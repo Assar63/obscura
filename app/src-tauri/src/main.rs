@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    obsbot_control_lib::run()
+    obsbot_center_lib::run()
 }

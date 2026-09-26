@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OBSBOT Control",
+  "productName": "OBSBOT Center",
+  "mainBinaryName": "obsbot-center",
   "version": "0.1.0",
-  "identifier": "io.github.kenvandine.obsbot-control",
+  "identifier": "io.github.kenvandine.obsbot-center",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "OBSBOT Control",
+        "title": "OBSBOT Center",
         "width": 1280,
         "height": 760,
         "minWidth": 1000,

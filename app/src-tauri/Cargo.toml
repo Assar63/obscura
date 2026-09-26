@@ -1,5 +1,5 @@
 [package]
-name = "obsbot-control"
+name = "obsbot-center"
 description = "Linux configuration tool for OBSBOT webcams"
 version.workspace = true
 edition.workspace = true
@@ -7,7 +7,7 @@ license.workspace = true
 authors.workspace = true
 
 [lib]
-name = "obsbot_control_lib"
+name = "obsbot_center_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
