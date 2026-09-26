@@ -26,7 +26,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage"],
+    "targets": [
+      "deb",
+      "appimage"
+    ],
     "category": "Video",
     "shortDescription": "Unofficial Linux control panel for OBSBOT webcams",
     "icon": [
@@ -34,6 +37,9 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.png"
-    ]
+    ],
+    "license": "GPL-3.0-or-later",
+    "licenseFile": "../../LICENSE",
+    "copyright": "Copyright \u00a9 2026 Ken VanDine"
   }
 }
