@@ -92,7 +92,7 @@ sudo dnf group install "c-development"
 ### 2. Build
 
 ```sh
-git clone <repository-url> obsbot-center
+git clone https://github.com/kenvandine/obsbot-center.git
 cd obsbot-center
 
 # CLI only
