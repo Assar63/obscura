@@ -6,3 +6,6 @@ node_modules/
 /captures/*.pcapng
 /captures/*.pcap
 __pycache__/
+
+# Screenshots of the official Windows app (personal photos); kept locally only.
+/reference-screenshots/
