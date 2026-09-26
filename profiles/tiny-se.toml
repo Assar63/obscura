@@ -1,0 +1,64 @@
+# OBSBOT Tiny SE (3564:feff), firmware 6.4.4.1.
+#
+# Image controls, pan/tilt/zoom and focus are standard UVC controls
+# (inherited from generic-uvc). AI and gesture features use the vendor
+# protocol on Extension Unit 2 -- see docs/protocol.md.
+#
+# Vendor bindings:
+#   frames = framed commands on selector 2 (dst module, 2-byte cmd, value encoding)
+#   short  = short setting on selector 6: [id, len, value]
+#   status = byte offset in the selector 6 status block used for readback
+
+id = "tiny-se"
+name = "OBSBOT Tiny SE"
+inherits = "generic-uvc"
+
+[[match]]
+vendor_id = 0x3564
+product_id = 0xfeff
+
+# Standard control overrides. The Tiny SE's exposure_auto menu is
+# 0 = Auto Mode, 1 = Manual (not the usual 3 = Aperture Priority).
+[features.auto_exposure]
+v4l2 = 0x009a0901
+map = [[1, 0], [0, 1]]
+
+# Gesture control: the master switch sends all four sub-switches.
+[features.gesture_control]
+status = 1
+frames = [
+  { dst = 0x04, cmd = "c430" },
+  { dst = 0x04, cmd = "4431" },
+  { dst = 0x04, cmd = "4433" },
+  { dst = 0x04, cmd = "c433" },
+]
+
+[features.gesture_locked_target]
+status = 1
+frames = [{ dst = 0x04, cmd = "c430" }]
+
+[features.gesture_zoom]
+frames = [{ dst = 0x04, cmd = "4431" }]
+
+[features.gesture_dynamic_zoom]
+frames = [{ dst = 0x04, cmd = "4433" }]
+
+[features.gesture_direction_flip]
+frames = [{ dst = 0x04, cmd = "c433" }]
+
+# Value is the factor x100 (100..400): the ISP gets it as u32 after a
+# constant 02000000, the AI module as a float.
+[features.gesture_zoom_factor]
+frames = [
+  { dst = 0x02, cmd = "4219", prefix = "02000000", value = "u32" },
+  { dst = 0x04, cmd = "4432", value = "f32", divisor = 100 },
+]
+
+[features.mirror_image]
+status = 19
+short = { id = 0x14 }
+
+# 0 off, 1 group, 2 human, 3 hand tracking
+[features.ai_mode]
+status = 24
+short = { id = 0x16, value = "u16" }

@@ -1,0 +1,34 @@
+# Standard UVC controls, exposed by uvcvideo as V4L2 controls.
+#
+# Used for OBSBOT models without a dedicated profile, and for any camera
+# when running with --all. Ranges and menus are read from the driver, so only
+# the control IDs (and value maps where the catalog differs) are listed here.
+# Features the camera doesn't expose are reported as unsupported.
+
+id = "generic-uvc"
+name = "Generic UVC camera"
+
+# OBSBOT (Remo Tech) vendor IDs. Model-specific profiles override this.
+[[match]]
+vendor_id = 0x3564
+
+[[match]]
+vendor_id = 0x6e30
+
+[features]
+brightness                = { v4l2 = 0x00980900 }
+contrast                  = { v4l2 = 0x00980901 }
+saturation                = { v4l2 = 0x00980902 }
+hue                       = { v4l2 = 0x00980903 }
+auto_white_balance        = { v4l2 = 0x0098090c }
+gain                      = { v4l2 = 0x00980913 }
+anti_flicker              = { v4l2 = 0x00980918 }  # power_line_frequency: 0 off, 1 50 Hz, 2 60 Hz
+white_balance_temperature = { v4l2 = 0x0098091a }
+sharpness                 = { v4l2 = 0x0098091b }
+auto_exposure             = { v4l2 = 0x009a0901, map = [[0, 1], [1, 3]] }  # manual / aperture priority
+exposure                  = { v4l2 = 0x009a0902 }
+pan                       = { v4l2 = 0x009a0908, scale = 3600, unit = "°" }  # arc-seconds
+tilt                      = { v4l2 = 0x009a0909, scale = 3600, unit = "°" }
+focus                     = { v4l2 = 0x009a090a }
+auto_focus                = { v4l2 = 0x009a090c }
+zoom                      = { v4l2 = 0x009a090d, scale = 1, unit = "" }

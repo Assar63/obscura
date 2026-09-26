@@ -1,0 +1,8 @@
+/target
+node_modules/
+/app/dist/
+/app/src-tauri/gen/
+# Raw captures can be large and contain video frames; commit selectively.
+/captures/*.pcapng
+/captures/*.pcap
+__pycache__/

@@ -1,0 +1,17 @@
+[package]
+name = "obsbot-core"
+description = "Control library for OBSBOT webcams on Linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+toml = "0.8"
+nix = { version = "0.29", features = ["ioctl", "fs"] }
+v4l = "0.14"
+
+[dev-dependencies]
+serde_json.workspace = true

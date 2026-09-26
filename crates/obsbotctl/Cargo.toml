@@ -1,0 +1,13 @@
+[package]
+name = "obsbotctl"
+description = "Command-line control for OBSBOT webcams"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+obsbot-core.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
