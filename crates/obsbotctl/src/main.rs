@@ -40,6 +40,17 @@ enum Command {
     Set { feature: String, value: String },
     /// List the raw V4L2 controls the driver exposes.
     Controls,
+    /// Move the gimbal at a velocity for a while, then stop. RIGHT and UP
+    /// are -1..1 fractions of the maximum speed.
+    Gimbal {
+        #[arg(allow_hyphen_values = true)]
+        right: f32,
+        #[arg(allow_hyphen_values = true)]
+        up: f32,
+        /// How long to move, in milliseconds.
+        #[arg(long, default_value_t = 500)]
+        ms: u64,
+    },
     /// Low-level UVC Extension Unit access (development only).
     #[command(subcommand, hide = true)]
     Raw(Raw),
@@ -192,6 +203,18 @@ fn main() -> Result<()> {
                 .ok_or_else(|| anyhow!("invalid value `{value}` for {feature} (expected {})", describe_kind(&kind)))?;
             let s = dev.set(id, raw)?;
             println!("{} = {}", feature, s.value.map_or("?".into(), |v| s.kind.format(v)));
+        }
+        Command::Gimbal { right, up, ms } => {
+            let dev = open(&cli)?;
+            let start = std::time::Instant::now();
+            while start.elapsed().as_millis() < *ms as u128 {
+                dev.gimbal_velocity(*right, *up)?;
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            // Stop twice: a single dropped stop would leave it drifting.
+            dev.gimbal_velocity(0.0, 0.0)?;
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            dev.gimbal_velocity(0.0, 0.0)?;
         }
         Command::Controls => {
             let dev = open(&cli)?;

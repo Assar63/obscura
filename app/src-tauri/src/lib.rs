@@ -17,6 +17,7 @@ pub fn run() {
             commands::open_camera,
             commands::get_features,
             commands::set_feature,
+            commands::gimbal_move,
             preview::start_preview,
             preview::preview_ready,
             preview::stop_preview,

@@ -1,11 +1,18 @@
 <script lang="ts">
   // Circular pan/tilt pad. While held, reports the knob offset (-1..1 on
-  // each axis) every `interval` ms; springs back on release.
+  // each axis) every `interval` ms; springs back and calls `onrelease`
+  // when let go.
   let {
     disabled = false,
     interval = 100,
     onmove,
-  }: { disabled?: boolean; interval?: number; onmove: (x: number, y: number) => void } = $props();
+    onrelease,
+  }: {
+    disabled?: boolean;
+    interval?: number;
+    onmove: (x: number, y: number) => void;
+    onrelease?: () => void;
+  } = $props();
 
   let pad: HTMLDivElement;
   let x = $state(0);
@@ -29,16 +36,21 @@
     if (disabled) return;
     pad.setPointerCapture(e.pointerId);
     update(e);
+    onmove(x, y);
     timer = setInterval(() => onmove(x, y), interval);
   }
 
   function up() {
+    if (!timer) return;
     clearInterval(timer);
     timer = undefined;
     x = 0;
     y = 0;
+    onrelease?.();
   }
 </script>
+
+<svelte:window onblur={up} />
 
 <div
   class="pad"

@@ -12,7 +12,10 @@
     { value: 1, label: "Med." },
     { value: 2, label: "Fast" },
   ];
+  // Absolute-nudge step per tick (generic cameras) and velocity fraction
+  // (cameras with a gimbal velocity command), per speed setting.
   const SPEED_STEP = [0.008, 0.02, 0.04];
+  const SPEED_VELOCITY = [0.3, 0.6, 1.0];
   let speed = $state(loadSpeed());
 
   function loadSpeed(): number {
@@ -52,11 +55,26 @@
     return !device.supported(parent) || device.on(parent) === state;
   }
 
-  const gimbalSupported = $derived(device.supported("pan") || device.supported("tilt"));
+  const gimbalSupported = $derived(
+    device.gimbalVelocity || device.supported("pan") || device.supported("tilt"),
+  );
 
   function joystick(x: number, y: number) {
-    device.nudge("pan", x * SPEED_STEP[speed]);
-    device.nudge("tilt", y * SPEED_STEP[speed]);
+    if (device.gimbalVelocity) {
+      // Mirrored video: pushing right should move the picture right.
+      const right = device.on("mirror_image") ? -x : x;
+      const k = SPEED_VELOCITY[speed];
+      void device.gimbalMove(right * k, y * k);
+    } else {
+      device.nudge("pan", x * SPEED_STEP[speed]);
+      device.nudge("tilt", y * SPEED_STEP[speed]);
+    }
+  }
+
+  function joystickRelease() {
+    if (!device.gimbalVelocity) return;
+    // Stop twice; a single lost stop would leave the gimbal drifting.
+    void device.gimbalMove(0, 0).then(() => device.gimbalMove(0, 0));
   }
 </script>
 
@@ -78,7 +96,7 @@
         <span class="label" class:dim={!gimbalSupported}>Gimbal Speed</span>
         <Segmented options={SPEEDS} value={speed} disabled={!gimbalSupported} onchange={setSpeed} />
       </div>
-      <Joystick disabled={!gimbalSupported} onmove={joystick} />
+      <Joystick disabled={!gimbalSupported} onmove={joystick} onrelease={joystickRelease} />
     </div>
     <Feature id="zoom" />
   </Card>
@@ -134,8 +152,14 @@
     flex-direction: column;
     gap: 8px;
   }
+  .gimbal-speed :global(.segmented) {
+    display: flex;
+    width: 100%;
+  }
   .gimbal-speed :global(.segmented button) {
-    padding: 3px 9px;
+    flex: 1;
+    min-width: 0;
+    padding: 3px 0;
   }
   .label.dim {
     color: var(--text-muted);

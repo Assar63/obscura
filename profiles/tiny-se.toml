@@ -17,6 +17,13 @@ inherits = "generic-uvc"
 vendor_id = 0x3564
 product_id = 0xfeff
 
+# Joystick: [roll, pitch, yaw] float32 velocity, resent ~10 Hz, zeros to stop.
+# Seen in OBSBOT Center captures with magnitudes up to ~8.5.
+[gimbal_velocity]
+dst = 0x04
+cmd = "8464"
+max_speed = 10.0
+
 # Standard control overrides. The Tiny SE's exposure_auto menu is
 # 0 = Auto Mode, 1 = Manual (not the usual 3 = Aperture Priority).
 [features.auto_exposure]

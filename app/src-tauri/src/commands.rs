@@ -20,6 +20,8 @@ pub struct Snapshot {
     info: CameraInfo,
     profile_id: String,
     profile_name: String,
+    /// Joystick can drive the gimbal by velocity (vendor command).
+    gimbal_velocity: bool,
     features: Vec<FeatureState>,
 }
 
@@ -79,6 +81,7 @@ pub fn open_camera(state: State<AppState>, path: PathBuf) -> CmdResult<Snapshot>
         info: device.info.clone(),
         profile_id: device.profile.id.clone(),
         profile_name: device.profile.name.clone(),
+        gimbal_velocity: device.has_gimbal_velocity(),
         features: device.read_all(),
     };
     *state.0.lock().unwrap() = Some(device);
@@ -103,4 +106,12 @@ pub fn set_feature(state: State<AppState>, id: FeatureId, value: i64) -> CmdResu
     let device = guard.as_ref().ok_or("no camera open")?;
     device.set(id, value).map_err(err)?;
     Ok(device.read_all())
+}
+
+/// Joystick velocity: `right`/`up` in -1..1; (0, 0) stops.
+#[tauri::command]
+pub fn gimbal_move(state: State<AppState>, right: f32, up: f32) -> CmdResult<()> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    device.gimbal_velocity(right, up).map_err(err)
 }

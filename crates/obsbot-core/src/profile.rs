@@ -118,6 +118,27 @@ pub struct VendorBinding {
     pub status: Option<usize>,
 }
 
+/// Gimbal velocity command: payload is three float32 `[roll, pitch, yaw]`
+/// in degrees/second, resent while moving and zeroed to stop.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GimbalVelocity {
+    pub dst: u8,
+    #[serde(deserialize_with = "hex_cmd")]
+    pub cmd: [u8; 2],
+    /// Multipliers mapping "right"/"up" to the device's sign convention.
+    #[serde(default = "one_f")]
+    pub yaw_sign: f32,
+    #[serde(default = "one_f")]
+    pub pitch_sign: f32,
+    /// Largest speed sent, in the device's units.
+    pub max_speed: f32,
+}
+
+fn one_f() -> f32 {
+    1.0
+}
+
 /// How a feature reaches the device.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -134,6 +155,8 @@ pub struct DeviceProfile {
     pub matches: Vec<UsbMatch>,
     /// Profile whose features this one starts from.
     pub inherits: Option<String>,
+    /// Vendor gimbal velocity command, used for joystick control.
+    pub gimbal_velocity: Option<GimbalVelocity>,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -156,6 +179,9 @@ impl DeviceProfile {
             .map(|p| {
                 let mut p = p.clone();
                 if let Some(parent) = p.inherits.as_ref().and_then(|id| parsed.iter().find(|q| &q.id == id)) {
+                    if p.gimbal_velocity.is_none() {
+                        p.gimbal_velocity = parent.gimbal_velocity.clone();
+                    }
                     for (id, b) in &parent.features {
                         p.features.entry(*id).or_insert_with(|| b.clone());
                     }

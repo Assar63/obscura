@@ -10,6 +10,8 @@ class DeviceStore {
   cameras = $state<CameraInfo[]>([]);
   current = $state<CameraInfo | null>(null);
   profileName = $state<string>("");
+  /** Joystick drives the gimbal by velocity rather than absolute nudges. */
+  gimbalVelocity = $state(false);
   features = $state<Record<string, FeatureState>>({});
   error = $state<string | null>(null);
 
@@ -80,6 +82,7 @@ class DeviceStore {
       const snap = await api.openCamera(path);
       this.current = snap.info;
       this.profileName = snap.profile_name;
+      this.gimbalVelocity = snap.gimbal_velocity;
       this.#apply(snap.features);
       this.error = null;
       await this.refreshCameras();
@@ -122,6 +125,16 @@ class DeviceStore {
       this.#timers.set(id, setTimeout(write, RANGE_DEBOUNCE_MS));
     } else {
       void write();
+    }
+  }
+
+  /** Gimbal velocity from the joystick; (0, 0) stops. Errors surface in
+   * the banner but don't interrupt the stream of updates. */
+  async gimbalMove(right: number, up: number) {
+    try {
+      await api.gimbalMove(right, up);
+    } catch (e) {
+      this.error = String(e);
     }
   }
 

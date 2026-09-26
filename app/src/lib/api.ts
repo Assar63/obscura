@@ -45,6 +45,7 @@ export type Snapshot = {
   info: CameraInfo;
   profile_id: string;
   profile_name: string;
+  gimbal_velocity: boolean;
   features: FeatureState[];
 };
 
@@ -66,6 +67,7 @@ export const api = {
     frames.onmessage = (m) => onFrame(m instanceof ArrayBuffer ? m : new Uint8Array(m).buffer);
     return invoke<PreviewFormat>("start_preview", { path, config, frames });
   },
+  gimbalMove: (right: number, up: number) => invoke<void>("gimbal_move", { right, up }),
   previewReady: () => invoke<void>("preview_ready"),
   stopPreview: () => invoke<void>("stop_preview"),
 };
