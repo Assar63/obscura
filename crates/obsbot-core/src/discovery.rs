@@ -34,6 +34,13 @@ fn read_hex(dir: &Path, file: &str) -> Option<u16> {
     u16::from_str_radix(&read(dir, file)?, 16).ok()
 }
 
+/// uvcvideo names nodes "<product>: <product, truncated>"; keep the first
+/// part. This is what's shown when the USB product string can't be read
+/// (e.g. under snap confinement, which only exposes the USB IDs).
+fn card_name(raw: &str) -> String {
+    raw.split(':').next().unwrap_or(raw).trim().to_string()
+}
+
 fn node_number(path: &Path) -> u32 {
     path.file_name()
         .and_then(|n| n.to_str())
@@ -82,7 +89,7 @@ pub fn discover(include_all: bool) -> Vec<CameraInfo> {
         }
         cameras.push(CameraInfo {
             path: dev,
-            name: read(&sys, "name").unwrap_or_default(),
+            name: card_name(&read(&sys, "name").unwrap_or_default()),
             vendor_id,
             product_id,
             manufacturer: read(usb, "manufacturer"),
@@ -95,4 +102,14 @@ pub fn discover(include_all: bool) -> Vec<CameraInfo> {
         });
     }
     cameras
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn card_name_drops_uvc_suffix() {
+        assert_eq!(super::card_name("OBSBOT Tiny SE: OBSBOT Tiny S"), "OBSBOT Tiny SE");
+        assert_eq!(super::card_name("Integrated RGB Camera: Integrat"), "Integrated RGB Camera");
+        assert_eq!(super::card_name("Plain"), "Plain");
+    }
 }

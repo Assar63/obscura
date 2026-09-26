@@ -1,0 +1,96 @@
+name: obsbot-center
+title: OBSBOT Center
+summary: Unofficial Linux control panel for OBSBOT webcams
+description: |
+  Configure OBSBOT webcams on Linux: AI tracking (human, group, hand),
+  gesture control, gimbal joystick, mirror image, and image settings such as
+  focus, exposure and white balance, with a live preview.
+
+  Settings are written to the camera itself, so they apply in every app that
+  uses it. Also includes the `obsbot-center.obsbotctl` command-line tool.
+
+  Supported: OBSBOT Tiny SE. Other OBSBOT models get the standard webcam
+  controls. Not affiliated with OBSBOT / Remo Tech.
+
+  After installing, connect the camera interface:
+
+    sudo snap connect obsbot-center:camera
+
+  Optionally, to show the camera's USB product name, serial number and
+  revision in the Device panel:
+
+    sudo snap connect obsbot-center:hardware-observe
+license: GPL-3.0-or-later
+website: https://github.com/kenvandine/obsbot-center
+source-code: https://github.com/kenvandine/obsbot-center
+issues: https://github.com/kenvandine/obsbot-center/issues
+icon: snap/gui/obsbot-center.png
+adopt-info: obsbot-center
+
+base: core24
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+  arm64:
+
+apps:
+  obsbot-center:
+    command: bin/obsbot-center
+    desktop: meta/gui/obsbot-center.desktop
+    common-id: io.github.kenvandine.obsbot-center
+    extensions: [gnome]
+    plugs:
+      - camera
+      - hardware-observe
+
+  obsbotctl:
+    command: bin/obsbotctl
+    plugs:
+      - camera
+      - hardware-observe
+
+parts:
+  obsbot-center:
+    plugin: nil
+    # Build from committed files only; keeps target/ and node_modules out.
+    source: .
+    source-type: git
+    build-snaps:
+      - rustup
+      - node/22/stable
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libssl-dev
+      - librsvg2-dev
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)+git$(git rev-parse --short HEAD)"
+    override-build: |
+      set -eux
+      # The gnome extension points LD_LIBRARY_PATH at the SDK's libc, which
+      # breaks every host tool run during the build (rustup, node, cargo
+      # build scripts). Keep its PKG_CONFIG_PATH so we compile against the
+      # same WebKitGTK/GTK the runtime ships, and give the linker the SDK
+      # library dirs via -rpath-link instead.
+      unset LD_LIBRARY_PATH
+      SDK_LIBS="$SNAPCRAFT_GNOME_SDK/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAPCRAFT_GNOME_SDK/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR"
+      export RUSTFLAGS="-C link-arg=-Wl,-rpath-link,$SDK_LIBS"
+      rustup toolchain install stable --profile minimal
+      rustup default stable
+
+      # pnpm must be on PATH: tauri's beforeBuildCommand runs `pnpm build`.
+      npm install --prefix "$CRAFT_PART_BUILD/.tools" pnpm@10
+      export PATH="$CRAFT_PART_BUILD/.tools/node_modules/.bin:$PATH"
+
+      cd app
+      pnpm install --frozen-lockfile
+      pnpm tauri build --no-bundle
+      cd ..
+      cargo build --release --locked -p obsbotctl
+
+      install -Dm755 target/release/obsbot-center "$CRAFT_PART_INSTALL/bin/obsbot-center"
+      install -Dm755 target/release/obsbotctl "$CRAFT_PART_INSTALL/bin/obsbotctl"
+      install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/obsbot-center/copyright"
