@@ -24,7 +24,7 @@ license: GPL-3.0-or-later
 website: https://github.com/kenvandine/obsbot-center
 source-code: https://github.com/kenvandine/obsbot-center
 issues: https://github.com/kenvandine/obsbot-center/issues
-icon: snap/gui/obsbot-center.png
+icon: snap/local/obsbot-center.png
 adopt-info: obsbot-center
 
 base: core24
@@ -38,7 +38,7 @@ platforms:
 apps:
   obsbot-center:
     command: bin/obsbot-center
-    desktop: meta/gui/obsbot-center.desktop
+    desktop: usr/share/applications/obsbot-center.desktop
     common-id: io.github.kenvandine.obsbot-center
     extensions: [gnome]
     plugs:
@@ -96,3 +96,7 @@ parts:
       install -Dm755 target/release/obsbot-center "$CRAFT_PART_INSTALL/bin/obsbot-center"
       install -Dm755 target/release/obsbotctl "$CRAFT_PART_INSTALL/bin/obsbotctl"
       install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/obsbot-center/copyright"
+      install -Dm644 snap/local/obsbot-center.desktop \
+        "$CRAFT_PART_INSTALL/usr/share/applications/obsbot-center.desktop"
+      install -Dm644 snap/local/obsbot-center.png \
+        "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/obsbot-center.png"
