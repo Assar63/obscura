@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    obsbot_center_lib::run()
+    obscura_lib::run()
 }

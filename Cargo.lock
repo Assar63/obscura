@@ -2312,17 +2312,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "obsbot-center"
-version = "0.1.0"
-dependencies = [
- "obsbot-core",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
-]
-
-[[package]]
 name = "obsbot-core"
 version = "0.1.0"
 dependencies = [
@@ -2342,6 +2331,17 @@ dependencies = [
  "clap",
  "obsbot-core",
  "serde_json",
+]
+
+[[package]]
+name = "obscura"
+version = "0.1.0"
+dependencies = [
+ "obsbot-core",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
 ]
 
 [[package]]

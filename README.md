@@ -1,6 +1,8 @@
-# OBSBOT Center for Linux
+# OBSCura
 
-An **unofficial** Linux configuration tool for OBSBOT webcams: AI tracking,
+**OBSCura: Unofficial control panel for OBSBOT webcams.**
+
+A Linux configuration tool for OBSBOT webcams: AI tracking,
 gesture control, gimbal, mirror and image settings, with a live preview.
 Built with Rust, Tauri 2 and Svelte.
 
@@ -68,9 +70,25 @@ explaining why. The layout matches the official app.
 
 ## Installing
 
-There are no prebuilt packages yet. Build from source:
+There are no prebuilt packages yet. Build a snap, or build from source.
 
-### 1. Dependencies
+### Snap (strictly confined)
+
+```sh
+snapcraft pack                                   # builds in an LXD container
+sudo snap install --dangerous ./obscura_*.snap
+sudo snap connect obscura:camera                 # required
+sudo snap connect obscura:hardware-observe       # optional: USB product name/serial
+sudo snap alias obscura.obsbotctl obsbotctl      # optional: plain `obsbotctl`
+```
+
+The snap uses the GNOME 46 runtime (which provides WebKitGTK), and only
+needs the `camera` interface to reach the camera. It never needs raw USB
+access.
+
+### From source
+
+#### 1. Dependencies
 
 Rust (stable, 1.77.2+), Node.js 20.19+ or 22.12+, [pnpm](https://pnpm.io/), and the
 [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
@@ -81,11 +99,11 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
     libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-### 2. Build
+#### 2. Build
 
 ```sh
-git clone https://github.com/kenvandine/obsbot-center.git
-cd obsbot-center
+git clone https://github.com/kenvandine/obscura.git
+cd obscura
 
 # CLI only
 cargo build --release -p obsbotctl        # -> target/release/obsbotctl
@@ -93,11 +111,11 @@ cargo build --release -p obsbotctl        # -> target/release/obsbotctl
 # Desktop app (+ .deb and AppImage bundles)
 cd app
 pnpm install
-pnpm tauri build                         # -> target/release/obsbot-center
+pnpm tauri build                         # -> target/release/obscura
                                          #    target/release/bundle/{deb,appimage}/
 ```
 
-### 3. Permissions
+#### 3. Permissions
 
 Everything goes through `/dev/videoN`, so no root access, udev rules or kernel
 modules are needed. On desktop distributions the logged-in user can already
@@ -109,7 +127,7 @@ sudo usermod -aG video "$USER"   # then log out and back in
 
 ## Using the app
 
-Run `obsbot-center` (or `pnpm tauri dev` from `app/` during development).
+Run `obscura` (or `pnpm tauri dev` from `app/` during development).
 
 - **Top bar:** camera picker, the Gesture Control and Mirror Image popovers,
   Sleep/Resume, and Open/Close Preview.
@@ -122,7 +140,7 @@ Run `obsbot-center` (or `pnpm tauri dev` from `app/` during development).
   details.
 
 Settings are written to the camera itself, so they apply to every app that
-uses it (Zoom, Meet, OBS, …). You don't need to keep OBSBOT Center running.
+uses it (Zoom, Meet, OBS, …). You don't need to keep OBSCura running.
 
 Only one application can stream from the camera at a time. **Close the preview
 before joining a call**; the controls keep working while another app is
@@ -132,7 +150,7 @@ To try the app without an OBSBOT camera, using another webcam's standard
 controls:
 
 ```sh
-OBSBOT_ALL_CAMERAS=1 obsbot-center
+OBSBOT_ALL_CAMERAS=1 obscura
 ```
 
 ## Using the CLI (`obsbotctl`)
@@ -258,7 +276,7 @@ contain video frames. Only commit the decoded evidence in `docs/protocol.md`.
 
 ```sh
 cargo test                         # protocol encoders vs captured packets, profiles, parsing
-cargo build                        # workspace: obsbot-core, obsbotctl, obsbot-center
+cargo build                        # workspace: obsbot-core, obsbotctl, obscura
 cd app && pnpm check               # Svelte/TypeScript type checking
 cd app && pnpm tauri dev           # run the app with hot reload
 ```
@@ -284,7 +302,7 @@ harmless. It's WebKit's JPEG decoder complaining about padding in the camera's
 MJPEG frames.
 
 **Blank window or rendering glitches on some GPUs**: try
-`WEBKIT_DISABLE_DMABUF_RENDERER=1 obsbot-center`.
+`WEBKIT_DISABLE_DMABUF_RENDERER=1 obscura`.
 
 **The camera disappears from USB**: it can reboot after an invalid vendor
 command, and comes back after about 40 seconds. The app reconnects on its own.

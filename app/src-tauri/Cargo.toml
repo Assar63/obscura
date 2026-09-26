@@ -1,13 +1,13 @@
 [package]
-name = "obsbot-center"
-description = "Linux configuration tool for OBSBOT webcams"
+name = "obscura"
+description = "OBSCura: unofficial control panel for OBSBOT webcams"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 
 [lib]
-name = "obsbot_center_lib"
+name = "obscura_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

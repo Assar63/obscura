@@ -1,9 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OBSBOT Center",
-  "mainBinaryName": "obsbot-center",
+  "productName": "OBSCura",
+  "mainBinaryName": "obscura",
   "version": "0.1.0",
-  "identifier": "io.github.kenvandine.obsbot-center",
+  "identifier": "io.github.kenvandine.obscura",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "OBSBOT Center",
+        "title": "OBSCura",
         "width": 1280,
         "height": 760,
         "minWidth": 1000,
@@ -31,7 +31,7 @@
       "appimage"
     ],
     "category": "Video",
-    "shortDescription": "Unofficial Linux control panel for OBSBOT webcams",
+    "shortDescription": "Unofficial control panel for OBSBOT webcams",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

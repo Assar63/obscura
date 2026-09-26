@@ -1,11 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=OBSBOT Center
+Name=OBSCura
 GenericName=Webcam Control
 Comment=Configure OBSBOT webcams: AI tracking, gestures, gimbal and image settings
-Exec=obsbot-center
-Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/obsbot-center.png
+Exec=obscura
+Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/obscura.png
 Terminal=false
 Categories=AudioVideo;Video;Settings;HardwareSettings;
 Keywords=webcam;camera;obsbot;tiny;gimbal;tracking;uvc;
-StartupWMClass=obsbot-center
+StartupWMClass=obscura

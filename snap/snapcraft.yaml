@@ -1,32 +1,36 @@
-name: obsbot-center
-title: OBSBOT Center
-summary: Unofficial Linux control panel for OBSBOT webcams
+name: obscura
+title: OBSCura
+summary: Unofficial control panel for OBSBOT webcams
 description: |
   Configure OBSBOT webcams on Linux: AI tracking (human, group, hand),
   gesture control, gimbal joystick, mirror image, and image settings such as
   focus, exposure and white balance, with a live preview.
 
   Settings are written to the camera itself, so they apply in every app that
-  uses it. Also includes the `obsbot-center.obsbotctl` command-line tool.
+  uses it. Also includes the `obscura.obsbotctl` command-line tool.
 
   Supported: OBSBOT Tiny SE. Other OBSBOT models get the standard webcam
   controls. Not affiliated with OBSBOT / Remo Tech.
 
   After installing, connect the camera interface:
 
-    sudo snap connect obsbot-center:camera
+    sudo snap connect obscura:camera
 
   Optionally, to show the camera's USB product name, serial number and
   revision in the Device panel:
 
-    sudo snap connect obsbot-center:hardware-observe
+    sudo snap connect obscura:hardware-observe
+
+  To call the CLI as plain `obsbotctl`:
+
+    sudo snap alias obscura.obsbotctl obsbotctl
 license: GPL-3.0-or-later
-website: https://github.com/kenvandine/obsbot-center
-source-code: https://github.com/kenvandine/obsbot-center
-issues: https://github.com/kenvandine/obsbot-center/issues
-contact: https://github.com/kenvandine/obsbot-center/issues
-icon: snap/local/obsbot-center.png
-adopt-info: obsbot-center
+website: https://github.com/kenvandine/obscura
+source-code: https://github.com/kenvandine/obscura
+issues: https://github.com/kenvandine/obscura/issues
+contact: https://github.com/kenvandine/obscura/issues
+icon: snap/local/obscura.png
+adopt-info: obscura
 
 base: core24
 grade: stable
@@ -37,10 +41,10 @@ platforms:
   arm64:
 
 apps:
-  obsbot-center:
-    command: bin/obsbot-center
-    desktop: usr/share/applications/obsbot-center.desktop
-    common-id: io.github.kenvandine.obsbot-center
+  obscura:
+    command: bin/obscura
+    desktop: usr/share/applications/obscura.desktop
+    common-id: io.github.kenvandine.obscura
     extensions: [gnome]
     plugs:
       - camera
@@ -53,7 +57,7 @@ apps:
       - hardware-observe
 
 parts:
-  obsbot-center:
+  obscura:
     plugin: nil
     # Build from committed files only; keeps target/ and node_modules out.
     source: .
@@ -94,10 +98,10 @@ parts:
       cd ..
       cargo build --release --locked -p obsbotctl
 
-      install -Dm755 target/release/obsbot-center "$CRAFT_PART_INSTALL/bin/obsbot-center"
+      install -Dm755 target/release/obscura "$CRAFT_PART_INSTALL/bin/obscura"
       install -Dm755 target/release/obsbotctl "$CRAFT_PART_INSTALL/bin/obsbotctl"
-      install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/obsbot-center/copyright"
-      install -Dm644 snap/local/obsbot-center.desktop \
-        "$CRAFT_PART_INSTALL/usr/share/applications/obsbot-center.desktop"
-      install -Dm644 snap/local/obsbot-center.png \
-        "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/obsbot-center.png"
+      install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/obscura/copyright"
+      install -Dm644 snap/local/obscura.desktop \
+        "$CRAFT_PART_INSTALL/usr/share/applications/obscura.desktop"
+      install -Dm644 snap/local/obscura.png \
+        "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/obscura.png"
