@@ -351,7 +351,10 @@ fn main() {
     if let Err(e) = companion::register(Role::Indicator) {
         eprintln!("obscura-indicator: couldn't record instance: {e}");
     }
-    let handle = match Indicator::new().spawn() {
+    // At login the indicator can start before the desktop shell's AppIndicator
+    // extension has registered its StatusNotifierWatcher; without this, ksni
+    // treats that as fatal and exits instead of waiting for it to appear.
+    let handle = match Indicator::new().assume_sni_available(true).spawn() {
         Ok(h) => h,
         Err(e) => {
             eprintln!("obscura-indicator: couldn't register the tray icon: {e}");
