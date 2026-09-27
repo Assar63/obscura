@@ -27,7 +27,9 @@ pub struct CameraInfo {
 }
 
 fn read(dir: &Path, file: &str) -> Option<String> {
-    fs::read_to_string(dir.join(file)).ok().map(|s| s.trim().to_string())
+    fs::read_to_string(dir.join(file))
+        .ok()
+        .map(|s| s.trim().to_string())
 }
 
 fn read_hex(dir: &Path, file: &str) -> Option<u16> {
@@ -70,12 +72,20 @@ pub fn discover(include_all: bool) -> Vec<CameraInfo> {
     let mut cameras: Vec<CameraInfo> = Vec::new();
     for sys in nodes {
         // `device` points at the USB interface; its parent is the USB device.
-        let Ok(iface) = fs::canonicalize(sys.join("device")) else { continue };
-        let Some(usb) = iface.parent() else { continue };
-        let (Some(vendor_id), Some(product_id)) = (read_hex(usb, "idVendor"), read_hex(usb, "idProduct")) else {
+        let Ok(iface) = fs::canonicalize(sys.join("device")) else {
             continue;
         };
-        let usb_path = usb.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let Some(usb) = iface.parent() else { continue };
+        let (Some(vendor_id), Some(product_id)) =
+            (read_hex(usb, "idVendor"), read_hex(usb, "idProduct"))
+        else {
+            continue;
+        };
+        let usb_path = usb
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
         if cameras.iter().any(|c| c.usb_path == usb_path) {
             continue;
         }
@@ -95,8 +105,7 @@ pub fn discover(include_all: bool) -> Vec<CameraInfo> {
             manufacturer: read(usb, "manufacturer"),
             product: read(usb, "product"),
             serial: read(usb, "serial"),
-            usb_version: read_hex(usb, "bcdDevice")
-                .map(|b| format!("{}.{:02x}", b >> 8, b & 0xff)),
+            usb_version: read_hex(usb, "bcdDevice").map(|b| format!("{}.{:02x}", b >> 8, b & 0xff)),
             usb_path,
             is_obsbot,
         });
@@ -108,8 +117,14 @@ pub fn discover(include_all: bool) -> Vec<CameraInfo> {
 mod tests {
     #[test]
     fn card_name_drops_uvc_suffix() {
-        assert_eq!(super::card_name("OBSBOT Tiny SE: OBSBOT Tiny S"), "OBSBOT Tiny SE");
-        assert_eq!(super::card_name("Integrated RGB Camera: Integrat"), "Integrated RGB Camera");
+        assert_eq!(
+            super::card_name("OBSBOT Tiny SE: OBSBOT Tiny S"),
+            "OBSBOT Tiny SE"
+        );
+        assert_eq!(
+            super::card_name("Integrated RGB Camera: Integrat"),
+            "Integrated RGB Camera"
+        );
         assert_eq!(super::card_name("Plain"), "Plain");
     }
 }

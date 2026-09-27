@@ -56,6 +56,8 @@ enum Command {
     Raw(Raw),
 }
 
+// Variant names become the subcommands `xu-probe`, `xu-get` and `xu-set`.
+#[allow(clippy::enum_variant_names)]
 #[derive(Subcommand)]
 enum Raw {
     /// Read-only scan for XU controls (GET_LEN/GET_INFO).
@@ -105,24 +107,31 @@ fn open(cli: &Cli) -> Result<Device> {
 fn feature_id(name: &str) -> Result<FeatureId> {
     FeatureId::from_name(name).ok_or_else(|| {
         let names: Vec<&str> = FeatureId::ALL.iter().map(|f| f.name()).collect();
-        anyhow!("unknown feature `{name}`; known features:\n  {}", names.join("\n  "))
+        anyhow!(
+            "unknown feature `{name}`; known features:\n  {}",
+            names.join("\n  ")
+        )
     })
 }
 
 fn describe_kind(kind: &FeatureKind) -> String {
     match kind {
         FeatureKind::Toggle => "on|off".into(),
-        FeatureKind::Choice { options } => {
-            options.iter().map(|o| o.label.as_str()).collect::<Vec<_>>().join("|")
+        FeatureKind::Choice { options } => options
+            .iter()
+            .map(|o| o.label.as_str())
+            .collect::<Vec<_>>()
+            .join("|"),
+        FeatureKind::Range { min, max, .. } => {
+            format!("{}..{}", kind.format(*min), kind.format(*max))
         }
-        FeatureKind::Range { min, max, .. } => format!("{}..{}", kind.format(*min), kind.format(*max)),
         FeatureKind::Action => "action".into(),
     }
 }
 
 fn parse_hex(s: &str) -> Result<Vec<u8>> {
     let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         bail!("hex payload must have an even number of digits");
     }
     (0..s.len())
@@ -132,7 +141,11 @@ fn parse_hex(s: &str) -> Result<Vec<u8>> {
 }
 
 fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" ")
+    bytes
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn main() -> Result<()> {
@@ -141,7 +154,10 @@ fn main() -> Result<()> {
         Command::List => {
             let cameras = discover(cli.all);
             if cameras.is_empty() {
-                println!("No cameras found{}.", if cli.all { "" } else { " (try --all)" });
+                println!(
+                    "No cameras found{}.",
+                    if cli.all { "" } else { " (try --all)" }
+                );
             }
             for c in cameras {
                 println!(
@@ -159,8 +175,14 @@ fn main() -> Result<()> {
             let i = &dev.info;
             println!("Device:        {}", i.path.display());
             println!("Name:          {}", i.name);
-            println!("USB ID:        {:04x}:{:04x} (bus path {})", i.vendor_id, i.product_id, i.usb_path);
-            println!("Manufacturer:  {}", i.manufacturer.as_deref().unwrap_or("-"));
+            println!(
+                "USB ID:        {:04x}:{:04x} (bus path {})",
+                i.vendor_id, i.product_id, i.usb_path
+            );
+            println!(
+                "Manufacturer:  {}",
+                i.manufacturer.as_deref().unwrap_or("-")
+            );
             println!("Product:       {}", i.product.as_deref().unwrap_or("-"));
             println!("Serial:        {}", i.serial.as_deref().unwrap_or("-"));
             println!("USB bcdDevice: {}", i.usb_version.as_deref().unwrap_or("-"));
@@ -181,8 +203,18 @@ fn main() -> Result<()> {
                         (true, Some(v)) => s.kind.format(v),
                         _ => format!("- ({})", s.reason.as_deref().unwrap_or("unavailable")),
                     };
-                    let inactive = if s.supported && !s.active { "  [inactive]" } else { "" };
-                    println!("{:<28} {:<14} {}{}", s.id.name(), value, describe_kind(&s.kind), inactive);
+                    let inactive = if s.supported && !s.active {
+                        "  [inactive]"
+                    } else {
+                        ""
+                    };
+                    println!(
+                        "{:<28} {:<14} {}{}",
+                        s.id.name(),
+                        value,
+                        describe_kind(&s.kind),
+                        inactive
+                    );
                 }
             }
         }
@@ -191,18 +223,29 @@ fn main() -> Result<()> {
             let s = dev.feature(feature_id(feature)?);
             match (s.supported, s.value) {
                 (true, Some(v)) => println!("{}", s.kind.format(v)),
-                _ => bail!("{}: {}", feature, s.reason.unwrap_or_else(|| "unavailable".into())),
+                _ => bail!(
+                    "{}: {}",
+                    feature,
+                    s.reason.unwrap_or_else(|| "unavailable".into())
+                ),
             }
         }
         Command::Set { feature, value } => {
             let dev = open(&cli)?;
             let id = feature_id(feature)?;
             let kind = dev.feature(id).kind;
-            let raw = kind
-                .parse(value)
-                .ok_or_else(|| anyhow!("invalid value `{value}` for {feature} (expected {})", describe_kind(&kind)))?;
+            let raw = kind.parse(value).ok_or_else(|| {
+                anyhow!(
+                    "invalid value `{value}` for {feature} (expected {})",
+                    describe_kind(&kind)
+                )
+            })?;
             let s = dev.set(id, raw)?;
-            println!("{} = {}", feature, s.value.map_or("?".into(), |v| s.kind.format(v)));
+            println!(
+                "{} = {}",
+                feature,
+                s.value.map_or("?".into(), |v| s.kind.format(v))
+            );
         }
         Command::Gimbal { right, up, ms } => {
             let dev = open(&cli)?;
@@ -219,7 +262,10 @@ fn main() -> Result<()> {
         Command::Controls => {
             let dev = open(&cli)?;
             for c in dev.node().list_controls()? {
-                let value = dev.node().get_control(c.id).map_or("-".into(), |v| v.to_string());
+                let value = dev
+                    .node()
+                    .get_control(c.id)
+                    .map_or("-".into(), |v| v.to_string());
                 println!(
                     "0x{:08x}  {:<32} {:>8}  [{}..{} step {} def {}] flags=0x{:x}",
                     c.id, c.name, value, c.min, c.max, c.step, c.default, c.flags
@@ -246,10 +292,17 @@ fn main() -> Result<()> {
                         );
                         let cur = uvc_xu::get(node, c.unit, c.selector, UvcQuery::GetCur)
                             .map_or_else(|e| format!("({e})"), |b| hex(&b));
-                        println!("unit {:>2} selector {:>2}  len {:>3}  {:<8} cur: {}", c.unit, c.selector, c.len, caps, cur);
+                        println!(
+                            "unit {:>2} selector {:>2}  len {:>3}  {:<8} cur: {}",
+                            c.unit, c.selector, c.len, caps, cur
+                        );
                     }
                 }
-                Raw::XuGet { unit, selector, query } => {
+                Raw::XuGet {
+                    unit,
+                    selector,
+                    query,
+                } => {
                     let q = match query.as_str() {
                         "min" => UvcQuery::GetMin,
                         "max" => UvcQuery::GetMax,
@@ -259,11 +312,18 @@ fn main() -> Result<()> {
                     };
                     println!("{}", hex(&uvc_xu::get(node, *unit, *selector, q)?));
                 }
-                Raw::XuSet { unit, selector, data } => {
+                Raw::XuSet {
+                    unit,
+                    selector,
+                    data,
+                } => {
                     let bytes = parse_hex(data)?;
                     let len = uvc_xu::len(node, *unit, *selector)? as usize;
                     if bytes.len() != len {
-                        bail!("payload is {} bytes but the control is {len} bytes", bytes.len());
+                        bail!(
+                            "payload is {} bytes but the control is {len} bytes",
+                            bytes.len()
+                        );
                     }
                     uvc_xu::set(node, *unit, *selector, &bytes)?;
                     println!("ok");

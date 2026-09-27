@@ -49,7 +49,12 @@ pub fn probe(node: &VideoNode) -> Vec<XuControl> {
     for unit in 1..=31u8 {
         for selector in 1..=31u8 {
             if let (Ok(len), Ok(info)) = (len(node, unit, selector), info(node, unit, selector)) {
-                found.push(XuControl { unit, selector, len, info });
+                found.push(XuControl {
+                    unit,
+                    selector,
+                    len,
+                    info,
+                });
             }
         }
     }

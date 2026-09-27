@@ -15,8 +15,14 @@ use crate::protocol::ValueEncoding;
 pub const OBSBOT_VENDOR_IDS: &[u16] = &[0x3564, 0x6e30];
 
 const BUILTIN: &[(&str, &str)] = &[
-    ("generic-uvc.toml", include_str!("../../../profiles/generic-uvc.toml")),
-    ("tiny-se.toml", include_str!("../../../profiles/tiny-se.toml")),
+    (
+        "generic-uvc.toml",
+        include_str!("../../../profiles/generic-uvc.toml"),
+    ),
+    (
+        "tiny-se.toml",
+        include_str!("../../../profiles/tiny-se.toml"),
+    ),
 ];
 
 #[derive(Debug, Clone, Deserialize)]
@@ -42,18 +48,25 @@ pub struct V4l2Binding {
 
 impl V4l2Binding {
     pub fn to_device(&self, value: i64) -> i64 {
-        self.map.iter().find(|[f, _]| *f == value).map_or(value, |[_, d]| *d)
+        self.map
+            .iter()
+            .find(|[f, _]| *f == value)
+            .map_or(value, |[_, d]| *d)
     }
 
     pub fn to_feature(&self, value: i64) -> i64 {
-        self.map.iter().find(|[_, d]| *d == value).map_or(value, |[f, _]| *f)
+        self.map
+            .iter()
+            .find(|[_, d]| *d == value)
+            .map_or(value, |[f, _]| *f)
     }
 }
 
 fn hex_cmd<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<[u8; 2], D::Error> {
     let s = String::deserialize(d)?;
     let b = parse_hex(&s).map_err(serde::de::Error::custom)?;
-    b.try_into().map_err(|_| serde::de::Error::custom("cmd must be 2 bytes, e.g. \"c430\""))
+    b.try_into()
+        .map_err(|_| serde::de::Error::custom("cmd must be 2 bytes, e.g. \"c430\""))
 }
 
 fn hex_bytes<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Vec<u8>, D::Error> {
@@ -62,7 +75,7 @@ fn hex_bytes<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Vec<
 
 fn parse_hex(s: &str) -> std::result::Result<Vec<u8>, String> {
     let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return Err(format!("odd-length hex `{s}`"));
     }
     (0..s.len())
@@ -178,7 +191,11 @@ impl DeviceProfile {
             .iter()
             .map(|p| {
                 let mut p = p.clone();
-                if let Some(parent) = p.inherits.as_ref().and_then(|id| parsed.iter().find(|q| &q.id == id)) {
+                if let Some(parent) = p
+                    .inherits
+                    .as_ref()
+                    .and_then(|id| parsed.iter().find(|q| &q.id == id))
+                {
                     if p.gimbal_velocity.is_none() {
                         p.gimbal_velocity = parent.gimbal_velocity.clone();
                     }
@@ -210,7 +227,7 @@ impl DeviceProfile {
                     None if m.vendor_id == vendor_id => 1,
                     _ => continue,
                 };
-                if best.as_ref().map_or(true, |(s, _)| score > *s) {
+                if best.as_ref().is_none_or(|(s, _)| score > *s) {
                     best = Some((score, p.clone()));
                 }
             }
@@ -244,7 +261,10 @@ mod tests {
         let p = DeviceProfile::for_usb(0x3564, 0xfeff);
         assert_eq!(p.id, "tiny-se");
         assert!(matches!(p.features[&FeatureId::Contrast], Binding::V4l2(_)));
-        assert!(matches!(p.features[&FeatureId::MirrorImage], Binding::Vendor(_)));
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
     }
 
     #[test]

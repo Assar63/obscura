@@ -221,7 +221,10 @@ mod tests {
         for &id in FeatureId::ALL {
             assert_eq!(FeatureId::from_name(id.name()), Some(id));
         }
-        assert_eq!(FeatureId::WhiteBalanceTemperature.name(), "white_balance_temperature");
+        assert_eq!(
+            FeatureId::WhiteBalanceTemperature.name(),
+            "white_balance_temperature"
+        );
     }
 
     #[test]
@@ -236,6 +239,9 @@ mod tests {
         let toggle = FeatureId::Hdr.def().kind;
         assert_eq!(toggle.parse("ON"), Some(1));
         assert_eq!(toggle.format(0), "off");
-        assert_eq!(FeatureId::WhiteBalanceTemperature.def().kind.format(4800), "4800K");
+        assert_eq!(
+            FeatureId::WhiteBalanceTemperature.def().kind.format(4800),
+            "4800K"
+        );
     }
 }

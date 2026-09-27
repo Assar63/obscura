@@ -78,7 +78,8 @@ pub fn start_preview(
                 if let Err(e) = result {
                     // Before the first frame this reaches start_preview;
                     // afterwards the frontend hears about it as an event.
-                    if started_tx.send(Err(e.to_string())).is_err() && !stop.load(Ordering::Relaxed) {
+                    if started_tx.send(Err(e.to_string())).is_err() && !stop.load(Ordering::Relaxed)
+                    {
                         let _ = app.emit("preview-stopped", e.to_string());
                     }
                 }
@@ -90,7 +91,11 @@ pub fn start_preview(
         .recv_timeout(Duration::from_secs(5))
         .unwrap_or_else(|_| Err("timed out starting the preview".into()));
     if result.is_ok() {
-        *state.0.lock().unwrap() = Some(Running { stop, ready, thread });
+        *state.0.lock().unwrap() = Some(Running {
+            stop,
+            ready,
+            thread,
+        });
     } else {
         stop.store(true, Ordering::Relaxed);
     }

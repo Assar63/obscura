@@ -23,7 +23,9 @@ pub fn describe(info: &ControlInfo, binding: &V4l2Binding, kind: &FeatureKind) -
         // A menu control bound 1:1 (no value map) takes the driver's labels
         // only if the catalog doesn't define them; catalog labels match the
         // OBSBOT Center wording, so prefer those when the values line up.
-        FeatureKind::Choice { options } if binding.map.is_empty() && info.type_ == CTRL_TYPE_MENU => {
+        FeatureKind::Choice { options }
+            if binding.map.is_empty() && info.type_ == CTRL_TYPE_MENU =>
+        {
             let known: Vec<ChoiceOption> = options
                 .iter()
                 .filter(|o| info.menu.iter().any(|(v, _)| *v == o.value))
@@ -34,7 +36,10 @@ pub fn describe(info: &ControlInfo, binding: &V4l2Binding, kind: &FeatureKind) -
                     options: info
                         .menu
                         .iter()
-                        .map(|(value, label)| ChoiceOption { value: *value, label: label.clone() })
+                        .map(|(value, label)| ChoiceOption {
+                            value: *value,
+                            label: label.clone(),
+                        })
                         .collect(),
                 }
             } else {

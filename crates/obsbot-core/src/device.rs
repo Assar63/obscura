@@ -58,11 +58,21 @@ impl Device {
 
     /// Reads the vendor status block (selector 6), if the device has one.
     pub fn status_block(&self) -> Option<Vec<u8>> {
-        let has_vendor = self.profile.features.values().any(|b| matches!(b, Binding::Vendor(_)));
+        let has_vendor = self
+            .profile
+            .features
+            .values()
+            .any(|b| matches!(b, Binding::Vendor(_)));
         if !has_vendor {
             return None;
         }
-        uvc_xu::get(&self.node, protocol::XU_UNIT, protocol::SEL_STATUS, crate::v4l2::UvcQuery::GetCur).ok()
+        uvc_xu::get(
+            &self.node,
+            protocol::XU_UNIT,
+            protocol::SEL_STATUS,
+            crate::v4l2::UvcQuery::GetCur,
+        )
+        .ok()
     }
 
     /// Records `value` for other vendor features whose frames are a subset of
@@ -76,7 +86,14 @@ impl Device {
         for (id, other) in &self.profile.features {
             if let Binding::Vendor(o) = other {
                 let covered = !o.frames.is_empty()
-                    && o.frames.iter().all(|f| b.frames.iter().any(|g| g.dst == f.dst && g.cmd == f.cmd && f.prefix.is_empty() && g.prefix.is_empty()));
+                    && o.frames.iter().all(|f| {
+                        b.frames.iter().any(|g| {
+                            g.dst == f.dst
+                                && g.cmd == f.cmd
+                                && f.prefix.is_empty()
+                                && g.prefix.is_empty()
+                        })
+                    });
                 if covered {
                     written.insert(*id, (value, now));
                 }
@@ -106,7 +123,12 @@ impl Device {
         }
         let seq = self.seq.fetch_add(1, Ordering::Relaxed);
         let packet = encode_command(seq, g.dst, g.cmd, &payload);
-        uvc_xu::set(&self.node, protocol::XU_UNIT, protocol::SEL_COMMAND, &packet)
+        uvc_xu::set(
+            &self.node,
+            protocol::XU_UNIT,
+            protocol::SEL_COMMAND,
+            &packet,
+        )
     }
 
     fn send_vendor(&self, b: &VendorBinding, value: i64) -> Result<()> {
@@ -115,7 +137,12 @@ impl Device {
             payload.extend(encode_value(f.value, value, f.divisor));
             let seq = self.seq.fetch_add(1, Ordering::Relaxed);
             let packet = encode_command(seq, f.dst, f.cmd, &payload);
-            uvc_xu::set(&self.node, protocol::XU_UNIT, protocol::SEL_COMMAND, &packet)?;
+            uvc_xu::set(
+                &self.node,
+                protocol::XU_UNIT,
+                protocol::SEL_COMMAND,
+                &packet,
+            )?;
         }
         if let Some(s) = &b.short {
             let packet = encode_short(s.id, &encode_value(s.value, value, 1));
@@ -203,7 +230,10 @@ impl Device {
             Some(Binding::V4l2(b)) => v4l2_ctrl::set(&self.node, b, value)?,
             Some(Binding::Vendor(b)) => {
                 self.send_vendor(b, value)?;
-                self.written.lock().unwrap().insert(id, (value, Instant::now()));
+                self.written
+                    .lock()
+                    .unwrap()
+                    .insert(id, (value, Instant::now()));
                 // Frames like the gesture master switch also set sub-features.
                 self.mark_related(b, value);
             }

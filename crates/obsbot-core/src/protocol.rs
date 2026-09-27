@@ -40,7 +40,11 @@ pub fn crc16_usb(data: &[u8]) -> u16 {
     for &b in data {
         crc ^= b as u16;
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ 0xa001 } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xa001
+            } else {
+                crc >> 1
+            };
         }
     }
     crc ^ 0xffff
@@ -91,7 +95,9 @@ pub fn encode_value(enc: ValueEncoding, value: i64, divisor: i64) -> Vec<u8> {
         ValueEncoding::U8 => vec![value as u8],
         ValueEncoding::U16 => (value as u16).to_le_bytes().to_vec(),
         ValueEncoding::U32 => (value as u32).to_le_bytes().to_vec(),
-        ValueEncoding::F32 => ((value as f64 / divisor.max(1) as f64) as f32).to_le_bytes().to_vec(),
+        ValueEncoding::F32 => ((value as f64 / divisor.max(1) as f64) as f32)
+            .to_le_bytes()
+            .to_vec(),
     }
 }
 
@@ -101,7 +107,10 @@ mod tests {
 
     fn hex(s: &str) -> Vec<u8> {
         let s: String = s.split_whitespace().collect();
-        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
     }
 
     fn padded(s: &str) -> [u8; PACKET_LEN] {
@@ -136,8 +145,16 @@ mod tests {
             encode_command(0x42, 0x02, [0x42, 0x19], &isp),
             padded("aa 25 42 00 0c 00 4a 11 0a 02 42 19 08 00 c2 83 02 00 00 00 d2 00 00 00")
         );
-        let ai = encode_command(0x43, 0x04, [0x44, 0x32], &encode_value(ValueEncoding::F32, 210, 100));
-        assert_eq!(ai[..20], padded("aa 25 43 00 0c 00 b8 6a 0a 04 44 32 04 00 42 c0 66 66 06 40")[..20]);
+        let ai = encode_command(
+            0x43,
+            0x04,
+            [0x44, 0x32],
+            &encode_value(ValueEncoding::F32, 210, 100),
+        );
+        assert_eq!(
+            ai[..20],
+            padded("aa 25 43 00 0c 00 b8 6a 0a 04 44 32 04 00 42 c0 66 66 06 40")[..20]
+        );
     }
 
     #[test]

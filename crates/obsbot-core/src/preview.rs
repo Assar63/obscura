@@ -71,15 +71,21 @@ pub fn run(
     if fmt.fourcc != mjpg {
         return Err(PreviewError::NoMjpeg(cfg.width, cfg.height));
     }
-    let params = dev.set_params(&Parameters::with_fps(cfg.fps)).map_err(map_busy)?;
-    let fps = if params.interval.numerator > 0 {
-        params.interval.denominator / params.interval.numerator
-    } else {
-        cfg.fps
-    };
+    let params = dev
+        .set_params(&Parameters::with_fps(cfg.fps))
+        .map_err(map_busy)?;
+    let fps = params
+        .interval
+        .denominator
+        .checked_div(params.interval.numerator)
+        .unwrap_or(cfg.fps);
 
     let mut stream = Stream::with_buffers(&dev, Type::VideoCapture, 4).map_err(map_busy)?;
-    on_start(PreviewFormat { width: fmt.width, height: fmt.height, fps });
+    on_start(PreviewFormat {
+        width: fmt.width,
+        height: fmt.height,
+        fps,
+    });
 
     while !stop.load(Ordering::Relaxed) {
         let (buf, meta) = stream.next().map_err(map_busy)?;

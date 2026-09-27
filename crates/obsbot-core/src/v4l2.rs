@@ -176,8 +176,10 @@ impl VideoNode {
 
     pub fn capability(&self) -> Result<Capability> {
         let mut cap: Capability = unsafe { std::mem::zeroed() };
-        unsafe { ioctls::querycap(self.fd(), &mut cap) }
-            .map_err(|source| Error::Ioctl { op: "VIDIOC_QUERYCAP", source })?;
+        unsafe { ioctls::querycap(self.fd(), &mut cap) }.map_err(|source| Error::Ioctl {
+            op: "VIDIOC_QUERYCAP",
+            source,
+        })?;
         Ok(cap)
     }
 
@@ -197,7 +199,10 @@ impl VideoNode {
         match unsafe { ioctls::queryctrl(self.fd(), &mut q) } {
             Ok(_) => Ok(Some(self.control_info(&q))),
             Err(nix::Error::EINVAL) => Ok(None),
-            Err(source) => Err(Error::Ioctl { op: "VIDIOC_QUERYCTRL", source }),
+            Err(source) => Err(Error::Ioctl {
+                op: "VIDIOC_QUERYCTRL",
+                source,
+            }),
         }
     }
 
@@ -215,7 +220,12 @@ impl VideoNode {
                     q.id |= CTRL_FLAG_NEXT_CTRL;
                 }
                 Err(nix::Error::EINVAL) => break,
-                Err(source) => return Err(Error::Ioctl { op: "VIDIOC_QUERYCTRL", source }),
+                Err(source) => {
+                    return Err(Error::Ioctl {
+                        op: "VIDIOC_QUERYCTRL",
+                        source,
+                    })
+                }
             }
         }
         Ok(out)
@@ -254,15 +264,22 @@ impl VideoNode {
 
     pub fn get_control(&self, id: u32) -> Result<i64> {
         let mut c = Control { id, value: 0 };
-        unsafe { ioctls::g_ctrl(self.fd(), &mut c) }
-            .map_err(|source| Error::Ioctl { op: "VIDIOC_G_CTRL", source })?;
+        unsafe { ioctls::g_ctrl(self.fd(), &mut c) }.map_err(|source| Error::Ioctl {
+            op: "VIDIOC_G_CTRL",
+            source,
+        })?;
         Ok(c.value as i64)
     }
 
     pub fn set_control(&self, id: u32, value: i64) -> Result<()> {
-        let mut c = Control { id, value: value as i32 };
-        unsafe { ioctls::s_ctrl(self.fd(), &mut c) }
-            .map_err(|source| Error::Ioctl { op: "VIDIOC_S_CTRL", source })?;
+        let mut c = Control {
+            id,
+            value: value as i32,
+        };
+        unsafe { ioctls::s_ctrl(self.fd(), &mut c) }.map_err(|source| Error::Ioctl {
+            op: "VIDIOC_S_CTRL",
+            source,
+        })?;
         Ok(())
     }
 
@@ -276,8 +293,10 @@ impl VideoNode {
             size: data.len() as u16,
             data: data.as_mut_ptr(),
         };
-        unsafe { ioctls::uvc_ctrl_query(self.fd(), &mut q) }
-            .map_err(|source| Error::Ioctl { op: "UVCIOC_CTRL_QUERY", source })?;
+        unsafe { ioctls::uvc_ctrl_query(self.fd(), &mut q) }.map_err(|source| Error::Ioctl {
+            op: "UVCIOC_CTRL_QUERY",
+            source,
+        })?;
         Ok(())
     }
 }

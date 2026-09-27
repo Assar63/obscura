@@ -101,7 +101,11 @@ pub fn get_features(state: State<AppState>) -> CmdResult<Vec<FeatureState>> {
 /// Writes one feature and returns every feature, since a write can change
 /// others (e.g. turning off Auto WB activates Temperature).
 #[tauri::command]
-pub fn set_feature(state: State<AppState>, id: FeatureId, value: i64) -> CmdResult<Vec<FeatureState>> {
+pub fn set_feature(
+    state: State<AppState>,
+    id: FeatureId,
+    value: i64,
+) -> CmdResult<Vec<FeatureState>> {
     let guard = state.0.lock().unwrap();
     let device = guard.as_ref().ok_or("no camera open")?;
     device.set(id, value).map_err(err)?;
