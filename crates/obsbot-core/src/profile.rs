@@ -363,8 +363,14 @@ mod tests {
         // 51-device-sleep, 53-status-light, 44-hdr
         assert_eq!(short(FeatureId::AutoSleep, -30), [0x0b, 0x02, 0xe2, 0xff]);
         assert_eq!(short(FeatureId::SleepTime, 600), [0x0b, 0x02, 0x58, 0x02]);
-        assert_eq!(short(FeatureId::SleepBackgroundMirror, 1), [0x0e, 0x02, 0x02, 0x01]);
-        assert_eq!(short(FeatureId::StatusLightBrightness, 3), [0x1a, 0x01, 0x03, 0x00]);
+        assert_eq!(
+            short(FeatureId::SleepBackgroundMirror, 1),
+            [0x0e, 0x02, 0x02, 0x01]
+        );
+        assert_eq!(
+            short(FeatureId::StatusLightBrightness, 3),
+            [0x1a, 0x01, 0x03, 0x00]
+        );
         assert_eq!(short(FeatureId::Hdr, 1), [0x01, 0x01, 0x01, 0x00]);
         assert!(matches!(p.features[&FeatureId::AiLock], Binding::Lock(_)));
     }

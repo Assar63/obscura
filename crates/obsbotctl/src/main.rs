@@ -353,7 +353,14 @@ fn main() -> Result<()> {
                         .try_into()
                         .map_err(|_| anyhow!("cmd must be two bytes, e.g. 0401"))?;
                     let payload = dev.query(dst, cmd)?;
-                    println!("{}", payload.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
+                    println!(
+                        "{}",
+                        payload
+                            .iter()
+                            .map(|b| format!("{b:02x}"))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    );
                 }
             }
         }

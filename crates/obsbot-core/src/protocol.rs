@@ -101,8 +101,7 @@ pub fn encode_query(seq: u16, dst: u8, cmd: [u8; 2]) -> [u8; PACKET_LEN] {
 /// Extracts the payload of a response to `cmd`, or `None` if `frame` is
 /// something else (e.g. a stale response to an earlier query).
 pub fn decode_response(frame: &[u8], cmd: [u8; 2]) -> Option<&[u8]> {
-    if frame.len() < 16 || frame[0] != MAGIC || frame[1] != FLAGS_RESPONSE || frame[10..12] != cmd
-    {
+    if frame.len() < 16 || frame[0] != MAGIC || frame[1] != FLAGS_RESPONSE || frame[10..12] != cmd {
         return None;
     }
     let len = u16::from_le_bytes([frame[12], frame[13]]) as usize;

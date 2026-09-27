@@ -130,7 +130,9 @@ impl Device {
         if !self.profile.system_info {
             return None;
         }
-        let version = self.query(protocol::DST_SYSTEM, protocol::CMD_VERSION).ok()?;
+        let version = self
+            .query(protocol::DST_SYSTEM, protocol::CMD_VERSION)
+            .ok()?;
         let serial = self.query(protocol::DST_SYSTEM, protocol::CMD_SERIAL).ok();
         Some(FirmwareInfo {
             version: version
@@ -324,10 +326,11 @@ impl Device {
     /// Reads the status block and query responses needed by `ids`, once each.
     fn readback(&self, ids: &[FeatureId]) -> Readback {
         let vendor = || {
-            ids.iter().filter_map(|id| match self.profile.features.get(id) {
-                Some(Binding::Vendor(b)) => Some(b),
-                _ => None,
-            })
+            ids.iter()
+                .filter_map(|id| match self.profile.features.get(id) {
+                    Some(Binding::Vendor(b)) => Some(b),
+                    _ => None,
+                })
         };
         let mut rb = Readback {
             status: None,
@@ -337,8 +340,7 @@ impl Device {
             rb.status = self.status_block();
         }
         for q in vendor().filter_map(|b| b.query.as_ref()) {
-            if let std::collections::hash_map::Entry::Vacant(e) = rb.queries.entry((q.dst, q.cmd))
-            {
+            if let std::collections::hash_map::Entry::Vacant(e) = rb.queries.entry((q.dst, q.cmd)) {
                 e.insert(self.query(q.dst, q.cmd).ok());
             }
         }
