@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/obsbot-core", "crates/obsbotctl", "app/src-tauri"]
+members = ["crates/obsbot-core", "crates/obsbotctl", "crates/obscura-indicator", "app/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"

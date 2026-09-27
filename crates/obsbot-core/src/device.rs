@@ -210,11 +210,20 @@ impl Device {
     }
 
     pub fn read_all(&self) -> Vec<FeatureState> {
+        self.read(FeatureId::ALL)
+    }
+
+    /// Reads several features with a single status-block read.
+    pub fn read(&self, ids: &[FeatureId]) -> Vec<FeatureState> {
         let status = self.status_block();
-        FeatureId::ALL
-            .iter()
+        ids.iter()
             .map(|&id| self.feature_with_status(id, status.as_deref()))
             .collect()
+    }
+
+    /// Whether the camera is still there (false after unplug or reboot).
+    pub fn is_connected(&self) -> bool {
+        self.node.capability().is_ok()
     }
 
     /// Validates `value` against the feature's kind, writes it, and returns

@@ -60,6 +60,7 @@ Status on the Tiny SE:
 | Image | Auto/manual focus, auto/manual exposure, gain, white balance, anti-flicker | ✅ |
 | Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ |
 | Device | Hot-plug and reboot recovery | ✅ |
+| Panel | Tray indicator with quick toggles and show/hide | ✅ |
 | Pending captures | Sleep/wake, HDR, face-priority AF/AE, presets, portrait mode, rotate, audio, auto-sleep, status light, gimbal reverse, factory reset | 🚧 greyed out |
 | Out of scope | Beauty/background effects, recording, firmware updates | ❌ ² |
 
@@ -110,6 +111,7 @@ cd obscura
 
 # CLI only
 cargo build --release -p obsbotctl        # -> target/release/obsbotctl
+cargo build --release -p obscura-indicator  # -> target/release/obscura-indicator
 
 # Desktop app (+ .deb and AppImage bundles)
 cd app
@@ -148,6 +150,24 @@ uses it (Zoom, Meet, OBS, …). You don't need to keep OBSCura running.
 Only one application can stream from the camera at a time. **Close the preview
 before joining a call**; the controls keep working while another app is
 streaming.
+
+### Panel indicator
+
+`obscura-indicator` (`obscura.indicator` in the snap) is a tiny tray icon,
+using about 4 MiB, that you can leave running all the time. Its menu offers:
+
+- **Show / Hide OBSCura**: starts the full app, and quits it again, so the
+  heavy GUI only uses memory while it's open.
+- **AI tracking**: Off, Human, Group or Hand tracking.
+- **Gesture control** and **Mirror image** on/off.
+- **Re-center camera**.
+- **Start at login**: writes an XDG autostart entry (inside the snap, snapd's
+  per-app autostart).
+
+The menu re-reads the camera each time it opens, so it reflects changes made
+with gestures or in the app. It uses no GTK or webview: the desktop shell
+draws the menu over D-Bus (StatusNotifierItem). On GNOME this needs the
+AppIndicator extension, which Ubuntu enables by default.
 
 To try the app without an OBSBOT camera, using another webcam's standard
 controls:
@@ -228,6 +248,7 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 |---|---|
 | `crates/obsbot-core/` | Library: discovery, V4L2/XU transports, vendor protocol, profiles, preview |
 | `crates/obsbotctl/` | Command-line tool |
+| `crates/obscura-indicator/` | Lightweight tray indicator |
 | `app/` | Tauri 2 desktop app: Rust backend in `src-tauri/`, Svelte 5 frontend in `src/` |
 | `profiles/` | Per-model device profiles (compiled into the binaries) |
 | `docs/protocol.md` | Decoded vendor protocol |

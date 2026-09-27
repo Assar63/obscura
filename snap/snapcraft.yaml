@@ -7,7 +7,9 @@ description: |
   focus, exposure and white balance, with a live preview.
 
   Settings are written to the camera itself, so they apply in every app that
-  uses it. Also includes the `obscura.obsbotctl` command-line tool.
+  uses it. Also includes a lightweight panel indicator (`obscura.indicator`)
+  for quick toggles during calls, and the `obscura.obsbotctl` command-line
+  tool.
 
   Supported: OBSBOT Tiny SE. Other OBSBOT models get the standard webcam
   controls. Not affiliated with OBSBOT / Remo Tech.
@@ -49,6 +51,19 @@ apps:
     plugs:
       - camera
       - hardware-observe
+
+  # Lightweight tray indicator (a few MiB). "Show" starts the GUI as a
+  # child process and "Hide" quits it, so it needs the GUI's environment
+  # and plugs; unity7 lets it register the StatusNotifierItem over D-Bus.
+  indicator:
+    command: bin/obscura-indicator
+    desktop: usr/share/applications/obscura-indicator.desktop
+    autostart: obscura-indicator.desktop
+    extensions: [gnome]
+    plugs:
+      - camera
+      - hardware-observe
+      - unity7
 
   obsbotctl:
     command: bin/obsbotctl
@@ -96,12 +111,15 @@ parts:
       pnpm install --frozen-lockfile
       pnpm tauri build --no-bundle
       cd ..
-      cargo build --release --locked -p obsbotctl
+      cargo build --release --locked -p obsbotctl -p obscura-indicator
 
       install -Dm755 target/release/obscura "$CRAFT_PART_INSTALL/bin/obscura"
       install -Dm755 target/release/obsbotctl "$CRAFT_PART_INSTALL/bin/obsbotctl"
+      install -Dm755 target/release/obscura-indicator "$CRAFT_PART_INSTALL/bin/obscura-indicator"
       install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/obscura/copyright"
       install -Dm644 snap/local/obscura.desktop \
         "$CRAFT_PART_INSTALL/usr/share/applications/obscura.desktop"
+      install -Dm644 snap/local/obscura-indicator.desktop \
+        "$CRAFT_PART_INSTALL/usr/share/applications/obscura-indicator.desktop"
       install -Dm644 snap/local/obscura.png \
         "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/obscura.png"

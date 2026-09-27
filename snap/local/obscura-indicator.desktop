@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=OBSCura Indicator
+GenericName=Webcam Controls
+Comment=Quick OBSBOT camera controls in the panel
+Exec=obscura.indicator
+Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/obscura.png
+Terminal=false
+Categories=AudioVideo;Video;Settings;HardwareSettings;
+Keywords=webcam;camera;obsbot;tray;indicator;tracking;
