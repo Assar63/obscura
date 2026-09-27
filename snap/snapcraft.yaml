@@ -51,6 +51,9 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      # The app starts the panel indicator, which then runs under this
+      # app's confinement and needs unity7 to register its tray icon.
+      - unity7
 
   # Lightweight tray indicator (a few MiB). "Show" starts the GUI as a
   # child process and "Hide" quits it, so it needs the GUI's environment

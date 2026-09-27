@@ -9,4 +9,4 @@ authors.workspace = true
 [dependencies]
 obsbot-core.workspace = true
 ksni = { version = "0.3", default-features = false, features = ["blocking", "async-io"] }
-nix = { version = "0.29", features = ["signal"] }
+png = "0.18"

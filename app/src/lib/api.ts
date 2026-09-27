@@ -67,6 +67,8 @@ export const api = {
     frames.onmessage = (m) => onFrame(m instanceof ArrayBuffer ? m : new Uint8Array(m).buffer);
     return invoke<PreviewFormat>("start_preview", { path, config, frames });
   },
+  getAutostart: () => invoke<boolean>("get_autostart"),
+  setAutostart: (enabled: boolean) => invoke<boolean>("set_autostart", { enabled }),
   gimbalMove: (right: number, up: number) => invoke<void>("gimbal_move", { right, up }),
   previewReady: () => invoke<void>("preview_ready"),
   stopPreview: () => invoke<void>("stop_preview"),

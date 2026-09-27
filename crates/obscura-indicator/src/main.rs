@@ -3,21 +3,19 @@
 //! A small StatusNotifierItem (AppIndicator) that stays running in the panel
 //! so the heavy GUI doesn't have to. It offers quick camera toggles that are
 //! handy during video calls, and starts/stops the `obscura` GUI on demand:
-//! "Hide" really quits the GUI, freeing its memory.
+//! "Hide" really quits the GUI, freeing its memory. The GUI and indicator
+//! find each other through `obsbot_core::companion`, so Show/Hide also work
+//! on a GUI that was started directly.
 //!
 //! No GTK or webview here: the tray menu is rendered by the desktop shell
 //! over D-Bus, and the camera is driven directly through `obsbot-core`.
 
-use std::fs;
-use std::path::PathBuf;
-use std::process::{Child, Command};
 use std::time::Duration;
 
 use ksni::blocking::TrayMethods;
 use ksni::menu::{CheckmarkItem, RadioGroup, RadioItem, StandardItem};
 use ksni::MenuItem;
-use nix::sys::signal::{kill, Signal};
-use nix::unistd::Pid;
+use obsbot_core::companion::{self, Role};
 use obsbot_core::{discover, Device, FeatureId};
 
 /// Background refresh; the menu also refreshes whenever it's opened.
@@ -32,7 +30,35 @@ const TOGGLES: &[(FeatureId, &str)] = &[
     (FeatureId::MirrorImage, "Mirror image"),
 ];
 
-const AUTOSTART_FILE: &str = "obscura-indicator.desktop";
+/// The application icon, embedded so it works without an installed theme.
+const ICONS: &[&[u8]] = &[
+    include_bytes!("../../../app/src-tauri/icons/32x32.png"),
+    include_bytes!("../../../app/src-tauri/icons/64x64.png"),
+];
+
+/// Decodes an 8-bit RGBA PNG into the ARGB32 (network byte order) pixmap
+/// that StatusNotifierItem expects.
+fn load_icon(png_data: &[u8]) -> Option<ksni::Icon> {
+    let mut reader = png::Decoder::new(std::io::Cursor::new(png_data))
+        .read_info()
+        .ok()?;
+    let mut buf = vec![0; reader.output_buffer_size()?];
+    let info = reader.next_frame(&mut buf).ok()?;
+    if info.color_type != png::ColorType::Rgba || info.bit_depth != png::BitDepth::Eight {
+        return None;
+    }
+    let data = buf[..info.buffer_size()]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .flat_map(|&[r, g, b, a]| [a, r, g, b])
+        .collect();
+    Some(ksni::Icon {
+        width: info.width as i32,
+        height: info.height as i32,
+        data,
+    })
+}
 
 struct Indicator {
     device: Option<Device>,
@@ -42,7 +68,8 @@ struct Indicator {
     /// Supported toggles and their state (None when the camera can't report it).
     toggles: Vec<(FeatureId, &'static str, Option<bool>)>,
     can_center: bool,
-    gui: Option<Child>,
+    gui_running: bool,
+    icons: Vec<ksni::Icon>,
     error: Option<String>,
 }
 
@@ -54,7 +81,8 @@ impl Indicator {
             ai_mode: None,
             toggles: Vec::new(),
             can_center: false,
-            gui: None,
+            gui_running: false,
+            icons: ICONS.iter().filter_map(|png| load_icon(png)).collect(),
             error: None,
         };
         this.refresh();
@@ -64,11 +92,7 @@ impl Indicator {
     /// Re-reads GUI and camera state. One status-block read covers all the
     /// vendor features shown in the menu.
     fn refresh(&mut self) {
-        if let Some(child) = &mut self.gui {
-            if !matches!(child.try_wait(), Ok(None)) {
-                self.gui = None;
-            }
-        }
+        self.gui_running = companion::running(Role::Gui).is_some();
 
         if self.device.as_ref().is_some_and(|d| !d.is_connected()) {
             self.device = None;
@@ -118,17 +142,13 @@ impl Indicator {
         self.set(FeatureId::Tilt, 0);
     }
 
-    fn gui_running(&self) -> bool {
-        self.gui.is_some()
-    }
-
     fn show_gui(&mut self) {
-        if self.gui_running() {
+        if self.gui_running {
             return;
         }
-        match Command::new(gui_binary()).spawn() {
-            Ok(child) => {
-                self.gui = Some(child);
+        match companion::launch(Role::Gui) {
+            Ok(()) => {
+                self.gui_running = true;
                 self.error = None;
             }
             Err(e) => self.error = Some(format!("couldn't start OBSCura: {e}")),
@@ -137,92 +157,16 @@ impl Indicator {
 
     /// Quits the GUI (not just hides it) so it stops using memory.
     fn hide_gui(&mut self) {
-        if let Some(mut child) = self.gui.take() {
-            let _ = kill(Pid::from_raw(child.id() as i32), Signal::SIGTERM);
-            // Reap it off the D-Bus thread.
-            std::thread::spawn(move || {
-                let _ = child.wait();
-            });
-        }
+        companion::terminate(Role::Gui);
+        self.gui_running = false;
     }
 
     fn toggle_gui(&mut self) {
-        if self.gui_running() {
+        if self.gui_running {
             self.hide_gui();
         } else {
             self.show_gui();
         }
-    }
-}
-
-/// The GUI binary: next to this one (dev builds, the snap), else on PATH.
-fn gui_binary() -> PathBuf {
-    std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|dir| dir.join("obscura")))
-        .filter(|p| p.exists())
-        .unwrap_or_else(|| PathBuf::from("obscura"))
-}
-
-/// `~/.config/autostart/obscura-indicator.desktop`. Inside the snap HOME is
-/// `$SNAP_USER_DATA`, which is where snapd looks for an app's autostart file.
-fn autostart_path() -> Option<PathBuf> {
-    let config = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .filter(|p| p.is_absolute())
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
-    Some(config.join("autostart").join(AUTOSTART_FILE))
-}
-
-fn autostart_enabled() -> bool {
-    autostart_path().is_some_and(|p| p.exists())
-}
-
-fn set_autostart(enable: bool) -> std::io::Result<()> {
-    let Some(path) = autostart_path() else {
-        return Ok(());
-    };
-    if !enable {
-        return match fs::remove_file(&path) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
-            _ => Ok(()),
-        };
-    }
-    let exec = if std::env::var_os("SNAP").is_some() {
-        "obscura.indicator".to_string()
-    } else {
-        std::env::current_exe()?.display().to_string()
-    };
-    fs::create_dir_all(path.parent().unwrap())?;
-    fs::write(
-        &path,
-        format!(
-            "[Desktop Entry]\nType=Application\nName=OBSCura Indicator\n\
-             Comment=Quick OBSBOT camera controls in the panel\n\
-             Exec={exec}\nIcon=camera-web\nTerminal=false\n\
-             X-GNOME-Autostart-enabled=true\n"
-        ),
-    )
-}
-
-/// In the snap, start at login by default: the first time the indicator
-/// runs it enables autostart (snapd launches apps whose autostart file is in
-/// `$SNAP_USER_DATA/.config/autostart`). A marker in the unversioned
-/// `$SNAP_USER_COMMON` records that this happened, so turning "Start at
-/// login" off afterwards sticks across restarts and refreshes.
-fn snap_first_run_autostart() {
-    let Some(common) = std::env::var_os("SNAP_USER_COMMON").map(PathBuf::from) else {
-        return;
-    };
-    let marker = common.join("autostart-initialized");
-    if marker.exists() {
-        return;
-    }
-    match set_autostart(true) {
-        Ok(()) => {
-            let _ = fs::write(&marker, "");
-        }
-        Err(e) => eprintln!("obscura-indicator: couldn't enable autostart: {e}"),
     }
 }
 
@@ -239,8 +183,8 @@ impl ksni::Tray for Indicator {
         ksni::Category::Hardware
     }
 
-    fn icon_name(&self) -> String {
-        "camera-web-symbolic".into()
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        self.icons.clone()
     }
 
     fn tool_tip(&self) -> ksni::ToolTip {
@@ -258,7 +202,7 @@ impl ksni::Tray for Indicator {
         ksni::ToolTip {
             title: "OBSCura".into(),
             description,
-            icon_name: "camera-web".into(),
+            icon_pixmap: self.icons.clone(),
             ..Default::default()
         }
     }
@@ -302,7 +246,7 @@ impl ksni::Tray for Indicator {
 
         items.push(
             StandardItem {
-                label: if self.gui_running() {
+                label: if self.gui_running {
                     "Hide OBSCura"
                 } else {
                     "Show OBSCura"
@@ -372,9 +316,9 @@ impl ksni::Tray for Indicator {
         items.push(
             CheckmarkItem {
                 label: "Start at login".into(),
-                checked: autostart_enabled(),
+                checked: companion::autostart_enabled(),
                 activate: Box::new(|this: &mut Self| {
-                    this.error = set_autostart(!autostart_enabled())
+                    this.error = companion::set_autostart(!companion::autostart_enabled())
                         .err()
                         .map(|e| format!("autostart: {e}"));
                 }),
@@ -386,8 +330,8 @@ impl ksni::Tray for Indicator {
             StandardItem {
                 label: "Quit".into(),
                 icon_name: "application-exit".into(),
-                activate: Box::new(|this: &mut Self| {
-                    this.hide_gui();
+                activate: Box::new(|_: &mut Self| {
+                    companion::unregister(Role::Indicator);
                     std::process::exit(0);
                 }),
                 ..Default::default()
@@ -399,7 +343,14 @@ impl ksni::Tray for Indicator {
 }
 
 fn main() {
-    snap_first_run_autostart();
+    companion::apply_first_run_defaults();
+    // One indicator per session: the GUI starts one, and so may autostart.
+    if companion::running(Role::Indicator).is_some() {
+        return;
+    }
+    if let Err(e) = companion::register(Role::Indicator) {
+        eprintln!("obscura-indicator: couldn't record instance: {e}");
+    }
     let handle = match Indicator::new().spawn() {
         Ok(h) => h,
         Err(e) => {

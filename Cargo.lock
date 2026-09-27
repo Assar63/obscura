@@ -2592,8 +2592,8 @@ name = "obscura-indicator"
 version = "0.1.0"
 dependencies = [
  "ksni",
- "nix",
  "obsbot-core",
+ "png 0.18.1",
 ]
 
 [[package]]

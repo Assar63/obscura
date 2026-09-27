@@ -10,7 +10,7 @@ authors.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 toml = "0.8"
-nix = { version = "0.29", features = ["ioctl", "fs"] }
+nix = { version = "0.29", features = ["ioctl", "fs", "signal", "user"] }
 v4l = "0.14"
 
 [dev-dependencies]

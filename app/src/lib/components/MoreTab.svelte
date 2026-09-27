@@ -3,8 +3,25 @@
   import Card from "./Card.svelte";
   import Feature from "./Feature.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
+  import Toggle from "./Toggle.svelte";
+  import { api } from "../api";
 
   let confirmReset = $state(false);
+
+  // Panel indicator autostart. When on, the indicator also stays running
+  // after the app closes.
+  let autostart = $state<boolean | null>(null);
+  api.getAutostart().then((v) => (autostart = v), () => (autostart = null));
+
+  async function setAutostart(enabled: boolean) {
+    autostart = enabled;
+    try {
+      autostart = await api.setAutostart(enabled);
+    } catch (e) {
+      device.error = String(e);
+      autostart = await api.getAutostart().catch(() => null);
+    }
+  }
   const hex = (n: number) => n.toString(16).padStart(4, "0");
 </script>
 
@@ -31,6 +48,19 @@
   <Card title="Indicator Status">
     <Feature id="status_light" />
     <Feature id="status_light_brightness" />
+  </Card>
+
+  <Card title="Panel Indicator">
+    <div class="row">
+      <div class="text">
+        <span>Start at login</span>
+        <span class="desc">
+          Keep the OBSCura indicator in the panel for quick camera controls, even after this
+          window is closed.
+        </span>
+      </div>
+      <Toggle checked={autostart ?? false} disabled={autostart === null} onchange={setAutostart} />
+    </div>
   </Card>
 
   <Card title="More Settings">
@@ -75,6 +105,22 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .desc {
+    font-size: 12px;
+    color: var(--text-muted);
   }
   .note {
     margin: -6px 0 0;

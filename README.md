@@ -154,15 +154,22 @@ streaming.
 ### Panel indicator
 
 `obscura-indicator` (`obscura.indicator` in the snap) is a tiny tray icon,
-using about 4 MiB, that you can leave running all the time. Its menu offers:
+using about 4 MiB and showing the app's icon, that you can leave running all
+the time. Its menu offers:
 
 - **Show / Hide OBSCura**: starts the full app, and quits it again, so the
   heavy GUI only uses memory while it's open.
 - **AI tracking**: Off, Human, Group or Hand tracking.
 - **Gesture control** and **Mirror image** on/off.
 - **Re-center camera**.
-- **Start at login**: writes an XDG autostart entry (inside the snap, snapd's
-  per-app autostart).
+- **Start at login**: the indicator's autostart entry (inside the snap,
+  snapd's per-app autostart). It's on by default after first launch, and can
+  also be switched in the app under **More → Panel Indicator**.
+
+The app and the indicator run together. Starting OBSCura, from the indicator
+or directly, also starts the indicator if it isn't already running. When you
+close the app, the indicator keeps running if **Start at login** is on, and
+quits with the app if it's off.
 
 The menu re-reads the camera each time it opens, so it reflects changes made
 with gestures or in the app. It uses no GTK or webview: the desktop shell

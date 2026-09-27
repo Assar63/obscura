@@ -119,3 +119,16 @@ pub fn gimbal_move(state: State<AppState>, right: f32, up: f32) -> CmdResult<()>
     let device = guard.as_ref().ok_or("no camera open")?;
     device.gimbal_velocity(right, up).map_err(err)
 }
+
+/// Whether the panel indicator starts at login (and stays running after the
+/// app closes).
+#[tauri::command]
+pub fn get_autostart() -> bool {
+    obsbot_core::companion::autostart_enabled()
+}
+
+#[tauri::command]
+pub fn set_autostart(enabled: bool) -> CmdResult<bool> {
+    obsbot_core::companion::set_autostart(enabled).map_err(err)?;
+    Ok(obsbot_core::companion::autostart_enabled())
+}

@@ -5,6 +5,7 @@
 //! and executed by [`device::Device`] over V4L2 standard controls or UVC
 //! Extension Unit queries.
 
+pub mod companion;
 pub mod device;
 pub mod discovery;
 pub mod error;
