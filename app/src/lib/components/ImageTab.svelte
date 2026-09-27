@@ -87,10 +87,11 @@
 
   function joystick(x: number, y: number) {
     if (device.gimbalVelocity) {
-      // Mirrored video: pushing right should move the picture right.
-      const right = device.on("mirror_image") ? -x : x;
+      // Like OBSBOT Center, the joystick points the camera: right turns the
+      // view right and up tilts it up. The camera's mirror setting doesn't
+      // change which way a velocity command turns the view.
       const k = SPEED_VELOCITY[speed];
-      void device.gimbalMove(right * k, y * k);
+      void device.gimbalMove(x * k, y * k);
     } else {
       device.nudge("pan", x * SPEED_STEP[speed]);
       device.nudge("tilt", y * SPEED_STEP[speed]);
