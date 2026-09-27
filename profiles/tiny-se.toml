@@ -20,6 +20,11 @@ system_info = true
 vendor_id = 0x3564
 product_id = 0xfeff
 
+# Gimbal presets: 3 slots holding position, zoom and a name (see
+# docs/protocol.md).
+[presets]
+slots = 3
+
 # Joystick: [roll, pitch, yaw] float32 velocity, resent ~10 Hz, zeros to stop.
 # Seen in OBSBOT Center captures with magnitudes up to ~8.5.
 [gimbal_velocity]
@@ -73,6 +78,26 @@ frames = [
 [features.mirror_image]
 status = 19
 short = { id = 0x14 }
+
+# Manual zoom: ISP digital zoom, factor x100 (100..400) after a constant
+# 02000000 (the same command the gesture zoom factor sends). Query 0468
+# returns the current zoom as f32, including zoom from AI tracking.
+[features.zoom]
+query = { dst = 0x04, cmd = "0468", offsets = [0], value = "f32", scale = 100 }
+frames = [{ dst = 0x02, cmd = "4219", prefix = "02000000", value = "u32" }]
+
+# Re-center, as OBSBOT Center's View & Gimbal reset icon does: a query
+# (8438, payload 01) then 0439 with flags 0x05. Writing UVC pan/tilt 0
+# doesn't move the gimbal back after velocity moves.
+[features.gimbal_reset]
+frames = [
+  { dst = 0x04, cmd = "8438", flags = 0x01, payload = "01" },
+  { dst = 0x04, cmd = "0439", flags = 0x05, payload = "" },
+]
+
+# View and gimbal reverse (upside-down mounting). No readback seen.
+[features.gimbal_reverse]
+frames = [{ dst = 0x04, cmd = "843b" }]
 
 # 0 off, 1 group, 2 human, 3 hand tracking
 [features.ai_mode]

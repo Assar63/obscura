@@ -11,6 +11,8 @@ class DeviceStore {
   current = $state<CameraInfo | null>(null);
   profileName = $state<string>("");
   firmware = $state<Snapshot["firmware"]>(null);
+  /** Camera-side gimbal presets by slot; null for an empty slot. */
+  presets = $state<(string | null)[]>([]);
   /** Joystick drives the gimbal by velocity rather than absolute nudges. */
   gimbalVelocity = $state(false);
   features = $state<Record<string, FeatureState>>({});
@@ -62,6 +64,7 @@ class DeviceStore {
     } catch {
       // The camera went away (unplugged or rebooting); wait for it.
       this.current = null;
+      this.presets = [];
       this.#apply(this.#catalog);
       this.error = "Camera disconnected. Waiting for it to come back…";
       await this.refreshCameras();
@@ -84,6 +87,7 @@ class DeviceStore {
       this.current = snap.info;
       this.profileName = snap.profile_name;
       this.firmware = snap.firmware;
+      this.presets = snap.presets;
       this.gimbalVelocity = snap.gimbal_velocity;
       this.#apply(snap.features);
       this.error = null;
@@ -127,6 +131,33 @@ class DeviceStore {
       this.#timers.set(id, setTimeout(write, RANGE_DEBOUNCE_MS));
     } else {
       void write();
+    }
+  }
+
+  async savePreset(slot: number, name: string) {
+    try {
+      this.presets = await api.savePreset(slot, name);
+      this.error = null;
+    } catch (e) {
+      this.error = String(e);
+    }
+  }
+
+  async renamePreset(slot: number, name: string) {
+    try {
+      this.presets = await api.renamePreset(slot, name);
+      this.error = null;
+    } catch (e) {
+      this.error = String(e);
+    }
+  }
+
+  async recallPreset(slot: number) {
+    try {
+      await api.recallPreset(slot);
+      this.error = null;
+    } catch (e) {
+      this.error = String(e);
     }
   }
 

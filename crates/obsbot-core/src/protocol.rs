@@ -36,10 +36,29 @@ pub const CMD_VERSION: [u8; 2] = [0x08, 0x04];
 /// Serial number, ASCII.
 pub const CMD_SERIAL: [u8; 2] = [0xc8, 0x18];
 
+/// AI/gimbal module.
+pub const DST_GIMBAL: u8 = 0x04;
+/// Gimbal position query (payload `01`): 24 bytes, i16 angles x10 at 8 and 10.
+pub const CMD_GIMBAL_POSITION: [u8; 2] = [0x04, 0x66];
+/// Current zoom query: f32.
+pub const CMD_ZOOM: [u8; 2] = [0x04, 0x68];
+/// Store a preset: slot u32, angle@10 f32, angle@8 f32, 0.0, zoom f32, -1000.0.
+pub const CMD_PRESET_SAVE: [u8; 2] = [0x44, 0x39];
+/// Move to a preset: slot u32, then 1.0 x4.
+pub const CMD_PRESET_RECALL: [u8; 2] = [0xc4, 0x39];
+/// Name a preset: slot u32, then the name's bytes.
+pub const CMD_PRESET_NAME: [u8; 2] = [0x84, 0x3a];
+/// Preset name query (flags 0x21, payload slot u32).
+pub const CMD_PRESET_NAME_QUERY: [u8; 2] = [0x04, 0x3b];
+
 const MAGIC: u8 = 0xaa;
 const FLAGS_COMMAND: u8 = 0x25;
-const FLAGS_QUERY: u8 = 0x01;
-const FLAGS_RESPONSE: u8 = 0x29;
+/// Query flags: plain, and the variant used for per-slot preset queries.
+pub const FLAGS_QUERY: u8 = 0x01;
+pub const FLAGS_QUERY_SLOT: u8 = 0x21;
+/// Response flags: success, and "nothing there" (e.g. an empty preset slot).
+pub const FLAGS_RESPONSE: u8 = 0x29;
+pub const FLAGS_RESPONSE_EMPTY: u8 = 0x09;
 const HEADER_LEN: u16 = 12;
 const SENDER_HOST: u8 = 0x0a;
 
@@ -80,32 +99,40 @@ pub fn encode_command(seq: u16, dst: u8, cmd: [u8; 2], payload: &[u8]) -> [u8; P
 }
 
 /// Encodes a query for selector 2. The camera answers with a response frame
-/// (flags 0x29, same cmd) read back from selector 2. Queries carry no
-/// payload and leave the payload CRC zeroed, as OBSBOT Center does.
+/// (same seq and cmd) read back from selector 2. Queries without a payload
+/// leave the payload CRC zeroed, as OBSBOT Center does.
 ///
 /// Only send queries seen in captures: unknown ones have hung the camera.
-pub fn encode_query(seq: u16, dst: u8, cmd: [u8; 2]) -> [u8; PACKET_LEN] {
-    let mut p = [0u8; PACKET_LEN];
-    p[0] = MAGIC;
-    p[1] = FLAGS_QUERY;
-    p[2..4].copy_from_slice(&seq.to_le_bytes());
-    p[4..6].copy_from_slice(&HEADER_LEN.to_le_bytes());
-    p[8] = SENDER_HOST;
-    p[9] = dst;
-    p[10..12].copy_from_slice(&cmd);
+pub fn encode_query(
+    seq: u16,
+    dst: u8,
+    cmd: [u8; 2],
+    flags: u8,
+    payload: &[u8],
+) -> [u8; PACKET_LEN] {
+    let mut p = encode_command(seq, dst, cmd, payload);
+    p[1] = flags;
+    if payload.is_empty() {
+        p[14..16].fill(0);
+    }
+    p[6..8].fill(0);
     let token = crc16_usb(&p[..12]);
     p[6..8].copy_from_slice(&token.to_le_bytes());
     p
 }
 
-/// Extracts the payload of a response to `cmd`, or `None` if `frame` is
-/// something else (e.g. a stale response to an earlier query).
-pub fn decode_response(frame: &[u8], cmd: [u8; 2]) -> Option<&[u8]> {
-    if frame.len() < 16 || frame[0] != MAGIC || frame[1] != FLAGS_RESPONSE || frame[10..12] != cmd {
+/// A response frame's flags and payload, if `frame` answers query `seq`
+/// for `cmd` (and isn't, say, the stale answer to an earlier query).
+pub fn decode_response(frame: &[u8], seq: u16, cmd: [u8; 2]) -> Option<(u8, &[u8])> {
+    if frame.len() < 16
+        || frame[0] != MAGIC
+        || frame[2..4] != seq.to_le_bytes()
+        || frame[10..12] != cmd
+    {
         return None;
     }
     let len = u16::from_le_bytes([frame[12], frame[13]]) as usize;
-    frame.get(16..16 + len)
+    Some((frame[1], frame.get(16..16 + len)?))
 }
 
 /// Encodes a short setting for selector 6.
@@ -213,19 +240,84 @@ mod tests {
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(
-            encode_query(0, 0x0d, [0x08, 0x18]),
+            encode_query(0, 0x0d, [0x08, 0x18], FLAGS_QUERY, &[]),
             padded("aa 01 00 00 0c 00 91 5c 0a 0d 08 18")
         );
         assert_eq!(
-            encode_query(1, 0x0d, [0x08, 0x04])[..16],
+            encode_query(1, 0x0d, [0x08, 0x04], FLAGS_QUERY, &[])[..16],
             padded("aa 01 01 00 0c 00 c1 50 0a 0d 08 04 00 00 00 00")[..16]
         );
         let rsp = padded("aa 29 01 00 0c 00 f0 45 0d 0a 08 04 08 00 77 aa 01 04 04 06 00 00 00 00");
         assert_eq!(
-            decode_response(&rsp, [0x08, 0x04]),
-            Some(&[1, 4, 4, 6, 0, 0, 0, 0][..])
+            decode_response(&rsp, 1, [0x08, 0x04]),
+            Some((FLAGS_RESPONSE, &[1, 4, 4, 6, 0, 0, 0, 0][..]))
         );
-        assert_eq!(decode_response(&rsp, [0xc8, 0x18]), None);
+        assert_eq!(decode_response(&rsp, 1, [0xc8, 0x18]), None);
+        assert_eq!(decode_response(&rsp, 2, [0x08, 0x04]), None);
+    }
+
+    #[test]
+    fn preset_frames_match_capture() {
+        // 34-presets: position query, save slot 1, name it, recall it, and
+        // the name query OBSBOT Center sends at startup.
+        assert_eq!(
+            encode_query(0x35, DST_GIMBAL, CMD_GIMBAL_POSITION, FLAGS_QUERY, &[1]),
+            padded("aa 01 35 00 0c 00 d4 91 0a 04 04 66 01 00 27 ff 01")
+        );
+        let mut save = 1u32.to_le_bytes().to_vec();
+        // Gimbal position 106 and 104 (x10), scaled by 0.1 in f32.
+        for v in [106.0f32 * 0.1, 104.0 * 0.1, 0.0, 1.0, -1000.0] {
+            save.extend(v.to_le_bytes());
+        }
+        assert_eq!(
+            encode_command(0x37, DST_GIMBAL, CMD_PRESET_SAVE, &save),
+            padded(
+                "aa 25 37 00 0c 00 ba 53 0a 04 44 39 18 00 82 97 01 00 00 00 9a 99 29 41 \
+                 67 66 26 41 00 00 00 00 00 00 80 3f 00 00 7a c4"
+            )
+        );
+        let mut name = 1u32.to_le_bytes().to_vec();
+        name.extend(b"Preset2");
+        assert_eq!(
+            encode_command(0x38, DST_GIMBAL, CMD_PRESET_NAME, &name),
+            padded(
+                "aa 25 38 00 0c 00 9a 62 0a 04 84 3a 0b 00 4a 2a 01 00 00 00 50 72 65 73 65 74 32"
+            )
+        );
+        let mut recall = 1u32.to_le_bytes().to_vec();
+        for _ in 0..4 {
+            recall.extend(1.0f32.to_le_bytes());
+        }
+        assert_eq!(
+            encode_command(0x56, DST_GIMBAL, CMD_PRESET_RECALL, &recall),
+            padded(
+                "aa 25 56 00 0c 00 89 e8 0a 04 c4 39 14 00 eb 2a 01 00 00 00 00 00 80 3f \
+                 00 00 80 3f 00 00 80 3f 00 00 80 3f"
+            )
+        );
+        assert_eq!(
+            encode_query(
+                0x0e,
+                DST_GIMBAL,
+                CMD_PRESET_NAME_QUERY,
+                FLAGS_QUERY_SLOT,
+                &2u32.to_le_bytes()
+            ),
+            padded("aa 21 0e 00 0c 00 cf b2 0a 04 04 3b 04 00 bf bf 02 00 00 00")
+        );
+    }
+
+    #[test]
+    fn gimbal_reset_matches_capture() {
+        // 31-gimbal-joystick: the View & Gimbal reset icon.
+        assert_eq!(
+            encode_query(0x74, DST_GIMBAL, [0x84, 0x38], FLAGS_QUERY, &[1]),
+            padded("aa 01 74 00 0c 00 67 b8 0a 04 84 38 01 00 27 ff 01")
+        );
+        assert_eq!(
+            encode_query(0x75, DST_GIMBAL, [0x04, 0x39], 0x05, &[]),
+            padded("aa 05 75 00 0c 00 83 4d 0a 04 04 39 00 00 00 00")
+        );
     }
 
     #[test]

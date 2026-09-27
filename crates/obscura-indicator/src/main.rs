@@ -13,7 +13,7 @@
 use std::time::Duration;
 
 use ksni::blocking::TrayMethods;
-use ksni::menu::{CheckmarkItem, RadioGroup, RadioItem, StandardItem};
+use ksni::menu::{CheckmarkItem, RadioGroup, RadioItem, StandardItem, SubMenu};
 use ksni::MenuItem;
 use obsbot_core::companion::{self, Role};
 use obsbot_core::{discover, Device, FeatureId};
@@ -68,6 +68,10 @@ struct Indicator {
     /// Supported toggles and their state (None when the camera can't report it).
     toggles: Vec<(FeatureId, &'static str, Option<bool>)>,
     can_center: bool,
+    /// The camera has a vendor re-center command (used by `center`).
+    can_reset: bool,
+    /// Filled camera presets: slot and name.
+    presets: Vec<(u32, String)>,
     gui_running: bool,
     icons: Vec<ksni::Icon>,
     error: Option<String>,
@@ -81,6 +85,8 @@ impl Indicator {
             ai_mode: None,
             toggles: Vec::new(),
             can_center: false,
+            can_reset: false,
+            presets: Vec::new(),
             gui_running: false,
             icons: ICONS.iter().filter_map(|png| load_icon(png)).collect(),
             error: None,
@@ -109,6 +115,7 @@ impl Indicator {
             self.ai_mode = None;
             self.toggles.clear();
             self.can_center = false;
+            self.presets.clear();
             return;
         };
         self.camera_name = dev
@@ -117,17 +124,36 @@ impl Indicator {
             .clone()
             .unwrap_or_else(|| dev.info.name.clone());
 
-        let mut ids = vec![FeatureId::AiMode, FeatureId::Pan, FeatureId::Tilt];
+        let mut ids = vec![
+            FeatureId::AiMode,
+            FeatureId::Pan,
+            FeatureId::Tilt,
+            FeatureId::GimbalReset,
+        ];
         ids.extend(TOGGLES.iter().map(|(id, _)| *id));
         let states = dev.read(&ids);
         self.ai_mode = states[0].supported.then(|| states[0].value.unwrap_or(0));
-        self.can_center = states[1].supported && states[2].supported;
+        self.can_reset = states[3].supported;
+        self.can_center = self.can_reset || (states[1].supported && states[2].supported);
         self.toggles = TOGGLES
             .iter()
-            .zip(&states[3..])
+            .zip(&states[4..])
             .filter(|(_, s)| s.supported)
             .map(|((id, label), s)| (*id, *label, s.value.map(|v| v != 0)))
             .collect();
+        self.presets = dev
+            .presets()
+            .unwrap_or_default()
+            .into_iter()
+            .zip(0..)
+            .filter_map(|(name, slot)| Some((slot, name?)))
+            .collect();
+    }
+
+    fn recall_preset(&mut self, slot: u32) {
+        if let Some(dev) = &self.device {
+            self.error = dev.recall_preset(slot).err().map(|e| e.to_string());
+        }
     }
 
     fn set(&mut self, id: FeatureId, value: i64) {
@@ -138,8 +164,12 @@ impl Indicator {
     }
 
     fn center(&mut self) {
-        self.set(FeatureId::Pan, 0);
-        self.set(FeatureId::Tilt, 0);
+        if self.can_reset {
+            self.set(FeatureId::GimbalReset, 1);
+        } else {
+            self.set(FeatureId::Pan, 0);
+            self.set(FeatureId::Tilt, 0);
+        }
     }
 
     fn show_gui(&mut self) {
@@ -286,7 +316,7 @@ impl ksni::Tray for Indicator {
             );
         }
 
-        if !self.toggles.is_empty() || self.can_center {
+        if !self.toggles.is_empty() || self.can_center || !self.presets.is_empty() {
             items.push(MenuItem::Separator);
         }
         for &(id, label, state) in &self.toggles {
@@ -306,6 +336,28 @@ impl ksni::Tray for Indicator {
                 StandardItem {
                     label: "Re-center camera".into(),
                     activate: Box::new(|this: &mut Self| this.center()),
+                    ..Default::default()
+                }
+                .into(),
+            );
+        }
+        if !self.presets.is_empty() {
+            items.push(
+                SubMenu {
+                    label: "Presets".into(),
+                    submenu: self
+                        .presets
+                        .iter()
+                        .map(|(slot, name)| {
+                            let slot = *slot;
+                            StandardItem {
+                                label: name.clone(),
+                                activate: Box::new(move |this: &mut Self| this.recall_preset(slot)),
+                                ..Default::default()
+                            }
+                            .into()
+                        })
+                        .collect(),
                     ..Default::default()
                 }
                 .into(),

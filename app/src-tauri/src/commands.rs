@@ -24,6 +24,9 @@ pub struct Snapshot {
     gimbal_velocity: bool,
     /// Firmware version and serial number reported by the camera.
     firmware: Option<FirmwareInfo>,
+    /// Camera-side gimbal presets by slot (`None` = empty); empty if the
+    /// camera has none.
+    presets: Vec<Option<String>>,
     features: Vec<FeatureState>,
 }
 
@@ -85,6 +88,7 @@ pub fn open_camera(state: State<AppState>, path: PathBuf) -> CmdResult<Snapshot>
         profile_name: device.profile.name.clone(),
         gimbal_velocity: device.has_gimbal_velocity(),
         firmware: device.firmware_info(),
+        presets: device.presets().unwrap_or_default(),
         features: device.read_all(),
     };
     *state.0.lock().unwrap() = Some(device);
@@ -113,6 +117,39 @@ pub fn set_feature(
     let device = guard.as_ref().ok_or("no camera open")?;
     device.set(id, value).map_err(err)?;
     Ok(device.read_all())
+}
+
+/// Stores the current gimbal position and zoom in `slot` (0-based) and
+/// returns the updated preset names.
+#[tauri::command]
+pub fn save_preset(
+    state: State<AppState>,
+    slot: u32,
+    name: String,
+) -> CmdResult<Vec<Option<String>>> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    device.save_preset(slot, &name).map_err(err)?;
+    device.presets().map_err(err)
+}
+
+#[tauri::command]
+pub fn rename_preset(
+    state: State<AppState>,
+    slot: u32,
+    name: String,
+) -> CmdResult<Vec<Option<String>>> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    device.rename_preset(slot, &name).map_err(err)?;
+    device.presets().map_err(err)
+}
+
+#[tauri::command]
+pub fn recall_preset(state: State<AppState>, slot: u32) -> CmdResult<()> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    device.recall_preset(slot).map_err(err)
 }
 
 /// Joystick velocity: `right`/`up` in -1..1; (0, 0) stops.

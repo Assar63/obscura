@@ -4,6 +4,7 @@
   import Feature from "./Feature.svelte";
   import Joystick from "./Joystick.svelte";
   import Segmented from "./Segmented.svelte";
+  import Icon from "./Icon.svelte";
 
   // Gimbal speed only scales joystick moves; OBSBOT Center sends nothing to
   // the camera for it. Remembered per machine.
@@ -47,6 +48,31 @@
     if (zoom?.supported && zoom.kind.type === "range") device.set("zoom", zoom.kind.min);
   }
 
+  // Presets live on the camera: position, zoom and a name per slot. Empty
+  // slots offer "Add"; filled ones recall on click, and can be overwritten
+  // with the current view or renamed.
+  const NAME_MAX = 16;
+  let renaming = $state<number | null>(null);
+  let draft = $state("");
+  const slots = $derived(device.presets.length ? device.presets : [null, null, null]);
+
+  function startRename(slot: number) {
+    renaming = slot;
+    draft = device.presets[slot] ?? "";
+  }
+
+  function finishRename() {
+    if (renaming === null) return;
+    const slot = renaming;
+    renaming = null;
+    const name = draft.trim();
+    if (name && name !== device.presets[slot]) void device.renamePreset(slot, name);
+  }
+
+  function focus(el: HTMLInputElement) {
+    el.select();
+  }
+
   const IMAGE = ["brightness", "contrast", "saturation", "sharpness", "hue"];
 
   /** Show a dependent control when its parent is in `state`, or when the
@@ -81,8 +107,36 @@
 <div class="tab">
   <Card title="Preset">
     <div class="presets">
-      {#each [1, 2, 3] as n (n)}
-        <button disabled title="Preset {n}: pending USB captures">Add</button>
+      {#each slots as name, slot (slot)}
+        {#if !device.presets.length}
+          <button disabled title="This camera has no presets">Add</button>
+        {:else if renaming === slot}
+          <input
+            class="rename"
+            maxlength={NAME_MAX}
+            bind:value={draft}
+            use:focus
+            onblur={finishRename}
+            onkeydown={(e) => {
+              if (e.key === "Enter") finishRename();
+              if (e.key === "Escape") renaming = null;
+            }}
+          />
+        {:else if name === null}
+          <button title="Save the current view as preset {slot + 1}" onclick={() => device.savePreset(slot, `Preset${slot + 1}`)}>
+            Add
+          </button>
+        {:else}
+          <div class="preset">
+            <button class="recall" title="Go to {name}" onclick={() => device.recallPreset(slot)}>{name}</button>
+            <button class="ghost icon" title="Save the current view to {name}" onclick={() => device.savePreset(slot, name)}>
+              <Icon name="target" size={14} />
+            </button>
+            <button class="ghost icon" title="Rename" onclick={() => startRename(slot)}>
+              <Icon name="pencil" size={14} />
+            </button>
+          </div>
+        {/if}
       {/each}
     </div>
   </Card>
@@ -139,6 +193,30 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
+  }
+  .preset {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    background: var(--control);
+    border-radius: var(--radius-sm);
+  }
+  .recall {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: transparent;
+    padding-right: 2px;
+  }
+  .icon {
+    padding: 4px;
+    display: grid;
+    place-items: center;
+  }
+  .rename {
+    min-width: 0;
   }
   .gimbal {
     display: flex;

@@ -59,7 +59,8 @@ Status on the Tiny SE:
 | AI tracking | Human / Group / Hand Tracking modes | ✅ |
 | Gesture control | Master switch, Locked Target, Zoom, Dynamic Zoom, Direction Flip, Zoom Factor (1–4×) | ✅ |
 | View & gimbal | Joystick (velocity control), speed, view reset | ✅ |
-| View & gimbal | Manual zoom | ✅ (raw 0–12 steps for now) |
+| View & gimbal | Manual zoom (1–4×), View and Gimbal Reverse | ✅ |
+| View & gimbal | Presets: save, recall and rename 3 camera-side presets (also in the tray menu) | ✅ |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ |
 | Image | Brightness, contrast, saturation, sharpness, hue | ✅ |
 | Image | Auto/manual focus, auto/manual exposure, gain, white balance, anti-flicker | ✅ |
@@ -71,10 +72,11 @@ Status on the Tiny SE:
 | Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ |
 | Device | Hot-plug and reboot recovery | ✅ |
 | Panel | Tray indicator with quick toggles and show/hide | ✅ |
-| Pending captures | Presets, portrait mode, rotate/flip, custom sleep background, gimbal reverse, factory reset | 🚧 greyed out |
-| Out of scope | Beauty/background effects, recording, firmware updates | ❌ ¹ |
+| Pending captures | Custom sleep background, factory reset | 🚧 greyed out |
+| Out of scope | Beauty/background effects, portrait mode, rotate/flip, recording, firmware updates | ❌ ¹ |
 
-¹ In OBSBOT Center these effects run on the PC, not the camera. Firmware
+¹ In OBSBOT Center these effects (and portrait mode, rotate and flip) run on
+the PC, not the camera. Firmware
 flashing is deliberately never implemented.
 
 Controls that aren't supported yet are still shown, greyed out, with a tooltip
@@ -170,7 +172,7 @@ the time. Its menu offers:
   heavy GUI only uses memory while it's open.
 - **AI tracking**: Off, Human, Group or Hand tracking.
 - **Gesture control** and **Mirror image** on/off.
-- **Re-center camera**.
+- **Re-center camera**, and **Presets** to move to one stored on the camera.
 - **Start at login**: the indicator's autostart entry (inside the snap,
   snapd's per-app autostart). It's on by default after first launch, and can
   also be switched in the app under **More → Panel Indicator**.
@@ -212,6 +214,11 @@ obsbotctl set anti_flicker "50 Hz"
 
 obsbotctl gimbal 0.5 0 --ms 800    # pan right at half speed for 0.8 s
 obsbotctl gimbal 0 -1 --ms 300     # tilt down at full speed
+
+obsbotctl preset list              # camera-side presets (slots 1-3)
+obsbotctl preset save 1 Desk       # store the current view in slot 1
+obsbotctl preset recall 1
+obsbotctl preset rename 1 Whiteboard
 
 obsbotctl controls                 # raw V4L2 controls exposed by the driver
 ```

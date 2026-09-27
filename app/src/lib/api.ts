@@ -47,6 +47,8 @@ export type Snapshot = {
   profile_name: string;
   gimbal_velocity: boolean;
   firmware: { version: string; serial: string | null } | null;
+  /** Preset names by slot; null for an empty slot. */
+  presets: (string | null)[];
   features: FeatureState[];
 };
 
@@ -71,6 +73,11 @@ export const api = {
   getAutostart: () => invoke<boolean>("get_autostart"),
   setAutostart: (enabled: boolean) => invoke<boolean>("set_autostart", { enabled }),
   gimbalMove: (right: number, up: number) => invoke<void>("gimbal_move", { right, up }),
+  savePreset: (slot: number, name: string) =>
+    invoke<(string | null)[]>("save_preset", { slot, name }),
+  renamePreset: (slot: number, name: string) =>
+    invoke<(string | null)[]>("rename_preset", { slot, name }),
+  recallPreset: (slot: number) => invoke<void>("recall_preset", { slot }),
   previewReady: () => invoke<void>("preview_ready"),
   stopPreview: () => invoke<void>("stop_preview"),
 };

@@ -40,6 +40,9 @@ enum Command {
     Set { feature: String, value: String },
     /// List the raw V4L2 controls the driver exposes.
     Controls,
+    /// Gimbal presets stored on the camera (slots are numbered from 1).
+    #[command(subcommand)]
+    Preset(Preset),
     /// Move the gimbal at a velocity for a while, then stop. RIGHT and UP
     /// are -1..1 fractions of the maximum speed.
     Gimbal {
@@ -58,6 +61,28 @@ enum Command {
 
 // Variant names become the subcommands `xu-probe`, `xu-get` and `xu-set`.
 #[allow(clippy::enum_variant_names)]
+#[derive(Subcommand)]
+enum Preset {
+    /// List the preset slots and their names.
+    List,
+    /// Store the current gimbal position and zoom in SLOT.
+    Save {
+        slot: u32,
+        /// Defaults to "PresetN", like OBSBOT Center.
+        name: Option<String>,
+    },
+    /// Move to the position stored in SLOT.
+    Recall { slot: u32 },
+    /// Rename SLOT.
+    Rename { slot: u32, name: String },
+}
+
+/// Converts a 1-based slot number from the command line to the camera's.
+fn slot_index(slot: u32) -> Result<u32> {
+    slot.checked_sub(1)
+        .ok_or_else(|| anyhow!("preset slots are numbered from 1"))
+}
+
 #[derive(Subcommand)]
 enum Raw {
     /// Read-only scan for XU controls (GET_LEN/GET_INFO).
@@ -263,6 +288,26 @@ fn main() -> Result<()> {
                 feature,
                 s.value.map_or("?".into(), |v| s.kind.format(v))
             );
+        }
+        Command::Preset(p) => {
+            let dev = open(&cli)?;
+            if dev.preset_slots() == 0 {
+                bail!("{} has no gimbal presets", dev.profile.name);
+            }
+            match p {
+                Preset::List => {
+                    for (i, name) in dev.presets()?.into_iter().enumerate() {
+                        println!("{}  {}", i + 1, name.as_deref().unwrap_or("(empty)"));
+                    }
+                }
+                Preset::Save { slot, name } => {
+                    let name = name.clone().unwrap_or_else(|| format!("Preset{slot}"));
+                    dev.save_preset(slot_index(*slot)?, &name)?;
+                    println!("saved preset {slot} ({name})");
+                }
+                Preset::Recall { slot } => dev.recall_preset(slot_index(*slot)?)?,
+                Preset::Rename { slot, name } => dev.rename_preset(slot_index(*slot)?, name)?,
+            }
         }
         Command::Gimbal { right, up, ms } => {
             let dev = open(&cli)?;

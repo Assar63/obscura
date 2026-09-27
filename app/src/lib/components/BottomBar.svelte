@@ -5,12 +5,11 @@
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import { preview } from "../preview.svelte";
 
-  // Portrait is a camera-side mode; pending captures.
-  let portrait = $state(false);
+  // OBSBOT Center's Portrait mode and rotate/flip buttons send nothing to
+  // the camera: they transform its virtual camera output on the PC, so
+  // they're not offered here.
   let formatOpen = $state(false);
   let confirmLock = $state(false);
-
-  const PENDING = "Pending USB captures";
   const aiMode = $derived(device.features.ai_mode?.value ?? 0);
   const aiSupported = $derived(device.supported("ai_mode"));
   const locked = $derived(device.on("ai_lock"));
@@ -31,7 +30,7 @@
     <Popover bind:open={formatOpen} placement="above">
       {#snippet trigger()}
         <button class="format" onclick={() => (formatOpen = !formatOpen)}>
-          <span class="aspect">{portrait ? "9:16" : "16:9"}</span>
+          <span class="aspect">16:9</span>
           {preview.resolution}P {preview.fps}
           <Icon name="chevron-down" size={14} />
         </button>
@@ -43,19 +42,8 @@
           <button class:sel={preview.resolution === 720} onclick={() => (preview.resolution = 720)}>720P (HD)</button>
           <button class:sel={preview.fps === 60} onclick={() => (preview.fps = 60)}>60 (Ultra Smooth)</button>
         </div>
-        <div class="aspects">
-          <button class:sel={!portrait} onclick={() => (portrait = false)}>
-            <span class="shape landscape"></span>Landscape (16:9)
-          </button>
-          <button class:sel={portrait} disabled title={PENDING}>
-            <span class="shape portrait"></span>Portrait (9:16)
-          </button>
-        </div>
       </div>
     </Popover>
-    <button class="ghost icon" disabled title="Rotate −90° ({PENDING})"><Icon name="rotate-ccw" /></button>
-    <button class="ghost icon" disabled title="Rotate +90° ({PENDING})"><Icon name="rotate-cw" /></button>
-    <button class="ghost icon" disabled title="Flip ({PENDING})"><Icon name="flip" /></button>
   </div>
 
   <div class="ai" title={aiSupported ? undefined : (device.features.ai_mode?.reason ?? "")}>
@@ -154,8 +142,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 4px;
   }
-  .grid button,
-  .aspects button {
+  .grid button {
     background: transparent;
   }
   .grid button.sel {
@@ -164,36 +151,6 @@
   .grid button.sel::before {
     content: "✓ ";
     color: var(--accent);
-  }
-  .aspects {
-    display: flex;
-    gap: 8px;
-    border-top: 1px solid var(--border);
-    padding-top: 12px;
-  }
-  .aspects button {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    border: 2px solid transparent;
-  }
-  .aspects button.sel {
-    border-color: var(--accent);
-  }
-  .shape {
-    background: var(--control);
-    border-radius: 3px;
-  }
-  .landscape {
-    width: 80px;
-    height: 45px;
-  }
-  .portrait {
-    width: 27px;
-    height: 48px;
   }
   .ai {
     display: flex;

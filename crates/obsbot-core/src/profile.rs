@@ -113,6 +113,18 @@ pub struct FrameSpec {
     /// For `f32`: the float sent is `value / divisor`.
     #[serde(default = "one")]
     pub divisor: i64,
+    /// Frame flags other than a plain command (0x25), e.g. 0x01 for a query
+    /// or 0x05 as used by the gimbal reset.
+    pub flags: Option<u8>,
+    /// A fixed payload sent instead of the value (actions).
+    #[serde(default, deserialize_with = "hex_opt")]
+    pub payload: Option<Vec<u8>>,
+}
+
+fn hex_opt<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Option<Vec<u8>>, D::Error> {
+    hex_bytes(d).map(Some)
 }
 
 /// A short setting (selector 6): `[id, len, value]`.
@@ -152,10 +164,13 @@ pub struct QueryRead {
     pub dst: u8,
     #[serde(deserialize_with = "hex_cmd")]
     pub cmd: [u8; 2],
-    /// Response byte holding the value. With several, the feature is a
-    /// toggle that is on when any of them is non-zero.
+    /// Response offset holding the value. With several, the feature is a
+    /// toggle that is on when any of the bytes is non-zero.
     pub offsets: Vec<usize>,
-    /// Feature value = byte x scale (e.g. zoom factor x10 -> x100).
+    /// Layout of a single value: `u8` (default) or `f32`.
+    #[serde(default = "u8_enc")]
+    pub value: ValueEncoding,
+    /// Feature value = value x scale (e.g. zoom factor x10 -> x100).
     #[serde(default = "one")]
     pub scale: i64,
 }
@@ -222,6 +237,13 @@ pub struct GimbalVelocity {
     pub max_speed: f32,
 }
 
+/// Camera-side gimbal presets (position and zoom), stored in numbered slots.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Presets {
+    pub slots: u32,
+}
+
 fn one_f() -> f32 {
     1.0
 }
@@ -249,6 +271,8 @@ pub struct DeviceProfile {
     /// serial number queries.
     #[serde(default)]
     pub system_info: bool,
+    /// Camera-side gimbal presets.
+    pub presets: Option<Presets>,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -276,6 +300,9 @@ impl DeviceProfile {
                     .and_then(|id| parsed.iter().find(|q| &q.id == id))
                 {
                     p.system_info |= parent.system_info;
+                    if p.presets.is_none() {
+                        p.presets = parent.presets.clone();
+                    }
                     if p.gimbal_velocity.is_none() {
                         p.gimbal_velocity = parent.gimbal_velocity.clone();
                     }

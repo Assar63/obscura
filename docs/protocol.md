@@ -53,7 +53,14 @@ later to read an `aa 29` response carrying the same cmd and a payload.
 | Gesture: Dynamic Zoom | dst 04 `4433` | ? (`0433` query was sent just before the camera hung) | u8 0/1 |
 | Gesture: Direction Flip | dst 04 `c433` | `8433` → u8 | u8 0/1 |
 | Gesture Control (master) | the four switch frames above, same value | status[1] | |
-| Gimbal velocity (joystick) | dst 04 `8464` 3×f32 `[0, pitch, yaw]`, ~10 Hz while held; zeros to stop | – | *unverified* |
+| Gimbal velocity (joystick) | dst 04 `8464` 3×f32 `[0, pitch, yaw]`, ~10 Hz while held; zeros to stop | – | ✅ measured from Linux: positive pitch tilts the camera down (the picture moves up); positive yaw moves the mirrored picture left. OBSBOT Center sends negative pitch for joystick up, and wraps each move in dst 04 `4402` u8 0 … 1 |
+| Re-center (View & Gimbal reset) | query dst 04 `8438` payload `01`, then `0439` with flags `0x05` and no payload | – | ✅ UVC pan/tilt 0 does *not* re-center after velocity moves |
+| Manual zoom | dst 02 `4219` payload `02000000` + u32 (factor×100, 100–400) | `0468` → f32 | ✅ ignored while the camera sleeps |
+| View and Gimbal Reverse | dst 04 `843b` u8 | none seen | |
+| Gimbal position | – | dst 04 `0466` payload `01` → 24 bytes | i16 angles ×10 at [8] and [10] |
+| Preset: save | dst 04 `4439`: slot u32, f32 angle[10]×0.1, f32 angle[8]×0.1, 0.0, zoom f32, −1000.0 | | ✅ 3 slots (0–2) |
+| Preset: name | dst 04 `843a`: slot u32 + name bytes | `043b` flags `0x21`, payload slot u32 → name, or flags `0x09` if empty | ✅ |
+| Preset: recall | dst 04 `c439`: slot u32, 1.0 ×4 | | ✅ |
 | Hand-tracking option (dropdown) | dst 04 `4422` u8 | ? | *meaning pending NOTES* |
 | Hand-tracking limits? | `4420`/`c420` f32 −45/45, `4421`/`c421` f32 −30/30, `c424` 24 bytes, `c426` u8 | | *unverified* |
 | Gimbal Speed | none (host-side scale for the joystick) | | ✅ `02-known-state-readback` shows no traffic |
@@ -64,7 +71,20 @@ later to read an `aa 29` response carrying the same cmd and a payload.
 | Gesture state | – | dst 04 `0401` → 12 bytes | ✅ [3] locked target, [4] zoom, [5] dynamic zoom, [6] direction flip, [7] zoom factor ×10 |
 | Current zoom? | – | dst 04 `0468` → f32 | 1.01–2.57 seen; follows tracking zoom, not the gesture zoom factor |
 
-Queries leave the payload CRC (bytes 14..16) zeroed. OBSBOT Center's startup
+Queries without a payload leave the payload CRC (bytes 14..16) zeroed;
+queries with one (`0466`, `043b`, `8438`) carry a normal CRC. Responses echo
+the query's seq, which matters when several queries are in flight.
+
+OBSBOT Center saves a preset by querying the position (`0466`) and zoom
+(`0468`), writing `4439` and then naming it with `843a` ("Preset1".."Preset3"
+by default). At startup it lists names with `043b` for each slot. It also
+sends `443a` (read a stored preset) and `c43d` around each recall, which
+aren't needed to move there. No delete command was seen.
+
+**Rotate, flip and Portrait** send nothing to the camera
+(`33-rotate-flip`, `35-resolution-aspect`): OBSBOT Center applies them to
+its virtual camera on the PC. Resolution and frame rate are standard UVC
+stream negotiation. OBSBOT Center's startup
 sequence (`02-known-state-readback`) is dst 0d `0818`, `0804`, `4819`,
 `c818`, then dst 02 `42c4`, dst 04 `0401` and `0468`, dst 02 `c229` and
 `4229`. It never queries the individual gesture switches.

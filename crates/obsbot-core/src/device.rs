@@ -11,7 +11,9 @@ use crate::discovery::CameraInfo;
 use crate::error::{Error, Result};
 use crate::features::{FeatureId, FeatureKind};
 use crate::profile::{Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding};
-use crate::protocol::{self, encode_command, encode_query, encode_short, encode_value};
+use crate::protocol::{
+    self, encode_command, encode_query, encode_short, encode_value, ValueEncoding,
+};
 use crate::transport::{uvc_xu, v4l2_ctrl};
 use crate::v4l2::VideoNode;
 
@@ -28,6 +30,10 @@ pub struct FeatureState {
     pub value: Option<i64>,
     /// Why the feature is unsupported or unreadable.
     pub reason: Option<String>,
+}
+
+fn hex(cmd: [u8; 2]) -> String {
+    format!("{:02x}{:02x}", cmd[0], cmd[1])
 }
 
 /// Status block and query responses shared by the features being read.
@@ -98,12 +104,25 @@ impl Device {
     /// Sends a query (selector 2) and returns the response payload. Only use
     /// queries seen in OBSBOT Center captures.
     pub fn query(&self, dst: u8, cmd: [u8; 2]) -> Result<Vec<u8>> {
+        self.query_with(dst, cmd, protocol::FLAGS_QUERY, &[])?
+            .ok_or_else(|| Error::Unsupported(format!("query {} answered empty", hex(cmd))))
+    }
+
+    /// Sends a query with `flags` and `payload`; `None` if the camera
+    /// answers that there is nothing there (e.g. an empty preset slot).
+    fn query_with(
+        &self,
+        dst: u8,
+        cmd: [u8; 2],
+        flags: u8,
+        payload: &[u8],
+    ) -> Result<Option<Vec<u8>>> {
         let seq = self.seq.fetch_add(1, Ordering::Relaxed);
         uvc_xu::set(
             &self.node,
             protocol::XU_UNIT,
             protocol::SEL_COMMAND,
-            &encode_query(seq, dst, cmd),
+            &encode_query(seq, dst, cmd, flags, payload),
         )?;
         // OBSBOT Center reads the response about 40 ms later.
         for _ in 0..5 {
@@ -114,14 +133,117 @@ impl Device {
                 protocol::SEL_COMMAND,
                 crate::v4l2::UvcQuery::GetCur,
             )?;
-            if let Some(payload) = protocol::decode_response(&frame, cmd) {
-                return Ok(payload.to_vec());
+            match protocol::decode_response(&frame, seq, cmd) {
+                Some((protocol::FLAGS_RESPONSE, p)) => return Ok(Some(p.to_vec())),
+                Some((protocol::FLAGS_RESPONSE_EMPTY, _)) => return Ok(None),
+                _ => {}
             }
         }
         Err(Error::Unsupported(format!(
-            "no response to query {:02x}{:02x}",
-            cmd[0], cmd[1]
+            "no response to query {}",
+            hex(cmd)
         )))
+    }
+
+    fn command(&self, dst: u8, cmd: [u8; 2], payload: &[u8]) -> Result<()> {
+        let seq = self.seq.fetch_add(1, Ordering::Relaxed);
+        uvc_xu::set(
+            &self.node,
+            protocol::XU_UNIT,
+            protocol::SEL_COMMAND,
+            &encode_command(seq, dst, cmd, payload),
+        )
+    }
+
+    /// Number of camera-side gimbal presets (0 if unsupported).
+    pub fn preset_slots(&self) -> u32 {
+        self.profile.presets.as_ref().map_or(0, |p| p.slots)
+    }
+
+    fn check_slot(&self, slot: u32) -> Result<()> {
+        if slot < self.preset_slots() {
+            Ok(())
+        } else {
+            Err(Error::OutOfRange {
+                value: slot as i64,
+                min: 0,
+                max: self.preset_slots() as i64 - 1,
+            })
+        }
+    }
+
+    /// Preset names by slot; `None` for empty slots.
+    pub fn presets(&self) -> Result<Vec<Option<String>>> {
+        (0..self.preset_slots())
+            .map(|slot| {
+                let name = self.query_with(
+                    protocol::DST_GIMBAL,
+                    protocol::CMD_PRESET_NAME_QUERY,
+                    protocol::FLAGS_QUERY_SLOT,
+                    &slot.to_le_bytes(),
+                )?;
+                Ok(name.map(|n| {
+                    String::from_utf8_lossy(&n)
+                        .trim_end_matches('\0')
+                        .to_string()
+                }))
+            })
+            .collect()
+    }
+
+    /// Stores the gimbal's current position and zoom in `slot`, as OBSBOT
+    /// Center's "Add" does, and names it.
+    pub fn save_preset(&self, slot: u32, name: &str) -> Result<()> {
+        self.check_slot(slot)?;
+        let pos = self
+            .query_with(
+                protocol::DST_GIMBAL,
+                protocol::CMD_GIMBAL_POSITION,
+                protocol::FLAGS_QUERY,
+                &[1],
+            )?
+            .ok_or_else(|| Error::Unsupported("gimbal position unavailable".into()))?;
+        let angle = |o: usize| -> Result<f32> {
+            let b = pos
+                .get(o..o + 2)
+                .ok_or_else(|| Error::Unsupported("short gimbal position".into()))?;
+            // x 0.1 in f32, as OBSBOT Center does (matches its bytes exactly).
+            Ok(i16::from_le_bytes([b[0], b[1]]) as f32 * 0.1)
+        };
+        let zoom = self
+            .query(protocol::DST_GIMBAL, protocol::CMD_ZOOM)?
+            .get(..4)
+            .map_or(1.0, |b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]));
+        let mut payload = slot.to_le_bytes().to_vec();
+        for v in [angle(10)?, angle(8)?, 0.0, zoom, -1000.0] {
+            payload.extend(v.to_le_bytes());
+        }
+        self.command(protocol::DST_GIMBAL, protocol::CMD_PRESET_SAVE, &payload)?;
+        self.rename_preset(slot, name)
+    }
+
+    /// Longest preset name sent to the camera, in bytes.
+    pub const PRESET_NAME_MAX: usize = 16;
+
+    pub fn rename_preset(&self, slot: u32, name: &str) -> Result<()> {
+        self.check_slot(slot)?;
+        let mut end = name.len().min(Self::PRESET_NAME_MAX);
+        while !name.is_char_boundary(end) {
+            end -= 1;
+        }
+        let mut payload = slot.to_le_bytes().to_vec();
+        payload.extend(&name.as_bytes()[..end]);
+        self.command(protocol::DST_GIMBAL, protocol::CMD_PRESET_NAME, &payload)
+    }
+
+    /// Moves the gimbal (and zoom) to a stored preset.
+    pub fn recall_preset(&self, slot: u32) -> Result<()> {
+        self.check_slot(slot)?;
+        let mut payload = slot.to_le_bytes().to_vec();
+        for _ in 0..4 {
+            payload.extend(1.0f32.to_le_bytes());
+        }
+        self.command(protocol::DST_GIMBAL, protocol::CMD_PRESET_RECALL, &payload)
     }
 
     /// Firmware version (e.g. "6.4.4.1") and serial number, for cameras
@@ -288,10 +410,16 @@ impl Device {
 
     fn send_vendor(&self, b: &VendorBinding, value: i64) -> Result<()> {
         for f in &b.frames {
-            let mut payload = f.prefix.clone();
-            payload.extend(encode_value(f.value, value, f.divisor));
+            let payload = f.payload.clone().unwrap_or_else(|| {
+                let mut p = f.prefix.clone();
+                p.extend(encode_value(f.value, value, f.divisor));
+                p
+            });
             let seq = self.seq.fetch_add(1, Ordering::Relaxed);
-            let packet = encode_command(seq, f.dst, f.cmd, &payload);
+            let packet = match f.flags {
+                Some(flags) => encode_query(seq, f.dst, f.cmd, flags, &payload),
+                None => encode_command(seq, f.dst, f.cmd, &payload),
+            };
             uvc_xu::set(
                 &self.node,
                 protocol::XU_UNIT,
@@ -349,6 +477,10 @@ impl Device {
 
     fn query_value(q: &QueryRead, rb: &Readback) -> Option<i64> {
         let payload = rb.queries.get(&(q.dst, q.cmd))?.as_ref()?;
+        if let (ValueEncoding::F32, [o]) = (q.value, q.offsets.as_slice()) {
+            let v = f32::from_le_bytes(payload.get(*o..*o + 4)?.try_into().ok()?);
+            return Some((v as f64 * q.scale as f64).round() as i64);
+        }
         let bytes: Option<Vec<u8>> = q.offsets.iter().map(|&o| payload.get(o).copied()).collect();
         match bytes?.as_slice() {
             [b] => Some(*b as i64 * q.scale),
