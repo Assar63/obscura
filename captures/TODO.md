@@ -37,6 +37,26 @@ firmware version and serial number queries.
 
 ## 1. Next batch
 
+### `34-presets` (do this first)
+- **Preview:** closed (open it briefly to aim if needed, then close before recording)
+- **Actions:**
+  1. Wait 5 s. Move the gimbal with the joystick, then **Add** preset 1.
+  2. Move it somewhere clearly different (and change Manual Zoom), then **Add** preset 2.
+  3. Recall 1, recall 2, recall 1.
+  4. Rename, delete or clear a preset if the UI allows it.
+  5. Close OBSBOT Center, reopen it, wait 20 s, and recall 2 again.
+- **Notes:** the slot numbers you used, roughly where the camera pointed for each preset,
+  whether the presets were still listed after reopening, and a screenshot of the preset
+  dropdown or list.
+- **Expect:** "save preset N" and "go to preset N" commands with a slot index, probably on
+  dst 04. Saving may be preceded by a position query. Presets listed after the restart
+  suggest they're stored on the camera, or the app queries them at startup.
+- **Why a capture is needed:** from Linux, the camera's standard pan/tilt/zoom controls
+  only echo the last value written. They don't change when the joystick or AI tracking
+  moves the gimbal, so the app can't save "where the camera is now" without the vendor
+  commands.
+- **Unlocks:** Presets on the Image tab and in the tray menu.
+
 ### `32-manual-zoom`
 - **Preview:** closed
 - **Actions:** type 1.0, max, 2.0, 2.1, 1.0.
@@ -59,15 +79,6 @@ firmware version and serial number queries.
   confirms the sign of each axis and the magnitudes. The reset icon should be a separate
   command; the app currently uses a UVC pan/tilt reset.
 - **Unlocks:** marking the joystick verified, and matching OBSBOT Center's reset exactly.
-
-### `34-presets`
-- **Preview:** closed (open it briefly to aim if needed, then close before recording)
-- **Actions:** move the gimbal, Add preset 1. Move again, Add preset 2. Recall 1, recall 2.
-  Delete or clear one if the UI allows.
-- **Expect:** "save preset N" and "go to preset N" commands with a slot index, possibly with a
-  position readback before saving. Note whether presets survived an app restart (stored on the
-  camera or on the PC).
-- **Unlocks:** Presets on the Image tab.
 
 ### `33-rotate-flip`
 - **Preview:** closed
