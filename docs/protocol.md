@@ -3,7 +3,9 @@
 Device: `3564:feff` "OBSBOT Tiny SE", Remo Tech Co., Ltd., bcdDevice 5.10,
 firmware v6.4.4.1. Decoded from the USB captures in `captures/` (decoder:
 `tools/obsbot_pcap.py`) and confirmed on the camera from Linux unless
-marked *unverified*.
+marked *unverified*. Entries from the 2026-09-27 batch (sleep, HDR, AF/AE
+modes, audio, device sleep, status light, AI lock, queries) were also set and
+read back on the camera from Linux.
 
 ## Channels
 
@@ -54,7 +56,26 @@ later to read an `aa 29` response carrying the same cmd and a payload.
 | Gimbal velocity (joystick) | dst 04 `8464` 3×f32 `[0, pitch, yaw]`, ~10 Hz while held; zeros to stop | – | *unverified* |
 | Hand-tracking option (dropdown) | dst 04 `4422` u8 | ? | *meaning pending NOTES* |
 | Hand-tracking limits? | `4420`/`c420` f32 −45/45, `4421`/`c421` f32 −30/30, `c424` 24 bytes, `c426` u8 | | *unverified* |
-| Gimbal Speed | none (host-side scale for the joystick) | | |
+| Gimbal Speed | none (host-side scale for the joystick) | | ✅ `02-known-state-readback` shows no traffic |
+| Sleep / Resume | dst 02 `c2a0` u32 1 / 0 | status[2] | ✅ status[9] also goes 01 → 03 while asleep |
+| Auto Focus Mode | dst 02 `0236` u32 | status[13] | 0 Global, 1 Face |
+| Firmware version | – | dst 0d `0804` → 4 bytes, last component first | `01 04 04 06` = 6.4.4.1 |
+| Serial number | – | dst 0d `c818` → ASCII | 14 characters |
+| Gesture state | – | dst 04 `0401` → 12 bytes | ✅ [3] locked target, [4] zoom, [5] dynamic zoom, [6] direction flip, [7] zoom factor ×10 |
+| Current zoom? | – | dst 04 `0468` → f32 | 1.01–2.57 seen; follows tracking zoom, not the gesture zoom factor |
+
+Queries leave the payload CRC (bytes 14..16) zeroed. OBSBOT Center's startup
+sequence (`02-known-state-readback`) is dst 0d `0818`, `0804`, `4819`,
+`c818`, then dst 02 `42c4`, dst 04 `0401` and `0468`, dst 02 `c229` and
+`4229`. It never queries the individual gesture switches.
+
+`0401` layout, confirmed from Linux by toggling each switch and re-querying:
+`00 00 00 LT ZM DZ DF ZF 00 02 00 00`, where ZF is the zoom factor ×10
+(`0f` = 1.5×, `19` = 2.5×, `28` = 4.0×). Byte [0] was 1 in the capture
+(AI mode Group) and 0 on Linux (AI mode off); [9] was always 2.
+
+**AI lock** has no command of its own. Locking sends AI mode 0 and turns off
+the gesture switches that were on; unlocking restores the AI mode only.
 
 ## Short settings (selector 6)
 
@@ -63,6 +84,27 @@ later to read an `aa 29` response carrying the same cmd and a payload.
 | Mirror Image | `14 01 v` | [19] | 0/1 ✅ |
 | AI mode | `16 02 v 00` | [24] | 0 off, 1 group, 2 human, 3 hand ✅ |
 | ? (hand dropdown) | `18 01 v` | | *pending* |
+| HDR | `01 01 v` | [6] | 0/1 |
+| Auto Exposure Mode | `03 01 v` | [7] | 0 Global, 1 Face |
+| Noise Reduction | `0a 01 v` | [8] | 0 Off, 1–3 (labels pending) |
+| Auto Sleep + Sleep Time | `0b 02 t` (i16 seconds) | [10..12] i16 | 30 / 120 / 600; negated (−30) when Auto Sleep is off |
+| Sleep Background Mirror | `0e 02 02 v` | [29] | 0/1 |
+| Mic Status During Sleep | `13 01 v` | [16] | 0/1 |
+| Auto Gain | `17 01 v` | [25] | 0/1 |
+| Status Light | `1a 01 v` | [33] | 0 off, 1–3 brightness |
+| Radio Distance | `1b 01 v` | [34] low bits | 0 Close, 1–2 (labels pending) |
+| Microphone enabled (OBSBOT Center: "Disable Microphone", inverted) | `1c 01 v` | [34] bit 4 (0x10) | 1 enabled, 0 disabled ✅; the camera re-enumerates on USB, without its audio interface when disabled |
 
-Status block bytes seen changing: [1] locked target, [4] and [17] tracking
-state, [19] mirror, [24] AI mode.
+## Standard UVC controls used by OBSBOT Center
+
+Confirmed in the captures: Auto Focus and Focus are Camera Terminal
+selectors 8 and 6; Exposure Compensation is Processing Unit selector 1
+(backlight compensation, 0..18 = −3..+3 EV in 1/3 steps); Anti-Flicker is
+PU selector 5; Contrast and Saturation are PU selectors 3 and 7.
+
+Status block bytes seen changing: [1] locked target, [2] asleep, [4] and
+[17] tracking state, [6] HDR, [7] AE mode, [8] noise reduction, [9] device
+state (1 awake, 3 asleep), [10..12] sleep time, [13] AF mode, [14] AF on,
+[15] focus, [16] mic during sleep, [19] mirror, [24] AI mode, [25] auto gain,
+[29] sleep background mirror, [31] 0x3c/0x1e (changes with [9]), [33] status
+light, [34] microphone flags.

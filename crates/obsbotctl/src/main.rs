@@ -80,6 +80,14 @@ enum Raw {
         /// Hex payload, e.g. `aa55010002`; spaces allowed.
         data: String,
     },
+    /// Send a framed query (selector 2) and print the response payload.
+    /// Only use queries seen in captures: unknown ones have hung the camera.
+    Query {
+        /// Destination module, e.g. `04` (AI/gimbal), `02` (ISP), `0d` (system).
+        dst: String,
+        /// Command ID as captured, e.g. `0401`.
+        cmd: String,
+    },
 }
 
 fn pick_camera(cli: &Cli) -> Result<CameraInfo> {
@@ -184,7 +192,16 @@ fn main() -> Result<()> {
                 i.manufacturer.as_deref().unwrap_or("-")
             );
             println!("Product:       {}", i.product.as_deref().unwrap_or("-"));
-            println!("Serial:        {}", i.serial.as_deref().unwrap_or("-"));
+            let fw = dev.firmware_info();
+            let serial = i
+                .serial
+                .clone()
+                .or_else(|| fw.as_ref().and_then(|f| f.serial.clone()));
+            println!("Serial:        {}", serial.as_deref().unwrap_or("-"));
+            println!(
+                "Firmware:      {}",
+                fw.as_ref().map_or("-", |f| f.version.as_str())
+            );
             println!("USB bcdDevice: {}", i.usb_version.as_deref().unwrap_or("-"));
             println!("Profile:       {} ({})", dev.profile.name, dev.profile.id);
         }
@@ -327,6 +344,16 @@ fn main() -> Result<()> {
                     }
                     uvc_xu::set(node, *unit, *selector, &bytes)?;
                     println!("ok");
+                }
+                Raw::Query { dst, cmd } => {
+                    let [dst] = parse_hex(dst)?[..] else {
+                        bail!("dst must be one byte, e.g. 04");
+                    };
+                    let cmd: [u8; 2] = parse_hex(cmd)?
+                        .try_into()
+                        .map_err(|_| anyhow!("cmd must be two bytes, e.g. 0401"))?;
+                    let payload = dev.query(dst, cmd)?;
+                    println!("{}", payload.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
                 }
             }
         }

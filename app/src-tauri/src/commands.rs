@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use obsbot_core::{discover, CameraInfo, Device, FeatureId, FeatureState};
+use obsbot_core::{discover, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo};
 use serde::Serialize;
 use tauri::State;
 
@@ -22,6 +22,8 @@ pub struct Snapshot {
     profile_name: String,
     /// Joystick can drive the gimbal by velocity (vendor command).
     gimbal_velocity: bool,
+    /// Firmware version and serial number reported by the camera.
+    firmware: Option<FirmwareInfo>,
     features: Vec<FeatureState>,
 }
 
@@ -82,6 +84,7 @@ pub fn open_camera(state: State<AppState>, path: PathBuf) -> CmdResult<Snapshot>
         profile_id: device.profile.id.clone(),
         profile_name: device.profile.name.clone(),
         gimbal_velocity: device.has_gimbal_velocity(),
+        firmware: device.firmware_info(),
         features: device.read_all(),
     };
     *state.0.lock().unwrap() = Some(device);

@@ -57,21 +57,24 @@ Status on the Tiny SE:
 | Area | Feature | Status |
 |---|---|---|
 | AI tracking | Human / Group / Hand Tracking modes | ✅ |
-| Gesture control | Master switch, Locked Target, Zoom, Dynamic Zoom, Direction Flip, Zoom Factor (1–4×) | ✅ ¹ |
+| Gesture control | Master switch, Locked Target, Zoom, Dynamic Zoom, Direction Flip, Zoom Factor (1–4×) | ✅ |
 | View & gimbal | Joystick (velocity control), speed, view reset | ✅ |
 | View & gimbal | Manual zoom | ✅ (raw 0–12 steps for now) |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ |
 | Image | Brightness, contrast, saturation, sharpness, hue | ✅ |
 | Image | Auto/manual focus, auto/manual exposure, gain, white balance, anti-flicker | ✅ |
+| Image | HDR, Global/Face AF and AE modes, exposure compensation | ✅ |
+| AI tracking | AI lock | ✅ |
+| Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ |
+| Audio | Mic during sleep, noise reduction, auto gain, disable microphone, radio distance | ✅ |
+| Device | Status light and brightness, firmware version | ✅ |
 | Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ |
 | Device | Hot-plug and reboot recovery | ✅ |
 | Panel | Tray indicator with quick toggles and show/hide | ✅ |
-| Pending captures | Sleep/wake, HDR, face-priority AF/AE, presets, portrait mode, rotate, audio, auto-sleep, status light, gimbal reverse, factory reset | 🚧 greyed out |
-| Out of scope | Beauty/background effects, recording, firmware updates | ❌ ² |
+| Pending captures | Presets, portrait mode, rotate/flip, custom sleep background, gimbal reverse, factory reset | 🚧 greyed out |
+| Out of scope | Beauty/background effects, recording, firmware updates | ❌ ¹ |
 
-¹ The camera doesn't report the gesture sub-switches or the zoom factor in its
-status block, so the app shows the value you last set.
-² In OBSBOT Center these effects run on the PC, not the camera. Firmware
+¹ In OBSBOT Center these effects run on the PC, not the camera. Firmware
 flashing is deliberately never implemented.
 
 Controls that aren't supported yet are still shown, greyed out, with a tooltip

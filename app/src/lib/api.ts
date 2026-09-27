@@ -46,6 +46,7 @@ export type Snapshot = {
   profile_id: string;
   profile_name: string;
   gimbal_velocity: boolean;
+  firmware: { version: string; serial: string | null } | null;
   features: FeatureState[];
 };
 

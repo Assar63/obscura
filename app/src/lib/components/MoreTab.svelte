@@ -81,8 +81,10 @@
         <dd>{hex(device.current.vendor_id)}:{hex(device.current.product_id)}</dd>
         <dt>USB revision</dt>
         <dd>{device.current.usb_version ?? "–"}</dd>
+        <dt>Firmware</dt>
+        <dd>{device.firmware?.version ?? "–"}</dd>
         <dt>Serial</dt>
-        <dd>{device.current.serial ?? "–"}</dd>
+        <dd>{device.current.serial ?? device.firmware?.serial ?? "–"}</dd>
         <dt>Node</dt>
         <dd>{device.current.path}</dd>
         <dt>Profile</dt>

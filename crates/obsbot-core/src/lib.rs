@@ -16,7 +16,7 @@ pub mod protocol;
 pub mod transport;
 pub mod v4l2;
 
-pub use device::{Device, FeatureState};
+pub use device::{Device, FeatureState, FirmwareInfo};
 pub use discovery::{discover, CameraInfo};
 pub use error::{Error, Result};
 pub use features::{FeatureId, FeatureKind};

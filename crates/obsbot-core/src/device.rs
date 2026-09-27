@@ -10,8 +10,8 @@ use serde::Serialize;
 use crate::discovery::CameraInfo;
 use crate::error::{Error, Result};
 use crate::features::{FeatureId, FeatureKind};
-use crate::profile::{Binding, DeviceProfile, VendorBinding};
-use crate::protocol::{self, encode_command, encode_short, encode_value};
+use crate::profile::{Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding};
+use crate::protocol::{self, encode_command, encode_query, encode_short, encode_value};
 use crate::transport::{uvc_xu, v4l2_ctrl};
 use crate::v4l2::VideoNode;
 
@@ -30,6 +30,19 @@ pub struct FeatureState {
     pub reason: Option<String>,
 }
 
+/// Status block and query responses shared by the features being read.
+struct Readback {
+    status: Option<Vec<u8>>,
+    queries: HashMap<(u8, [u8; 2]), Option<Vec<u8>>>,
+}
+
+/// Details reported by the camera's system module.
+#[derive(Debug, Clone, Serialize)]
+pub struct FirmwareInfo {
+    pub version: String,
+    pub serial: Option<String>,
+}
+
 pub struct Device {
     pub info: CameraInfo,
     pub profile: DeviceProfile,
@@ -39,6 +52,11 @@ pub struct Device {
     /// Last written value of each vendor feature, and when. Used when there
     /// is no status readback, and to mask the status block's update lag.
     written: Mutex<HashMap<FeatureId, (i64, Instant)>>,
+    /// Last non-zero level of each switch/level setting, by status offset,
+    /// so switching it back on restores the level.
+    levels: Mutex<HashMap<usize, i64>>,
+    /// Values saved by a host-side lock, while locked.
+    locked: Mutex<Option<Vec<(FeatureId, i64)>>>,
 }
 
 /// The status block reflects a command about 1.1 s after it is sent.
@@ -53,6 +71,8 @@ impl Device {
             node,
             seq: AtomicU16::new(0),
             written: Mutex::new(HashMap::new()),
+            levels: Mutex::new(HashMap::new()),
+            locked: Mutex::new(None),
         })
     }
 
@@ -73,6 +93,139 @@ impl Device {
             crate::v4l2::UvcQuery::GetCur,
         )
         .ok()
+    }
+
+    /// Sends a query (selector 2) and returns the response payload. Only use
+    /// queries seen in OBSBOT Center captures.
+    pub fn query(&self, dst: u8, cmd: [u8; 2]) -> Result<Vec<u8>> {
+        let seq = self.seq.fetch_add(1, Ordering::Relaxed);
+        uvc_xu::set(
+            &self.node,
+            protocol::XU_UNIT,
+            protocol::SEL_COMMAND,
+            &encode_query(seq, dst, cmd),
+        )?;
+        // OBSBOT Center reads the response about 40 ms later.
+        for _ in 0..5 {
+            std::thread::sleep(Duration::from_millis(30));
+            let frame = uvc_xu::get(
+                &self.node,
+                protocol::XU_UNIT,
+                protocol::SEL_COMMAND,
+                crate::v4l2::UvcQuery::GetCur,
+            )?;
+            if let Some(payload) = protocol::decode_response(&frame, cmd) {
+                return Ok(payload.to_vec());
+            }
+        }
+        Err(Error::Unsupported(format!(
+            "no response to query {:02x}{:02x}",
+            cmd[0], cmd[1]
+        )))
+    }
+
+    /// Firmware version (e.g. "6.4.4.1") and serial number, for cameras
+    /// whose profile says they answer the system module's queries.
+    pub fn firmware_info(&self) -> Option<FirmwareInfo> {
+        if !self.profile.system_info {
+            return None;
+        }
+        let version = self.query(protocol::DST_SYSTEM, protocol::CMD_VERSION).ok()?;
+        let serial = self.query(protocol::DST_SYSTEM, protocol::CMD_SERIAL).ok();
+        Some(FirmwareInfo {
+            version: version
+                .get(..4)?
+                .iter()
+                .rev()
+                .map(|b| b.to_string())
+                .collect::<Vec<_>>()
+                .join("."),
+            serial: serial.map(|s| {
+                String::from_utf8_lossy(&s)
+                    .trim_end_matches('\0')
+                    .to_string()
+            }),
+        })
+    }
+
+    /// Reads a vendor setting's raw value from the status block.
+    fn status_value(b: &VendorBinding, block: &[u8]) -> Option<i64> {
+        let v = protocol::decode_status(block, b.status?, b.status_value)?;
+        Some(match b.status_mask {
+            Some(m) => ((v as u8 & m) >> m.trailing_zeros()) as i64,
+            None => v,
+        })
+    }
+
+    /// The last level seen for a switch/level setting.
+    fn level(&self, b: &VendorBinding) -> i64 {
+        b.status
+            .and_then(|o| self.levels.lock().unwrap().get(&o).copied())
+            .or(b.default_level)
+            .unwrap_or(1)
+    }
+
+    fn remember_level(&self, b: &VendorBinding, raw: i64) {
+        if let (Some(o), Some(_), true) = (b.status, b.level, raw != 0) {
+            self.levels.lock().unwrap().insert(o, raw.abs());
+        }
+    }
+
+    /// Feature value from a raw setting.
+    fn from_setting(&self, b: &VendorBinding, raw: i64) -> i64 {
+        self.remember_level(b, raw);
+        match b.level {
+            None if b.invert => (raw == 0) as i64,
+            None => raw,
+            Some(Level::Switch) => (raw != 0) as i64,
+            Some(Level::SignSwitch) => (raw > 0) as i64,
+            Some(Level::Magnitude) if raw == 0 => self.level(b),
+            Some(Level::Magnitude) => raw.abs(),
+        }
+    }
+
+    /// Raw setting to write for a feature value.
+    fn to_setting(&self, b: &VendorBinding, value: i64) -> i64 {
+        let Some(level) = b.level else {
+            return if b.invert { (value == 0) as i64 } else { value };
+        };
+        let current = self
+            .status_block()
+            .and_then(|block| Self::status_value(b, &block));
+        if let Some(raw) = current {
+            self.remember_level(b, raw);
+        }
+        match level {
+            Level::Switch if value != 0 => self.level(b),
+            Level::Switch => 0,
+            Level::SignSwitch if value != 0 => self.level(b),
+            Level::SignSwitch => -self.level(b),
+            Level::Magnitude if current.is_some_and(|c| c < 0) => -value,
+            Level::Magnitude => value,
+        }
+    }
+
+    fn set_lock(&self, spec: &LockSpec, lock: bool) -> Result<()> {
+        if lock {
+            if self.locked.lock().unwrap().is_some() {
+                return Ok(());
+            }
+            let saved = spec
+                .restore
+                .iter()
+                .filter_map(|&id| self.feature(id).value.map(|v| (id, v)))
+                .collect();
+            for &id in &spec.off {
+                self.set(id, 0)?;
+            }
+            *self.locked.lock().unwrap() = Some(saved);
+        } else {
+            let saved = self.locked.lock().unwrap().take();
+            for (id, v) in saved.unwrap_or_default() {
+                self.set(id, v)?;
+            }
+        }
+        Ok(())
     }
 
     /// Records `value` for other vendor features whose frames are a subset of
@@ -145,7 +298,9 @@ impl Device {
             )?;
         }
         if let Some(s) = &b.short {
-            let packet = encode_short(s.id, &encode_value(s.value, value, 1));
+            let mut payload = s.prefix.clone();
+            payload.extend(encode_value(s.value, value, 1));
+            let packet = encode_short(s.id, &payload);
             uvc_xu::set(&self.node, protocol::XU_UNIT, protocol::SEL_STATUS, &packet)?;
         }
         Ok(())
@@ -162,14 +317,45 @@ impl Device {
     }
 
     pub fn feature(&self, id: FeatureId) -> FeatureState {
-        let status = match self.profile.features.get(&id) {
-            Some(Binding::Vendor(b)) if b.status.is_some() => self.status_block(),
-            _ => None,
-        };
-        self.feature_with_status(id, status.as_deref())
+        let readback = self.readback(&[id]);
+        self.feature_with_status(id, &readback)
     }
 
-    fn feature_with_status(&self, id: FeatureId, status: Option<&[u8]>) -> FeatureState {
+    /// Reads the status block and query responses needed by `ids`, once each.
+    fn readback(&self, ids: &[FeatureId]) -> Readback {
+        let vendor = || {
+            ids.iter().filter_map(|id| match self.profile.features.get(id) {
+                Some(Binding::Vendor(b)) => Some(b),
+                _ => None,
+            })
+        };
+        let mut rb = Readback {
+            status: None,
+            queries: HashMap::new(),
+        };
+        if vendor().any(|b| b.status.is_some() && b.query.is_none()) {
+            rb.status = self.status_block();
+        }
+        for q in vendor().filter_map(|b| b.query.as_ref()) {
+            if let std::collections::hash_map::Entry::Vacant(e) = rb.queries.entry((q.dst, q.cmd))
+            {
+                e.insert(self.query(q.dst, q.cmd).ok());
+            }
+        }
+        rb
+    }
+
+    fn query_value(q: &QueryRead, rb: &Readback) -> Option<i64> {
+        let payload = rb.queries.get(&(q.dst, q.cmd))?.as_ref()?;
+        let bytes: Option<Vec<u8>> = q.offsets.iter().map(|&o| payload.get(o).copied()).collect();
+        match bytes?.as_slice() {
+            [b] => Some(*b as i64 * q.scale),
+            bs => Some(bs.iter().any(|&b| b != 0) as i64),
+        }
+    }
+
+    fn feature_with_status(&self, id: FeatureId, rb: &Readback) -> FeatureState {
+        let status = rb.status.as_deref();
         let def = id.def();
         let mut state = FeatureState {
             id,
@@ -199,11 +385,23 @@ impl Device {
             Some(Binding::Vendor(b)) => {
                 state.supported = true;
                 let written = self.written.lock().unwrap().get(&id).copied();
-                state.value = match (b.status, status, written) {
-                    (_, _, Some((v, at))) if at.elapsed() < STATUS_LAG => Some(v),
-                    (Some(offset), Some(block), _) => block.get(offset).map(|&v| v as i64),
-                    (_, _, w) => w.map(|(v, _)| v),
+                let raw = status.and_then(|block| Self::status_value(b, block));
+                let read = match &b.query {
+                    Some(q) => Self::query_value(q, rb),
+                    None => raw.map(|r| self.from_setting(b, r)),
                 };
+                state.value = match written {
+                    Some((v, at)) if at.elapsed() < STATUS_LAG => Some(v),
+                    w => read.or(w.map(|(v, _)| v)),
+                };
+                // A level is inactive while its switch is off.
+                if b.level == Some(Level::Magnitude) {
+                    state.active = raw.is_none_or(|r| r > 0);
+                }
+            }
+            Some(Binding::Lock(_)) => {
+                state.supported = true;
+                state.value = Some(self.locked.lock().unwrap().is_some() as i64);
             }
         }
         state
@@ -215,9 +413,9 @@ impl Device {
 
     /// Reads several features with a single status-block read.
     pub fn read(&self, ids: &[FeatureId]) -> Vec<FeatureState> {
-        let status = self.status_block();
+        let readback = self.readback(ids);
         ids.iter()
-            .map(|&id| self.feature_with_status(id, status.as_deref()))
+            .map(|&id| self.feature_with_status(id, &readback))
             .collect()
     }
 
@@ -237,8 +435,12 @@ impl Device {
         validate(&current.kind, value)?;
         match self.profile.features.get(&id) {
             Some(Binding::V4l2(b)) => v4l2_ctrl::set(&self.node, b, value)?,
+            Some(Binding::Lock(l)) => self.set_lock(&l.lock, value != 0)?,
             Some(Binding::Vendor(b)) => {
-                self.send_vendor(b, value)?;
+                self.send_vendor(b, self.to_setting(b, value))?;
+                if b.level == Some(Level::Magnitude) {
+                    self.remember_level(b, value);
+                }
                 self.written
                     .lock()
                     .unwrap()

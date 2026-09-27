@@ -104,6 +104,7 @@ def main():
     ap.add_argument("capture")
     ap.add_argument("--all-gets", action="store_true", help="print unchanged GET_CUR results too")
     ap.add_argument("--raw", action="store_true", help="print every transfer")
+    ap.add_argument("--frames", action="store_true", help="print selector 2 responses as whole frames, not diffs")
     args = ap.parse_args()
 
     last = {}
@@ -119,6 +120,11 @@ def main():
                       f"dst={d[9]:02x} cmd={d[10]:02x}{d[11]:02x} len={n:<3} {decode(body)}")
             else:
                 print(f"{c.t:8.3f} SET u{c.unit} s{c.selector:<2} {c.out_data.hex(' ')}")
+        elif c.bm == 0xA1 and c.req == 0x81 and args.frames and c.selector == 2 and c.in_data[:1] == b"\xaa":
+            d = c.in_data
+            n = struct.unpack("<H", d[12:14])[0]
+            print(f"{c.t:8.3f} RSP f={d[1]:02x} seq={struct.unpack('<H', d[2:4])[0]:<4} "
+                  f"src={d[8]:02x} cmd={d[10]:02x}{d[11]:02x} len={n:<3} {decode(d[16:16 + n])}")
         elif c.bm == 0xA1 and c.req == 0x81:
             prev = last.get(key)
             last[key] = c.in_data

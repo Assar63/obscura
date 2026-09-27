@@ -44,6 +44,10 @@ pub struct V4l2Binding {
     pub scale: Option<i64>,
     /// Override the catalog's unit; `""` removes it.
     pub unit: Option<String>,
+    /// Subtracted from the device value (after `map`), for controls whose
+    /// zero is mid-range (e.g. exposure compensation 0..18 -> -9..9).
+    #[serde(default)]
+    pub offset: i64,
 }
 
 impl V4l2Binding {
@@ -52,9 +56,11 @@ impl V4l2Binding {
             .iter()
             .find(|[f, _]| *f == value)
             .map_or(value, |[_, d]| *d)
+            + self.offset
     }
 
     pub fn to_feature(&self, value: i64) -> i64 {
+        let value = value - self.offset;
         self.map
             .iter()
             .find(|[_, d]| *d == value)
@@ -114,8 +120,44 @@ pub struct FrameSpec {
 #[serde(deny_unknown_fields)]
 pub struct ShortSpec {
     pub id: u8,
+    /// Constant bytes before the value (counted in `len`).
+    #[serde(default, deserialize_with = "hex_bytes")]
+    pub prefix: Vec<u8>,
     #[serde(default = "u8_enc")]
     pub value: ValueEncoding,
+}
+
+/// How a feature reads a setting that holds both a switch and a level,
+/// e.g. the status light (0 = off, 1..3 = brightness) or auto sleep
+/// (seconds, negative = off).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Level {
+    /// Toggle: on when the setting is non-zero. Turning it on restores the
+    /// last level.
+    Switch,
+    /// Toggle: on when the setting is positive. Turning it off negates the
+    /// level instead of zeroing it.
+    SignSwitch,
+    /// The level itself, ignoring the switch: the magnitude of the setting
+    /// (the last level while switched off). Writing keeps the switch state.
+    Magnitude,
+}
+
+/// Readback through a framed query (selector 2). Responses are shared by
+/// every feature reading the same query.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct QueryRead {
+    pub dst: u8,
+    #[serde(deserialize_with = "hex_cmd")]
+    pub cmd: [u8; 2],
+    /// Response byte holding the value. With several, the feature is a
+    /// toggle that is on when any of them is non-zero.
+    pub offsets: Vec<usize>,
+    /// Feature value = byte x scale (e.g. zoom factor x10 -> x100).
+    #[serde(default = "one")]
+    pub scale: i64,
 }
 
 /// OBSBOT vendor feature over the UVC Extension Unit.
@@ -127,8 +169,40 @@ pub struct VendorBinding {
     pub frames: Vec<FrameSpec>,
     pub short: Option<ShortSpec>,
     /// Byte offset in the selector 6 status block holding the current value.
-    /// Without it the last written value is shown.
+    /// Without it (or `query`) the last written value is shown.
     pub status: Option<usize>,
+    /// Readback through a query; takes precedence over `status`.
+    pub query: Option<QueryRead>,
+    /// Layout of the status value: `u8` (default), `u16` or `i16`.
+    #[serde(default = "u8_enc")]
+    pub status_value: ValueEncoding,
+    /// Bits of the status byte holding the value (shifted down).
+    pub status_mask: Option<u8>,
+    /// For toggles whose camera value is the opposite of the label (e.g.
+    /// "Disable Microphone" is 1 while the microphone is enabled).
+    #[serde(default)]
+    pub invert: bool,
+    /// Switch/level handling for settings that combine both.
+    pub level: Option<Level>,
+    /// The level assumed before one has been seen (see `level`).
+    pub default_level: Option<i64>,
+}
+
+/// A host-side lock (OBSBOT Center's AI lock): locking saves `restore`
+/// features, then sets every `off` feature to 0; unlocking writes the saved
+/// values back. The camera has no lock state of its own.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LockSpec {
+    pub off: Vec<FeatureId>,
+    #[serde(default)]
+    pub restore: Vec<FeatureId>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LockBinding {
+    pub lock: LockSpec,
 }
 
 /// Gimbal velocity command: payload is three float32 `[roll, pitch, yaw]`
@@ -158,6 +232,7 @@ fn one_f() -> f32 {
 pub enum Binding {
     V4l2(V4l2Binding),
     Vendor(VendorBinding),
+    Lock(LockBinding),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -170,6 +245,10 @@ pub struct DeviceProfile {
     pub inherits: Option<String>,
     /// Vendor gimbal velocity command, used for joystick control.
     pub gimbal_velocity: Option<GimbalVelocity>,
+    /// Whether the camera answers the system module's firmware version and
+    /// serial number queries.
+    #[serde(default)]
+    pub system_info: bool,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -196,6 +275,7 @@ impl DeviceProfile {
                     .as_ref()
                     .and_then(|id| parsed.iter().find(|q| &q.id == id))
                 {
+                    p.system_info |= parent.system_info;
                     if p.gimbal_velocity.is_none() {
                         p.gimbal_velocity = parent.gimbal_velocity.clone();
                     }
@@ -265,6 +345,39 @@ mod tests {
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)
         ));
+    }
+
+    #[test]
+    fn tiny_se_bindings_match_captures() {
+        use crate::protocol::{encode_short, encode_value};
+        let p = DeviceProfile::for_usb(0x3564, 0xfeff);
+        assert!(p.system_info);
+        let short = |id: FeatureId, value: i64| {
+            let Binding::Vendor(VendorBinding { short: Some(s), .. }) = &p.features[&id] else {
+                panic!("{id:?} is a short setting")
+            };
+            let mut payload = s.prefix.clone();
+            payload.extend(encode_value(s.value, value, 1));
+            encode_short(s.id, &payload)[..4].to_vec()
+        };
+        // 51-device-sleep, 53-status-light, 44-hdr
+        assert_eq!(short(FeatureId::AutoSleep, -30), [0x0b, 0x02, 0xe2, 0xff]);
+        assert_eq!(short(FeatureId::SleepTime, 600), [0x0b, 0x02, 0x58, 0x02]);
+        assert_eq!(short(FeatureId::SleepBackgroundMirror, 1), [0x0e, 0x02, 0x02, 0x01]);
+        assert_eq!(short(FeatureId::StatusLightBrightness, 3), [0x1a, 0x01, 0x03, 0x00]);
+        assert_eq!(short(FeatureId::Hdr, 1), [0x01, 0x01, 0x01, 0x00]);
+        assert!(matches!(p.features[&FeatureId::AiLock], Binding::Lock(_)));
+    }
+
+    #[test]
+    fn v4l2_offset_round_trips() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfeff);
+        let Binding::V4l2(b) = &p.features[&FeatureId::ExposureCompensation] else {
+            panic!("exposure_compensation is a V4L2 control")
+        };
+        assert_eq!(b.to_device(0), 9);
+        assert_eq!(b.to_feature(18), 9);
+        assert_eq!(b.to_feature(0), -9);
     }
 
     #[test]

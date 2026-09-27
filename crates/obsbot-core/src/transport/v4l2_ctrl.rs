@@ -9,10 +9,10 @@ use crate::v4l2::{ControlInfo, VideoNode, CTRL_TYPE_MENU};
 pub fn describe(info: &ControlInfo, binding: &V4l2Binding, kind: &FeatureKind) -> FeatureKind {
     match kind {
         FeatureKind::Range { scale, unit, .. } => FeatureKind::Range {
-            min: info.min,
-            max: info.max,
+            min: info.min - binding.offset,
+            max: info.max - binding.offset,
             step: info.step.max(1),
-            default: Some(info.default),
+            default: Some(info.default - binding.offset),
             scale: binding.scale.unwrap_or(*scale),
             unit: match &binding.unit {
                 Some(u) if u.is_empty() => None,

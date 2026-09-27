@@ -31,3 +31,23 @@ Mention anything observed: camera moved, LED changed, controls appeared/hid.
 4. 51
 5. 52
 6. Reset icon (value became: __)
+
+## `02-known-state-readback`
+Contrast 23
+Saturation 77
+Status Light on Brightness 2
+Anti-Flicker 50 Hz
+Gimbal Speed Slow
+Gesture Control on
+Locked Target on
+Zoom OFF
+Dynamic Zoom on
+Direction Flip OFF
+Gesture Zoom Factor 2.5
+AI Mode Group
+
+
+## `51-device-sleep`
+The drop down for sleep time has 30s, 2min, 10min
+
+
