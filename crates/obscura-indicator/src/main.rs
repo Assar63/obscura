@@ -205,6 +205,27 @@ fn set_autostart(enable: bool) -> std::io::Result<()> {
     )
 }
 
+/// In the snap, start at login by default: the first time the indicator
+/// runs it enables autostart (snapd launches apps whose autostart file is in
+/// `$SNAP_USER_DATA/.config/autostart`). A marker in the unversioned
+/// `$SNAP_USER_COMMON` records that this happened, so turning "Start at
+/// login" off afterwards sticks across restarts and refreshes.
+fn snap_first_run_autostart() {
+    let Some(common) = std::env::var_os("SNAP_USER_COMMON").map(PathBuf::from) else {
+        return;
+    };
+    let marker = common.join("autostart-initialized");
+    if marker.exists() {
+        return;
+    }
+    match set_autostart(true) {
+        Ok(()) => {
+            let _ = fs::write(&marker, "");
+        }
+        Err(e) => eprintln!("obscura-indicator: couldn't enable autostart: {e}"),
+    }
+}
+
 impl ksni::Tray for Indicator {
     fn id(&self) -> String {
         "obscura".into()
@@ -378,6 +399,7 @@ impl ksni::Tray for Indicator {
 }
 
 fn main() {
+    snap_first_run_autostart();
     let handle = match Indicator::new().spawn() {
         Ok(h) => h,
         Err(e) => {
