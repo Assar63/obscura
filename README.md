@@ -80,6 +80,7 @@ explaining why. The layout matches the official app.
 ## Installing
 
 [![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/obscura)
+
 [![obscura](https://snapcraft.io/obscura/badge.svg)](https://snapcraft.io/obscura)
 
 ### Snap (strictly confined)
