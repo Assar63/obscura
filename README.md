@@ -73,13 +73,13 @@ explaining why. The layout matches the official app.
 
 ## Installing
 
-There are no prebuilt packages yet. Build a snap, or build from source.
+[![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/obscura)
+[![obscura](https://snapcraft.io/obscura/badge.svg)](https://snapcraft.io/obscura)
 
 ### Snap (strictly confined)
 
 ```sh
-snapcraft pack                                   # builds in an LXD container
-sudo snap install --dangerous ./obscura_*.snap
+sudo snap install obscura
 sudo snap connect obscura:camera                 # required
 sudo snap connect obscura:hardware-observe       # optional: USB product name/serial
 sudo snap alias obscura.obsbotctl obsbotctl      # optional: plain `obsbotctl`
