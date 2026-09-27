@@ -48,11 +48,13 @@ apps:
     extensions: [gnome]
     plugs:
       - camera
+      - hardware-observe
 
   obsbotctl:
     command: bin/obsbotctl
     plugs:
       - camera
+      - hardware-observe
 
 parts:
   obscura:
