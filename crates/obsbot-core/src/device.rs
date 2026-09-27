@@ -174,7 +174,7 @@ impl Device {
     }
 
     /// Feature value from a raw setting.
-    fn from_setting(&self, b: &VendorBinding, raw: i64) -> i64 {
+    fn setting_to_feature(&self, b: &VendorBinding, raw: i64) -> i64 {
         self.remember_level(b, raw);
         match b.level {
             None if b.invert => (raw == 0) as i64,
@@ -187,7 +187,7 @@ impl Device {
     }
 
     /// Raw setting to write for a feature value.
-    fn to_setting(&self, b: &VendorBinding, value: i64) -> i64 {
+    fn feature_to_setting(&self, b: &VendorBinding, value: i64) -> i64 {
         let Some(level) = b.level else {
             return if b.invert { (value == 0) as i64 } else { value };
         };
@@ -390,7 +390,7 @@ impl Device {
                 let raw = status.and_then(|block| Self::status_value(b, block));
                 let read = match &b.query {
                     Some(q) => Self::query_value(q, rb),
-                    None => raw.map(|r| self.from_setting(b, r)),
+                    None => raw.map(|r| self.setting_to_feature(b, r)),
                 };
                 state.value = match written {
                     Some((v, at)) if at.elapsed() < STATUS_LAG => Some(v),
@@ -439,7 +439,7 @@ impl Device {
             Some(Binding::V4l2(b)) => v4l2_ctrl::set(&self.node, b, value)?,
             Some(Binding::Lock(l)) => self.set_lock(&l.lock, value != 0)?,
             Some(Binding::Vendor(b)) => {
-                self.send_vendor(b, self.to_setting(b, value))?;
+                self.send_vendor(b, self.feature_to_setting(b, value))?;
                 if b.level == Some(Level::Magnitude) {
                     self.remember_level(b, value);
                 }
