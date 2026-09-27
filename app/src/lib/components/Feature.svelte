@@ -110,6 +110,12 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
+  }
+  /* Toggles, choices and buttons keep their size; long descriptions wrap
+     beside them instead of running underneath. */
+  .row:not(.ranged) .control {
+    flex-shrink: 0;
   }
   .label {
     white-space: nowrap;
