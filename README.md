@@ -18,6 +18,11 @@ using a vendor protocol reverse-engineered from USB captures.
 > This project was written without any vendor documentation or SDK. Use it
 > at your own risk.
 
+<p align="center">
+  <img src="screenshots/obscura1.png" width="48%" alt="OBSCura main window">
+  <img src="screenshots/obscura2.png" width="48%" alt="OBSCura image settings">
+</p>
+
 ## Contents
 
 - [Supported cameras](#supported-cameras)
