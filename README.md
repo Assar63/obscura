@@ -1,5 +1,8 @@
 # OBSCura
 
+[![CI](https://github.com/kenvandine/obscura/actions/workflows/ci.yml/badge.svg)](https://github.com/kenvandine/obscura/actions/workflows/ci.yml)
+[![Snap](https://github.com/kenvandine/obscura/actions/workflows/snap.yml/badge.svg)](https://github.com/kenvandine/obscura/actions/workflows/snap.yml)
+
 **OBSCura: Unofficial control panel for OBSBOT webcams.**
 
 A Linux configuration tool for OBSBOT webcams: AI tracking,
@@ -280,6 +283,28 @@ cargo build                        # workspace: obsbot-core, obsbotctl, obscura
 cd app && pnpm check               # Svelte/TypeScript type checking
 cd app && pnpm tauri dev           # run the app with hot reload
 ```
+
+### Continuous integration and releases
+
+- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request:
+  `cargo fmt --check`, `clippy -D warnings`, `cargo test`, `svelte-check`
+  and a frontend build.
+- **Snap** (`.github/workflows/snap.yml`) builds the snap natively on amd64
+  and arm64. Pull requests get the snaps as downloadable artifacts. Pushes to
+  `main` publish both architectures to the **candidate** channel, from which
+  they can be promoted to stable:
+
+  ```sh
+  snapcraft release obscura <revision> stable
+  ```
+
+  Publishing uses a `SNAPCRAFT_STORE_CREDENTIALS` repository secret, created
+  with:
+
+  ```sh
+  snapcraft export-login --snaps obscura --channels candidate \
+    --acls package_access,package_push,package_update,package_release -
+  ```
 
 The dev watcher doesn't track `profiles/`. Restart `pnpm tauri dev` after
 editing a profile.

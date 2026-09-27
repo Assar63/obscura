@@ -1,0 +1,63 @@
+name: Snap
+
+# Builds the snap natively on amd64 and arm64. Pull requests get the built
+# snaps as artifacts; pushes to main (and manual runs on main) also publish
+# both architectures to the candidate channel.
+#
+# Publishing needs the snap name registered (`snapcraft register obscura`)
+# and a SNAPCRAFT_STORE_CREDENTIALS repository secret:
+#
+#   snapcraft export-login --snaps obscura --channels candidate \
+#     --acls package_access,package_push,package_update,package_release -
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snap-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  snap:
+    name: Snap (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      # snapcraft.yaml uses `source-type: git`, so the build clones this
+      # checkout; fetch full history so that clone is a normal repository.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        id: build
+        uses: snapcore/action-build@v1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: obscura-${{ matrix.arch }}
+          path: ${{ steps.build.outputs.snap }}
+          if-no-files-found: error
+
+      - name: Publish to candidate
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: candidate
