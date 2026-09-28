@@ -23,10 +23,7 @@ const BUILTIN: &[(&str, &str)] = &[
         "tiny-se.toml",
         include_str!("../../../profiles/tiny-se.toml"),
     ),
-    (
-        "tiny-2.toml",
-        include_str!("../../../profiles/tiny-2.toml"),
-    ),
+    ("tiny-2.toml", include_str!("../../../profiles/tiny-2.toml")),
     (
         "tiny-2-lite.toml",
         include_str!("../../../profiles/tiny-2-lite.toml"),
@@ -35,10 +32,7 @@ const BUILTIN: &[(&str, &str)] = &[
         "tiny-4k.toml",
         include_str!("../../../profiles/tiny-4k.toml"),
     ),
-    (
-        "meet-2.toml",
-        include_str!("../../../profiles/meet-2.toml"),
-    ),
+    ("meet-2.toml", include_str!("../../../profiles/meet-2.toml")),
     (
         "meet-se.toml",
         include_str!("../../../profiles/meet-se.toml"),
