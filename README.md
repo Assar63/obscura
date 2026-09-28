@@ -41,14 +41,33 @@ using a vendor protocol reverse-engineered from USB captures.
 | Camera | USB ID | Status |
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
+| OBSBOT Tiny 2 | `3564:fef8` | Assumed supported, cross-checked (see below) |
+| OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed supported, unverified (see below) |
+| OBSBOT Tiny 4K | `3564:fef4` | Assumed supported, unverified (see below) |
+| OBSBOT Meet 2 | `3564:fefb` | Assumed supported minus gimbal features, unverified (see below) |
+| OBSBOT Meet SE | `3564:fefe` | Assumed supported minus gimbal features, unverified (see below) |
 | Other OBSBOT models | `3564:*` | Standard UVC controls only (see below) |
 | Any other UVC webcam | – | Standard UVC controls, with `--all` / `OBSBOT_ALL_CAMERAS=1` |
 
-Other OBSBOT models (Tiny 2, Tiny 2 Lite, Meet 2, …) are detected and get
-the standard webcam controls. Their vendor features stay disabled until
-someone contributes USB captures, because command IDs and status layouts
-may differ between models. Adding a model means adding one profile file;
-see [Adding support for another camera](#adding-support-for-another-camera).
+Other OBSBOT models (Meet, Meet 4K, Tiny 3, …) are detected and get the
+standard webcam controls. Their vendor features stay disabled until someone
+contributes USB captures, because command IDs and status layouts may differ
+between models.
+
+The Tiny 2, Tiny 2 Lite, Tiny 4K, Meet 2 and Meet SE are exceptions:
+`profiles/tiny-2.toml`, `tiny-2-lite.toml`, `tiny-4k.toml`, `meet-2.toml`
+and `meet-se.toml` reuse the Tiny SE's vendor bindings on the assumption
+that they share the same protocol. This is **unverified** for each
+specific model, but it isn't a blind guess either — OBSBOT's own SDK
+groups all of these under one status-block struct internally (a different
+one from plain Meet/Meet 4K), and [cgevans/tiny2](https://github.com/cgevans/tiny2),
+an independent from-scratch reverse-engineering of the Tiny 2, confirms
+several of the same command and tag IDs this project captured for the
+Tiny SE. Meet 2 and Meet SE don't have the Tiny line's mechanical gimbal,
+so gimbal velocity, presets and gimbal reset/reverse are left unbound for
+them rather than guessed. If something doesn't work, or you can capture
+one of these models' traffic, see
+[Adding support for another camera](#adding-support-for-another-camera).
 
 ## Features
 

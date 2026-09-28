@@ -23,6 +23,26 @@ const BUILTIN: &[(&str, &str)] = &[
         "tiny-se.toml",
         include_str!("../../../profiles/tiny-se.toml"),
     ),
+    (
+        "tiny-2.toml",
+        include_str!("../../../profiles/tiny-2.toml"),
+    ),
+    (
+        "tiny-2-lite.toml",
+        include_str!("../../../profiles/tiny-2-lite.toml"),
+    ),
+    (
+        "tiny-4k.toml",
+        include_str!("../../../profiles/tiny-4k.toml"),
+    ),
+    (
+        "meet-2.toml",
+        include_str!("../../../profiles/meet-2.toml"),
+    ),
+    (
+        "meet-se.toml",
+        include_str!("../../../profiles/meet-se.toml"),
+    ),
 ];
 
 #[derive(Debug, Clone, Deserialize)]
@@ -416,5 +436,62 @@ mod tests {
     #[test]
     fn unknown_device_falls_back_to_generic() {
         assert_eq!(DeviceProfile::for_usb(0x1234, 0x5678).id, "generic-uvc");
+    }
+
+    #[test]
+    fn tiny_2_lite_assumes_tiny_se_vendor_features() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfef9);
+        assert_eq!(p.id, "tiny-2-lite");
+        assert!(matches!(p.features[&FeatureId::Contrast], Binding::V4l2(_)));
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
+    }
+
+    #[test]
+    fn tiny_2_matches_by_product_id() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfef8);
+        assert_eq!(p.id, "tiny-2");
+        assert!(p.presets.is_some());
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
+    }
+
+    #[test]
+    fn tiny_4k_matches_by_product_id() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfef4);
+        assert_eq!(p.id, "tiny-4k");
+        assert!(p.presets.is_some());
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
+    }
+
+    #[test]
+    fn meet_2_has_no_gimbal_features() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfefb);
+        assert_eq!(p.id, "meet-2");
+        assert!(p.presets.is_none());
+        assert!(p.gimbal_velocity.is_none());
+        assert!(!p.features.contains_key(&FeatureId::GimbalReset));
+        assert!(!p.features.contains_key(&FeatureId::GimbalReverse));
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
+    }
+
+    #[test]
+    fn meet_se_has_no_gimbal_features() {
+        let p = DeviceProfile::for_usb(0x3564, 0xfefe);
+        assert_eq!(p.id, "meet-se");
+        assert!(p.presets.is_none());
+        assert!(p.gimbal_velocity.is_none());
+        assert!(!p.features.contains_key(&FeatureId::GimbalReset));
+        assert!(!p.features.contains_key(&FeatureId::GimbalReverse));
     }
 }
