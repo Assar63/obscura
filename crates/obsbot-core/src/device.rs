@@ -9,7 +9,7 @@ use serde::Serialize;
 
 use crate::discovery::CameraInfo;
 use crate::error::{Error, Result};
-use crate::features::{FeatureId, FeatureKind};
+use crate::features::{ChoiceOption, FeatureId, FeatureKind};
 use crate::profile::{Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding};
 use crate::protocol::{
     self, encode_command, encode_query, encode_short, encode_value, ValueEncoding,
@@ -546,6 +546,18 @@ impl Device {
             },
             Some(Binding::Vendor(b)) => {
                 state.supported = true;
+                if !b.options.is_empty() {
+                    state.kind = FeatureKind::Choice {
+                        options: b
+                            .options
+                            .iter()
+                            .map(|(value, label)| ChoiceOption {
+                                value: *value,
+                                label: label.clone(),
+                            })
+                            .collect(),
+                    };
+                }
                 let written = self.written.lock().unwrap().get(&id).copied();
                 let raw = status.and_then(|block| Self::status_value(b, block));
                 let read = match &b.query {

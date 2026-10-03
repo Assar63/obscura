@@ -225,6 +225,10 @@ pub struct VendorBinding {
     /// the switch (the Tiny 3's status light: brightness at 33, on/off at
     /// 45). Switching on writes the level found there.
     pub level_status: Option<usize>,
+    /// Choice options replacing the catalog's, for models with other values
+    /// (e.g. the Tiny 3's extra AI modes), as `[value, label]` pairs.
+    #[serde(default)]
+    pub options: Vec<(i64, String)>,
     /// Raw status values the camera reports while a change is in progress
     /// (e.g. AI mode 6, "switching"); the last settled value is shown
     /// instead.
@@ -475,6 +479,11 @@ mod tests {
         assert_eq!(p.id, "tiny-3");
         assert!(p.presets.is_none());
         assert!(p.gimbal_velocity.is_some());
+        let Binding::Vendor(ai) = &p.features[&FeatureId::AiMode] else {
+            panic!("AI mode is not a vendor binding");
+        };
+        assert!(ai.options.contains(&(5, "Desk".to_string())));
+        assert_eq!(ai.transient, [6]);
         let Binding::Vendor(b) = &p.features[&FeatureId::GestureZoom] else {
             panic!("gesture zoom is not a vendor binding");
         };

@@ -223,6 +223,11 @@ On startup the SDK also sends the system module (dst 0d, `c81a`) a shell
 command, `touch /app/private/resolution.conf`, so it can run commands on
 the camera's Linux system. Nothing here sends that.
 
+**More AI modes.** Short setting `16 02 <mode> 00` also takes 4
+Whiteboard, 5 Desk and 7 Speech (OBSBOT's "Voice Tracking"), each echoed at
+status[24]; 7 also set status[28] (sub-mode) to 2. 14, portrait tracking
+in the SDK, is ignored.
+
 **Status light: on/off and brightness are separate.** Short setting `1a`
 with 1–3 sets the brightness ([33]) and switches the light on ([45] = 1).
 With 0 it switches the light off ([45] = 0) and leaves the brightness at

@@ -16,13 +16,10 @@ use ksni::blocking::TrayMethods;
 use ksni::menu::{CheckmarkItem, RadioGroup, RadioItem, StandardItem, SubMenu};
 use ksni::MenuItem;
 use obsbot_core::companion::{self, Role};
-use obsbot_core::{discover, Device, FeatureId};
+use obsbot_core::{discover, Device, FeatureId, FeatureKind};
 
 /// Background refresh; the menu also refreshes whenever it's opened.
 const POLL: Duration = Duration::from_secs(5);
-
-/// AI tracking modes in menu order, with their device values.
-const AI_MODES: &[(i64, &str)] = &[(0, "Off"), (2, "Human"), (1, "Group"), (3, "Hand tracking")];
 
 /// On/off features worth having one click away during a call.
 const TOGGLES: &[(FeatureId, &str)] = &[
@@ -65,6 +62,8 @@ struct Indicator {
     camera_name: String,
     /// Current AI mode, or None if the camera doesn't support it.
     ai_mode: Option<i64>,
+    /// The camera's AI modes in menu order, with their device values.
+    ai_modes: Vec<(i64, String)>,
     /// Supported toggles and their state (None when the camera can't report it).
     toggles: Vec<(FeatureId, &'static str, Option<bool>)>,
     can_center: bool,
@@ -83,6 +82,7 @@ impl Indicator {
             device: None,
             camera_name: String::new(),
             ai_mode: None,
+            ai_modes: Vec::new(),
             toggles: Vec::new(),
             can_center: false,
             can_reset: false,
@@ -133,6 +133,12 @@ impl Indicator {
         ids.extend(TOGGLES.iter().map(|(id, _)| *id));
         let states = dev.read(&ids);
         self.ai_mode = states[0].supported.then(|| states[0].value.unwrap_or(0));
+        self.ai_modes = match &states[0].kind {
+            FeatureKind::Choice { options } => {
+                options.iter().map(|o| (o.value, o.label.clone())).collect()
+            }
+            _ => Vec::new(),
+        };
         self.can_reset = states[3].supported;
         self.can_center = self.can_reset || (states[1].supported && states[2].supported);
         self.toggles = TOGGLES
@@ -221,10 +227,11 @@ impl ksni::Tray for Indicator {
         let description = match (&self.device, self.ai_mode) {
             (None, _) => "No OBSBOT camera connected".to_string(),
             (Some(_), Some(mode)) => {
-                let label = AI_MODES
+                let label = self
+                    .ai_modes
                     .iter()
                     .find(|(v, _)| *v == mode)
-                    .map_or("?", |(_, l)| l);
+                    .map_or("?", |(_, l)| l.as_str());
                 format!("{} · AI tracking: {label}", self.camera_name)
             }
             (Some(_), None) => self.camera_name.clone(),
@@ -300,14 +307,21 @@ impl ksni::Tray for Indicator {
             );
             items.push(
                 RadioGroup {
-                    selected: AI_MODES.iter().position(|(v, _)| *v == mode).unwrap_or(0),
+                    selected: self
+                        .ai_modes
+                        .iter()
+                        .position(|(v, _)| *v == mode)
+                        .unwrap_or(0),
                     select: Box::new(|this: &mut Self, index| {
-                        this.set(FeatureId::AiMode, AI_MODES[index].0);
+                        if let Some(&(value, _)) = this.ai_modes.get(index) {
+                            this.set(FeatureId::AiMode, value);
+                        }
                     }),
-                    options: AI_MODES
+                    options: self
+                        .ai_modes
                         .iter()
                         .map(|(_, label)| RadioItem {
-                            label: (*label).into(),
+                            label: label.clone(),
                             ..Default::default()
                         })
                         .collect(),

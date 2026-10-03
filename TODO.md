@@ -121,11 +121,13 @@ profiles use lands on the field the SDK names. The struct is
 
 ### P2: status byte known, likely simple
 
-- [ ] **More AI modes: Whiteboard, Desk, Voice tracking, Portrait.** The
-  Tiny 3 manual lists hand tracking, desk and whiteboard modes; the SDK
-  adds Speech (7) and Portrait tracking (14). joshualambert's notes write
-  them with short setting `16 02 <category> <submode>` (4 Whiteboard,
-  5 Desk) and read them at [24]. Trace `cameraSetAiModeU` for 7 and 14.
+- [x] **More AI modes: Whiteboard, Desk, Voice tracking, Portrait.** *Done:*
+  short setting `16 02 <mode> 00` with 4 Whiteboard, 5 Desk, 7 Voice
+  Tracking (SDK "speech") is echoed at status[24] on the Tiny 3. Writing 7
+  also set the sub-mode [28] to 2. 14 (portrait tracking) is ignored. The
+  Tiny 3 profile lists them (new `options` binding field), the app shows them
+  in a second column next to Group/Hand, and the tray menu follows the
+  camera's list.
 - [ ] **Human tracking framing (AI sub-mode).** `AiSubModeType`: Normal,
   Upper Body, Close-up, Headless, Lower Body, at [28]. joshualambert writes
   it as the 4th byte of `16 02 02 <sub>`. OBSBOT Center calls this "Auto
