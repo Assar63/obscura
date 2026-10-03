@@ -237,6 +237,20 @@ mod tests {
     }
 
     #[test]
+    fn tiny_3_gesture_matches_sdk_traffic() {
+        // OBSBOT SDK (libdev 2.1.0) on a Tiny 3: gesture master off, and a
+        // read of the zoom gesture switch.
+        assert_eq!(
+            encode_command(5, 0x04, [0x44, 0x34], &[0, 0, 0, 0, 0])[..21],
+            padded("aa 25 05 00 0c 00 da a3 0a 04 44 34 05 00 ca 5f 00 00 00 00 00")[..21]
+        );
+        assert_eq!(
+            encode_query(7, 0x04, [0x84, 0x34], FLAGS_QUERY_SLOT, &[2, 0, 0, 0])[..20],
+            padded("aa 21 07 00 0c 00 3e 59 0a 04 84 34 04 00 bf bf 02 00 00 00")[..20]
+        );
+    }
+
+    #[test]
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(

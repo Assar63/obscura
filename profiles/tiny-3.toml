@@ -13,13 +13,13 @@
 # Tested from Linux on firmware 6.6.8.3, set and read back: mirror, status
 # light, HDR, AI mode, AF mode, sleep/resume, manual zoom (the camera ramps
 # it at about 0.2x per second), joystick and re-center (gimbal position
-# query `0466`), and the firmware/serial queries. Gestures and presets
-# differ from the Tiny SE and are left unbound; the audio and device-sleep
-# settings read back sensibly but haven't been written. See "Adding
-# support for another camera" in README.md.
+# query `0466`), the firmware/serial queries, and the gesture switches.
+# Presets differ from the Tiny SE and are left unbound; the audio and
+# device-sleep settings read back sensibly but haven't been written. See
+# "Adding support for another camera" in README.md.
 #
 # Image controls, pan/tilt/zoom and focus are standard UVC controls
-# (inherited from generic-uvc). AI features use the vendor
+# (inherited from generic-uvc). AI and gesture features use the vendor
 # protocol on Extension Unit 2 -- see docs/protocol.md.
 #
 # Vendor bindings:
@@ -57,12 +57,41 @@ pitch_sign = -1.0
 v4l2 = 0x009a0901
 map = [[1, 0], [0, 1]]
 
-# No gesture features. Query `0401` is the AI status on the Tiny 3 (20
-# bytes: [0] tracking, [1] AI mode, [4] 0xc8) with no gesture switches, and
-# the Tiny SE's gesture commands are accepted and ignored: with Locked
-# Target `c430` or Zoom `4431` set to 0, the palm and "L" gestures still
-# worked. Gestures work on the camera by default. Pending a capture of
-# OBSBOT Center; see "OBSBOT Tiny 3" in docs/protocol.md.
+# Gesture control: one command for every gesture setting, unlike the Tiny
+# SE's command per switch (which the Tiny 3 accepts and ignores). Write dst
+# 04 `4434` with a u32 setting type then the value; read with query `8434`
+# (flags 0x21) and the u32 type as payload, which answers u8 (switches) or
+# f32 (zoom factor). Types: 0 master, 1 target selection (palm: tracking
+# on/off), 2 zoom ("L": 2x in/out), 3 dynamic zoom, 8 zoom factor. Seen in
+# the traffic of OBSBOT's SDK (libdev 2.1.0) and confirmed on the camera:
+# with type 1 or 2 off, that gesture is ignored. Switching the master off
+# also turns the gestures off, and switching it on doesn't bring them back,
+# so the master sends all four.
+[features.gesture_control]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "00000000", offsets = [0] }
+frames = [
+  { dst = 0x04, cmd = "4434", prefix = "00000000" },
+  { dst = 0x04, cmd = "4434", prefix = "01000000" },
+  { dst = 0x04, cmd = "4434", prefix = "02000000" },
+  { dst = 0x04, cmd = "4434", prefix = "03000000" },
+]
+
+[features.gesture_locked_target]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "01000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4434", prefix = "01000000" }]
+
+[features.gesture_zoom]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "02000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4434", prefix = "02000000" }]
+
+[features.gesture_dynamic_zoom]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "03000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4434", prefix = "03000000" }]
+
+# Value is the factor x100 (100..400); the camera takes and returns a float.
+[features.gesture_zoom_factor]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "08000000", offsets = [0], value = "f32", scale = 100 }
+frames = [{ dst = 0x04, cmd = "4434", prefix = "08000000", value = "f32", divisor = 100 }]
 
 [features.mirror_image]
 status = 19
@@ -98,11 +127,10 @@ short = { id = 0x16, value = "u16" }
 status = 2
 frames = [{ dst = 0x02, cmd = "c2a0", value = "u32" }]
 
-# OBSBOT Center's AI lock is host-side: it turns AI tracking off, and
-# unlocking restores it. (On the Tiny SE it also turns gestures off; those
-# aren't bound here.)
+# OBSBOT Center's AI lock is host-side: it turns AI tracking and gestures
+# off, and unlocking restores the AI mode (not the gestures).
 [features.ai_lock]
-lock = { off = ["ai_mode"], restore = ["ai_mode"] }
+lock = { off = ["ai_mode", "gesture_control"], restore = ["ai_mode"] }
 
 # Image
 [features.hdr]

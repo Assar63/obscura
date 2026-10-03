@@ -15,8 +15,10 @@ changed. This project talks to the camera the same way the official app does,
 using a vendor protocol reverse-engineered from USB captures.
 
 > **Not affiliated with OBSBOT / Remo Tech.** "OBSBOT" is their trademark.
-> This project was written without any vendor documentation or SDK. Use it
-> at your own risk.
+> This project contains no vendor code and was written without vendor
+> documentation. The protocol comes from watching OBSBOT's own software
+> talk to the camera: OBSBOT Center's USB traffic, and for the Tiny 3's
+> gesture settings, the traffic of OBSBOT's SDK. Use it at your own risk.
 
 <p align="center">
   <img src="screenshots/obscura1.png" width="48%" alt="OBSCura main window">
@@ -42,7 +44,7 @@ using a vendor protocol reverse-engineered from USB captures.
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
 | OBSBOT Tiny 2 | `3564:fef8` | Assumed supported, cross-checked (see below) |
-| OBSBOT Tiny 3 | `3564:ff02` | Supported except gestures and presets (firmware 6.6.8.3, see below) |
+| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets (firmware 6.6.8.3, see below) |
 | OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed supported, unverified (see below) |
 | OBSBOT Tiny 4K | `3564:fef4` | Assumed supported, unverified (see below) |
 | OBSBOT Meet 2 | `3564:fefb` | Assumed supported minus gimbal features, unverified (see below) |
@@ -66,9 +68,10 @@ different one from plain Meet/Meet 4K), and
 from-scratch reverse-engineering of the Tiny 2, confirms several of the
 same command and tag IDs this project captured for the Tiny SE. The Tiny 3 was
 tested on a real camera: it has the same Extension Unit and status block
-layout, and most settings were set and read back, but its gesture and
-preset commands differ from the Tiny SE's, so those are left unbound
-(details in `profiles/tiny-3.toml`). Meet 2 and Meet SE don't have
+layout, and most settings were set and read back. Its gesture settings use
+a different command, recorded from OBSBOT's SDK and tested on the camera;
+its preset commands also differ and are left unbound (details in
+`profiles/tiny-3.toml`). Meet 2 and Meet SE don't have
 the Tiny line's mechanical gimbal, so gimbal velocity, presets and gimbal
 reset/reverse are left unbound for them rather than guessed. If something
 doesn't work, or you can capture one of these models' traffic, see

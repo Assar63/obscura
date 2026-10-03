@@ -141,20 +141,42 @@ for what was set and read back.
 constant. It carries no gesture switches, unlike the Tiny SE's 12-byte
 reply with gestures at [3..6].
 
-**The Tiny SE's gesture commands are accepted and ignored.** Sent one at a
-time from Linux, checked by making gestures at the camera (it nods when it
-recognises one): Locked Target `c430` = 0 left the palm gesture working
-(it still locked on and tracked), and Zoom `4431` = 0 left the "L" zoom
-gesture working. Dynamic Zoom `4433` and Direction Flip `c433` = 0 changed
-nothing either. Gestures work on the camera by default without any host
-software.
+**Gesture settings use one command** (not the Tiny SE's command per
+switch). Recorded from the traffic of OBSBOT's SDK (libdev 2.1.0,
+`aiSetGestureParaR` / `aiGetGestureParaR`) by logging its
+`UVCIOC_CTRL_QUERY` calls, then sent from Linux and tested on the camera:
 
-No readback for gestures was found: a recognised gesture changes nothing
-in the status block or the AI status, apart from tracking starting or
-stopping. The Tiny 3's gesture command is still unknown; OBSBOT's SDK
-names a single `aiSetGestureParaR` call, so it may be one command with a
-structured payload. A capture of OBSBOT Center toggling each gesture
-switch is needed (see `captures/TODO.md`).
+| Action | Frame | Payload |
+|---|---|---|
+| Write | flags `0x25`, dst 04 `4434` | u32 type, then u8 switch or f32 zoom factor |
+| Read | flags `0x21`, dst 04 `8434` | u32 type → reply u8 or f32 |
+
+| Type | Setting | Tested |
+|---|---|---|
+| 0 | Gesture master | ✅ off disables gestures |
+| 1 | Target selection: palm turns human tracking on/off | ✅ ignored while off |
+| 2 | Zoom: "L" zooms to the zoom factor and back | ✅ ignored while off |
+| 3 | Dynamic zoom | read back only |
+| 7 | Direction mirror (Tiny 2/SE per the SDK) | reads 0; not bound |
+| 8 | Zoom factor, f32 | ✅ 3.0 made "L" zoom to 3.00x |
+
+Switching the master off also switches types 1–3 off, and switching it on
+leaves them off, so gestures stay dead until each is switched on again. The
+profile's master switch therefore writes all four.
+
+The status light shows gestures: it blinks twice when one is recognised,
+then shows the new state (manual: green no target, blue human tracking,
+purple hand/desk/whiteboard, yellow target lost). Gestures need AI
+recognition running, and a busy background makes them less reliable.
+While a palm gesture starts tracking, status[24] briefly reads 6 before
+settling on 2 (human).
+
+Earlier tests: the Tiny SE's gesture commands (`c430`, `4431`, `4433`,
+`c433`) are accepted and ignored by the Tiny 3.
+
+On startup the SDK also sends the system module (dst 0d, `c81a`) a shell
+command, `touch /app/private/resolution.conf`, so it can run commands on
+the camera's Linux system. Nothing here sends that.
 
 Independent Tiny 3 notes, which agree with the above where they overlap:
 [joshualambert/obsbot-tiny3-linux](https://github.com/joshualambert/obsbot-tiny3-linux)

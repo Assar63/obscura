@@ -172,13 +172,18 @@ pub enum Level {
 }
 
 /// Readback through a framed query (selector 2). Responses are shared by
-/// every feature reading the same query.
+/// every feature reading the same query and payload.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QueryRead {
     pub dst: u8,
     #[serde(deserialize_with = "hex_cmd")]
     pub cmd: [u8; 2],
+    /// Frame flags other than a plain query (0x01), e.g. 0x21.
+    pub flags: Option<u8>,
+    /// Payload sent with the query, e.g. which setting to read.
+    #[serde(default, deserialize_with = "hex_bytes")]
+    pub payload: Vec<u8>,
     /// Response offset holding the value. With several, the feature is a
     /// toggle that is on when any of the bytes is non-zero.
     pub offsets: Vec<usize>,
@@ -461,7 +466,15 @@ mod tests {
         assert_eq!(p.id, "tiny-3");
         assert!(p.presets.is_none());
         assert!(p.gimbal_velocity.is_some());
-        assert!(!p.features.contains_key(&FeatureId::GestureControl));
+        let Binding::Vendor(b) = &p.features[&FeatureId::GestureZoom] else {
+            panic!("gesture zoom is not a vendor binding");
+        };
+        let q = b.query.as_ref().unwrap();
+        assert_eq!(
+            (q.flags, q.payload.as_slice()),
+            (Some(0x21), &[2, 0, 0, 0][..])
+        );
+        assert!(!p.features.contains_key(&FeatureId::GestureDirectionFlip));
         assert!(matches!(
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)

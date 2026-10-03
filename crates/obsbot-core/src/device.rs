@@ -36,10 +36,13 @@ fn hex(cmd: [u8; 2]) -> String {
     format!("{:02x}{:02x}", cmd[0], cmd[1])
 }
 
+/// A query's destination, command and payload.
+type QueryKey = (u8, [u8; 2], Vec<u8>);
+
 /// Status block and query responses shared by the features being read.
 struct Readback {
     status: Option<Vec<u8>>,
-    queries: HashMap<(u8, [u8; 2]), Option<Vec<u8>>>,
+    queries: HashMap<QueryKey, Option<Vec<u8>>>,
 }
 
 /// Details reported by the camera's system module.
@@ -468,15 +471,25 @@ impl Device {
             rb.status = self.status_block();
         }
         for q in vendor().filter_map(|b| b.query.as_ref()) {
-            if let std::collections::hash_map::Entry::Vacant(e) = rb.queries.entry((q.dst, q.cmd)) {
-                e.insert(self.query(q.dst, q.cmd).ok());
+            if let std::collections::hash_map::Entry::Vacant(e) =
+                rb.queries.entry((q.dst, q.cmd, q.payload.clone()))
+            {
+                let flags = q.flags.unwrap_or(protocol::FLAGS_QUERY);
+                e.insert(
+                    self.query_with(q.dst, q.cmd, flags, &q.payload)
+                        .ok()
+                        .flatten(),
+                );
             }
         }
         rb
     }
 
     fn query_value(q: &QueryRead, rb: &Readback) -> Option<i64> {
-        let payload = rb.queries.get(&(q.dst, q.cmd))?.as_ref()?;
+        let payload = rb
+            .queries
+            .get(&(q.dst, q.cmd, q.payload.clone()))?
+            .as_ref()?;
         if let (ValueEncoding::F32, [o]) = (q.value, q.offsets.as_slice()) {
             let v = f32::from_le_bytes(payload.get(*o..*o + 4)?.try_into().ok()?);
             return Some((v as f64 * q.scale as f64).round() as i64);
