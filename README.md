@@ -42,6 +42,7 @@ using a vendor protocol reverse-engineered from USB captures.
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
 | OBSBOT Tiny 2 | `3564:fef8` | Assumed supported, cross-checked (see below) |
+| OBSBOT Tiny 3 | `3564:ff02` | Supported except gestures and presets (firmware 6.6.8.3, see below) |
 | OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed supported, unverified (see below) |
 | OBSBOT Tiny 4K | `3564:fef4` | Assumed supported, unverified (see below) |
 | OBSBOT Meet 2 | `3564:fefb` | Assumed supported minus gimbal features, unverified (see below) |
@@ -49,24 +50,28 @@ using a vendor protocol reverse-engineered from USB captures.
 | Other OBSBOT models | `3564:*` | Standard UVC controls only (see below) |
 | Any other UVC webcam | – | Standard UVC controls, with `--all` / `OBSBOT_ALL_CAMERAS=1` |
 
-Other OBSBOT models (Meet, Meet 4K, Tiny 3, …) are detected and get the
+Other OBSBOT models (Meet, Meet 4K, …) are detected and get the
 standard webcam controls. Their vendor features stay disabled until someone
 contributes USB captures, because command IDs and status layouts may differ
 between models.
 
-The Tiny 2, Tiny 2 Lite, Tiny 4K, Meet 2 and Meet SE are exceptions:
-`profiles/tiny-2.toml`, `tiny-2-lite.toml`, `tiny-4k.toml`, `meet-2.toml`
-and `meet-se.toml` reuse the Tiny SE's vendor bindings on the assumption
-that they share the same protocol. This is **unverified** for each
-specific model, but it isn't a blind guess either — OBSBOT's own SDK
-groups all of these under one status-block struct internally (a different
-one from plain Meet/Meet 4K), and [cgevans/tiny2](https://github.com/cgevans/tiny2),
-an independent from-scratch reverse-engineering of the Tiny 2, confirms
-several of the same command and tag IDs this project captured for the
-Tiny SE. Meet 2 and Meet SE don't have the Tiny line's mechanical gimbal,
-so gimbal velocity, presets and gimbal reset/reverse are left unbound for
-them rather than guessed. If something doesn't work, or you can capture
-one of these models' traffic, see
+The Tiny 2, Tiny 3, Tiny 2 Lite, Tiny 4K, Meet 2 and Meet SE are exceptions:
+`profiles/tiny-2.toml`, `tiny-3.toml`, `tiny-2-lite.toml`, `tiny-4k.toml`,
+`meet-2.toml` and `meet-se.toml` reuse the Tiny SE's vendor bindings on the
+assumption that they share the same protocol. This is **unverified** for
+each specific model, but it isn't a blind guess either — OBSBOT's own SDK
+groups the other five under one status-block struct internally (a
+different one from plain Meet/Meet 4K), and
+[cgevans/tiny2](https://github.com/cgevans/tiny2), an independent
+from-scratch reverse-engineering of the Tiny 2, confirms several of the
+same command and tag IDs this project captured for the Tiny SE. The Tiny 3 was
+tested on a real camera: it has the same Extension Unit and status block
+layout, and most settings were set and read back, but its gesture and
+preset commands differ from the Tiny SE's, so those are left unbound
+(details in `profiles/tiny-3.toml`). Meet 2 and Meet SE don't have
+the Tiny line's mechanical gimbal, so gimbal velocity, presets and gimbal
+reset/reverse are left unbound for them rather than guessed. If something
+doesn't work, or you can capture one of these models' traffic, see
 [Adding support for another camera](#adding-support-for-another-camera).
 
 ## Features

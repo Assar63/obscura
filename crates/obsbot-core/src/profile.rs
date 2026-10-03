@@ -24,6 +24,7 @@ const BUILTIN: &[(&str, &str)] = &[
         include_str!("../../../profiles/tiny-se.toml"),
     ),
     ("tiny-2.toml", include_str!("../../../profiles/tiny-2.toml")),
+    ("tiny-3.toml", include_str!("../../../profiles/tiny-3.toml")),
     (
         "tiny-2-lite.toml",
         include_str!("../../../profiles/tiny-2-lite.toml"),
@@ -448,6 +449,19 @@ mod tests {
         let p = DeviceProfile::for_usb(0x3564, 0xfef8);
         assert_eq!(p.id, "tiny-2");
         assert!(p.presets.is_some());
+        assert!(matches!(
+            p.features[&FeatureId::MirrorImage],
+            Binding::Vendor(_)
+        ));
+    }
+
+    #[test]
+    fn tiny_3_matches_by_product_id() {
+        let p = DeviceProfile::for_usb(0x3564, 0xff02);
+        assert_eq!(p.id, "tiny-3");
+        assert!(p.presets.is_none());
+        assert!(p.gimbal_velocity.is_some());
+        assert!(!p.features.contains_key(&FeatureId::GestureControl));
         assert!(matches!(
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)
