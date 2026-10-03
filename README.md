@@ -138,6 +138,10 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
     libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
+Or let `tools/bootstrap.sh dev` check all of this and install what's
+missing (apt packages, Rust via rustup, Node 22 via snap, pnpm). Add
+`--check` to only report.
+
 #### 2. Build
 
 ```sh
@@ -351,6 +355,23 @@ cargo build                        # workspace: obsbot-core, obsbotctl, obscura
 cd app && pnpm check               # Svelte/TypeScript type checking
 cd app && pnpm tauri dev           # run the app with hot reload
 ```
+
+### Building the snap locally
+
+```sh
+tools/bootstrap.sh snap            # snapcraft, LXD, and firewall rules if needed
+snapcraft pack --use-lxd           # builds from committed files only
+sudo snap install --dangerous obscura_*.snap
+sudo snap connect obscura:camera
+```
+
+On machines that also run Docker, Docker's `DROP` forwarding policy cuts
+LXD containers off the network, and snapcraft fails with "A network related
+operation failed in a context of no network access". The bootstrap script
+detects this and adds two `DOCKER-USER` rules for `lxdbr0`. They don't
+survive a reboot, so run it again before the next build. A `--dangerous`
+install doesn't update from the store; `sudo snap refresh obscura --amend`
+switches back.
 
 ### Continuous integration and releases
 
