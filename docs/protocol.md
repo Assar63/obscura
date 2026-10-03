@@ -128,3 +128,36 @@ state (1 awake, 3 asleep), [10..12] sleep time, [13] AF mode, [14] AF on,
 [15] focus, [16] mic during sleep, [19] mirror, [24] AI mode, [25] auto gain,
 [29] sleep background mirror, [31] 0x3c/0x1e (changes with [9]), [33] status
 light, [34] microphone flags.
+
+## OBSBOT Tiny 3 (`3564:ff02`)
+
+Tested from Linux on firmware 6.6.8.3 (bcdDevice 5.10), without captures.
+Same Extension Unit (unit 2, same GUID, 60-byte selectors) and the same
+selector 6 status block layout as the Tiny SE; see `profiles/tiny-3.toml`
+for what was set and read back.
+
+**Query `0401` (wire 0x0104) is the AI status.** On the Tiny 3 it returns
+20 bytes: [0] tracking active, [1] AI mode (matches status[24]), [4] 0xc8,
+constant. It carries no gesture switches, unlike the Tiny SE's 12-byte
+reply with gestures at [3..6].
+
+**The Tiny SE's gesture commands are accepted and ignored.** Sent one at a
+time from Linux, checked by making gestures at the camera (it nods when it
+recognises one): Locked Target `c430` = 0 left the palm gesture working
+(it still locked on and tracked), and Zoom `4431` = 0 left the "L" zoom
+gesture working. Dynamic Zoom `4433` and Direction Flip `c433` = 0 changed
+nothing either. Gestures work on the camera by default without any host
+software.
+
+No readback for gestures was found: a recognised gesture changes nothing
+in the status block or the AI status, apart from tracking starting or
+stopping. The Tiny 3's gesture command is still unknown; OBSBOT's SDK
+names a single `aiSetGestureParaR` call, so it may be one command with a
+structured payload. A capture of OBSBOT Center toggling each gesture
+switch is needed (see `captures/TODO.md`).
+
+Independent Tiny 3 notes, which agree with the above where they overlap:
+[joshualambert/obsbot-tiny3-linux](https://github.com/joshualambert/obsbot-tiny3-linux)
+(AI mode short setting `16 02 <category> <submode>`, sleep, recenter) and
+[brendanwelsh/obsbot-tiny3-protocol](https://github.com/brendanwelsh/obsbot-tiny3-protocol)
+(which Tiny 2 commands the Tiny 3 ignores, and its AI quick status).

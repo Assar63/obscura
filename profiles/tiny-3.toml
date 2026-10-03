@@ -57,9 +57,12 @@ pitch_sign = -1.0
 v4l2 = 0x009a0901
 map = [[1, 0], [0, 1]]
 
-# No gesture features: the Tiny 3 answers the gesture query (dst 04 `0401`)
-# with a different 20-byte layout (`01 00 00 00 c8 00 ...`), and writing
-# Direction Flip (`c433`) changed nothing in it. Pending captures.
+# No gesture features. Query `0401` is the AI status on the Tiny 3 (20
+# bytes: [0] tracking, [1] AI mode, [4] 0xc8) with no gesture switches, and
+# the Tiny SE's gesture commands are accepted and ignored: with Locked
+# Target `c430` or Zoom `4431` set to 0, the palm and "L" gestures still
+# worked. Gestures work on the camera by default. Pending a capture of
+# OBSBOT Center; see "OBSBOT Tiny 3" in docs/protocol.md.
 
 [features.mirror_image]
 status = 19

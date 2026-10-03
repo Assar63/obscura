@@ -54,6 +54,17 @@ differed from the TODO steps), but nothing is blocked on them.
 - **Expect:** OK sends the same four frames as the master switch (`c430`, `4431`, `4433`,
   `c433`) with 0. No sends nothing. This confirms the current implementation.
 
+### `60-tiny3-gestures` (OBSBOT Tiny 3, not the Tiny SE)
+- **Camera:** a Tiny 3 (`3564:ff02`). Note its firmware version in NOTES.
+- **Preview:** closed
+- **Actions:** Gesture Control master switch ON → OFF → ON → OFF. Then each gesture
+  sub-switch the app shows (Locked Target, Zoom, Dynamic Zoom, and anything new), ON → OFF →
+  ON → OFF, then the zoom factor slider: min, max, middle. Screenshot the gesture panel.
+- **Expect:** a different command from the Tiny SE's (`c430`/`4431`/`4433`/`c433`), which the
+  Tiny 3 accepts and ignores. Possibly one command with a structured payload (the SDK names
+  `aiSetGestureParaR`). Also look for a query that reads the gesture state back.
+- **Unlocks:** gesture switches for the Tiny 3. See "OBSBOT Tiny 3" in `docs/protocol.md`.
+
 ## 2. Optional, do last
 
 ### `52-sleep-bg-custom`
