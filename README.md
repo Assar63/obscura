@@ -363,6 +363,7 @@ cd app && pnpm tauri dev           # run the app with hot reload
 
 ```sh
 tools/bootstrap.sh snap            # snapcraft, LXD, and firewall rules if needed
+snapcraft clean obscura --use-lxd  # after new commits, or pack reuses the old build
 snapcraft pack --use-lxd           # builds from committed files only
 sudo snap install --dangerous obscura_*.snap
 sudo snap connect obscura:camera
