@@ -81,35 +81,39 @@ profiles use lands on the field the SDK names. The struct is
 
 ## 2. Corrections (P1)
 
-- [ ] **AI mode values 4–15.** The catalog only knows 0 Off, 1 Group,
-  2 Human, 3 Hand, so the app shows a raw "6" while the AI mode changes.
+- [x] **AI mode values 4–15.** The catalog only knows 0 Off, 1 Group,
+  2 Human, 3 Hand, so the app showed a raw "6" while the AI mode changed.
   `AiWorkModeType` is 4 Whiteboard, 5 Desk, **6 Switching** (a change in
   progress), 7 Speech (Tiny 3's voice tracking), 14 Portrait tracking (Tiny
-  3). Show 6 as the previous value or "Switching…", and add the Tiny 3's
-  modes (item in §3).
-- [ ] **Fix the status byte notes in `docs/protocol.md`.** [1] and [2] are
+  3). *Done:* profiles mark 6 as `transient`, and the app keeps showing the
+  last settled mode. The Tiny 3's extra modes are a feature (§3).
+- [x] **Fix the status byte notes in `docs/protocol.md`.** *Done:* the
+  SDK layout is now a table there, with measured bytes marked. [1] and [2] are
   `rvd` in the SDK; [2] still works as "asleep" on the Tiny SE and Tiny 3.
   [4–5] are the zoom ratio and [17] the field of view, not "tracking state".
   [31] is the stream fps. [43] is an event counter. Add the table above.
-- [ ] **Auto sleep "off".** The SDK says `auto_sleep_time` 0 means "do not
-  sleep". OBSCura writes a negative time, which is what OBSBOT Center sent
-  to the Tiny SE. Check that the negative value disables sleep on the Tiny 3;
-  [joshualambert/obsbot-tiny3-linux](https://github.com/joshualambert/obsbot-tiny3-linux)
-  confirmed 0 does on a Tiny 3 Lite.
-- [ ] **Pickup distance labels.** The SDK names `audio_opt.distance` 0 near,
+- [x] **Auto sleep "off".** The SDK says `auto_sleep_time` 0 means "do not
+  sleep"; OBSCura writes a negative time, as OBSBOT Center did for the Tiny
+  SE. *Measured:* with −120 and nothing streaming, the Tiny 3 stayed awake
+  for 3 minutes (with 120 it sleeps after 2). No change needed.
+- [x] **Pickup distance labels.** *Done:* Close, Standard, Far ("Close"
+  is OBSBOT Center's label for 0 on the Tiny SE, so it stays). The SDK names `audio_opt.distance` 0 near,
   1 standard, 2 far. The app shows Close, Medium, Far, with Medium a
   guess (`captures/TODO.md` §0). Use Near, Standard, Far.
-- [ ] **Noise reduction range.** The SDK documents `noise_cancellation` as
+- [x] **Noise reduction range.** The SDK documents `noise_cancellation` as
   0 off, 1 on, but the Tiny SE captures show values 0–3 and the Tiny 3
-  reports 3. Check whether the Tiny 3 treats it as a switch or as levels,
-  and pick labels to match.
-- [ ] **Status light: two bytes.** [33] is the brightness (0 = off) and [45]
-  `led_enable` is a separate switch. The profile only uses [33]. Find out
-  what [45] does on the Tiny 3 (trace the SDK's LED call) before relying
-  on [33] alone.
-- [ ] **Zoom readback from the status block.** [4–5] holds the zoom ratio
-  0–100, so zoom could be read with the shared status read instead of the
-  extra `0468` query. Check the mapping to 1–4x on the Tiny 3 first.
+  reports 3. *Measured:* the Tiny 3 takes and reports 0–3, so the levels
+  stay. Whether they sound different is untested.
+- [x] **Status light: two bytes.** [33] is the brightness (0 = off) and [45]
+  `led_enable` is a separate switch. *Fixed:* on the Tiny 3, writing 0
+  clears [45] and keeps the brightness at [33], so the app showed the light
+  as on while it was off. The Tiny 3 profile now reads the switch from [45],
+  and switching on writes the brightness from [33] (new `level_status`
+  option).
+- [x] **Zoom readback from the status block.** [4–5] holds the zoom ratio
+  0–100. *Measured:* linear, 1x–4x = 0–100 (2x 33, 3x 67). *Decision:* keep
+  the `0468` query. It returns an exact float, and switching would need a
+  new scaling option for one query saved per refresh.
 
 ---
 

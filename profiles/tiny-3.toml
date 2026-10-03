@@ -120,6 +120,8 @@ frames = [{ dst = 0x04, cmd = "843b" }]
 # 0 off, 1 group, 2 human, 3 hand tracking
 [features.ai_mode]
 status = 24
+# 6 is AiWorkModeSwitching in OBSBOT's SDK: a mode change in progress.
+transient = [6]
 short = { id = 0x16, value = "u16" }
 
 # Sleep/resume: ISP u32, 1 sleep, 0 wake. status[2] is 1 while asleep.
@@ -198,11 +200,14 @@ default_level = 30
 status = 29
 short = { id = 0x0e, prefix = "02" }
 
-# Status light: 0 off, 1..3 brightness.
+# Status light. Unlike the Tiny SE, writing 0 keeps the brightness at [33]
+# and clears led_enable at [45]; writing 1..3 sets the brightness and
+# switches it on again. Measured on the camera.
 [features.status_light]
-status = 33
+status = 45
 short = { id = 0x1a }
 level = "switch"
+level_status = 33
 default_level = 2
 
 [features.status_light_brightness]

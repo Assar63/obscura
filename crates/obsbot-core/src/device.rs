@@ -64,6 +64,8 @@ pub struct Device {
     /// Last non-zero level of each switch/level setting, by status offset,
     /// so switching it back on restores the level.
     levels: Mutex<HashMap<usize, i64>>,
+    /// Last value read that wasn't transient (see `VendorBinding::transient`).
+    settled: Mutex<HashMap<FeatureId, i64>>,
     /// Values saved by a host-side lock, while locked.
     locked: Mutex<Option<Vec<(FeatureId, i64)>>>,
 }
@@ -81,6 +83,7 @@ impl Device {
             seq: AtomicU16::new(0),
             written: Mutex::new(HashMap::new()),
             levels: Mutex::new(HashMap::new()),
+            settled: Mutex::new(HashMap::new()),
             locked: Mutex::new(None),
         })
     }
@@ -286,13 +289,17 @@ impl Device {
 
     /// The last level seen for a switch/level setting.
     fn level(&self, b: &VendorBinding) -> i64 {
-        b.status
+        b.level_status
+            .or(b.status)
             .and_then(|o| self.levels.lock().unwrap().get(&o).copied())
             .or(b.default_level)
             .unwrap_or(1)
     }
 
     fn remember_level(&self, b: &VendorBinding, raw: i64) {
+        if b.level_status.is_some() {
+            return; // `raw` is the switch, not the level
+        }
         if let (Some(o), Some(_), true) = (b.status, b.level, raw != 0) {
             self.levels.lock().unwrap().insert(o, raw.abs());
         }
@@ -316,11 +323,19 @@ impl Device {
         let Some(level) = b.level else {
             return if b.invert { (value == 0) as i64 } else { value };
         };
-        let current = self
-            .status_block()
-            .and_then(|block| Self::status_value(b, &block));
+        let block = self.status_block();
+        let current = block
+            .as_deref()
+            .and_then(|block| Self::status_value(b, block));
         if let Some(raw) = current {
             self.remember_level(b, raw);
+        }
+        if let Some(o) = b.level_status {
+            if let Some(&l) = block.as_deref().and_then(|block| block.get(o)) {
+                if l != 0 {
+                    self.levels.lock().unwrap().insert(o, l as i64);
+                }
+            }
         }
         match level {
             Level::Switch if value != 0 => self.level(b),
@@ -535,7 +550,16 @@ impl Device {
                 let raw = status.and_then(|block| Self::status_value(b, block));
                 let read = match &b.query {
                     Some(q) => Self::query_value(q, rb),
-                    None => raw.map(|r| self.setting_to_feature(b, r)),
+                    None if raw.is_some_and(|r| b.transient.contains(&r)) => {
+                        self.settled.lock().unwrap().get(&id).copied()
+                    }
+                    None => {
+                        let v = raw.map(|r| self.setting_to_feature(b, r));
+                        if let Some(v) = v {
+                            self.settled.lock().unwrap().insert(id, v);
+                        }
+                        v
+                    }
                 };
                 state.value = match written {
                     Some((v, at)) if at.elapsed() < STATUS_LAG => Some(v),

@@ -112,7 +112,7 @@ the gesture switches that were on; unlocking restores the AI mode only.
 | Mic Status During Sleep | `13 01 v` | [16] | 0/1 |
 | Auto Gain | `17 01 v` | [25] | 0/1 |
 | Status Light | `1a 01 v` | [33] | 0 off, 1–3 brightness |
-| Radio Distance | `1b 01 v` | [34] low bits | 0 Close, 1–2 (labels pending) |
+| Radio Distance | `1b 01 v` | [34] low bits | 0 Close, 1 Standard, 2 Far (SDK: near, standard, far) |
 | Microphone enabled (OBSBOT Center: "Disable Microphone", inverted) | `1c 01 v` | [34] bit 4 (0x10) | 1 enabled, 0 disabled ✅; the camera re-enumerates on USB, without its audio interface when disabled |
 
 ## Standard UVC controls used by OBSBOT Center
@@ -122,12 +122,57 @@ selectors 8 and 6; Exposure Compensation is Processing Unit selector 1
 (backlight compensation, 0..18 = −3..+3 EV in 1/3 steps); Anti-Flicker is
 PU selector 5; Contrast and Saturation are PU selectors 3 and 7.
 
-Status block bytes seen changing: [1] locked target, [2] asleep, [4] and
-[17] tracking state, [6] HDR, [7] AE mode, [8] noise reduction, [9] device
-state (1 awake, 3 asleep), [10..12] sleep time, [13] AF mode, [14] AF on,
-[15] focus, [16] mic during sleep, [19] mirror, [24] AI mode, [25] auto gain,
-[29] sleep background mirror, [31] 0x3c/0x1e (changes with [9]), [33] status
-light, [34] microphone flags.
+## Status block layout (selector 6)
+
+OBSBOT's SDK headers (`libdev` 2.1.0, `Device::CameraStatus::tiny`, packed,
+bitfields LSB first) name every byte. The SDK uses this layout for the
+Tiny, Tiny 4K, Tiny 2 series, Tiny SE, Meet 2 and Meet SE, and the Tiny 3
+matches it too. Bytes marked ✅ were measured from Linux.
+
+| Byte | Field | Notes |
+|---|---|---|
+| 0 | `ai_target` / `length` | `2e` (46) on the Tiny 3 |
+| 1–2 | `rvd1`, `rvd2` ("not used") | [1] follows Locked Target on the Tiny SE; [2] is 1 while asleep ✅ |
+| 3 | `anti_flicker` | |
+| 4–5 | `zoom_ratio`, u16 | 0–100 = 1x–4x, linear ✅ (Tiny 3: 2x 33, 3x 67, 4x 100) |
+| 6 | `hdr` | ✅ |
+| 7 | `face_ae` (AE mode) | ✅ |
+| 8 | `noise_cancellation` | SDK says on/off; the Tiny SE and Tiny 3 take and report 0–3 ✅ |
+| 9 | `dev_status` | 1 run, 3 sleep, 4 privacy |
+| 10–11 | `auto_sleep_time`, i16 s | SDK: 0 means never sleep |
+| 12 | `vertical` | portrait mode |
+| 13 | `face_auto_focus` (AF mode) | ✅ |
+| 14 | `auto_focus` | |
+| 15 | `manual_focus_value` | |
+| 16 | `sleep_micro` | mic during sleep ✅ |
+| 17 | `fov` | 0 86°, 1 78°, 2 65°, 3 none |
+| 18 | `rvd3` | |
+| 19 | `image_flip_hor` | mirror ✅ |
+| 20 | `voice_ctrl_language` | 0 Chinese, 1 English |
+| 21 | `voice_ctrl` | one bit per voice command |
+| 22–23 | `voice_ctrl_zoom`, u16 | 0–100 |
+| 24 | `ai_mode` (AiWorkModeType) | 0 off, 1 group, 2 human, 3 hand, 4 whiteboard, 5 desk, **6 switching** (a change in progress) ✅, 7 speech, 14 portrait tracking |
+| 25 | `audio_auto_gain` | ✅ |
+| 26 | `sleep_bg_type` | bits 0–3 image, 4–7 video |
+| 27 | `bg_img_idx` | |
+| 28 | `ai_sub_mode` (AiSubModeType) | normal, upper body, close-up, headless, lower body |
+| 29 | `bg_img_mirror` | ✅ |
+| 30 | `hdr_support` | HDR possible in the current mode |
+| 31 | `fps` | current stream fps ✅ (`1e` 30, `0f` 15, `3c` 60) |
+| 32 | `boot_mode` | bits 0–4 sub-mode, 5–7 AI mode |
+| 33 | `led_brightness_level` | 0 off, 1–3; on the Tiny 3, writing 0 keeps the level here ✅ |
+| 34 | `audio_opt` | bits 0–3 pickup distance (0 near, 1 standard, 2 far), bit 4 UAC enabled ✅ |
+| 35 | `ble_status` | |
+| 36 | `ai_tracker_speed` | 0 normal, 2 motion |
+| 37 | `live_stream_mode` | |
+| 38–39 | `gesture_para` | Meet 2 / Meet SE gestures |
+| 40 | `audio_mode` | bits 0–2 source, 3–7 AudioModeType (omni, stereo, front, back, dipole, music) |
+| 41 | `wireless_mic` | Tiny 3 |
+| 42 | `auto_frame` | low nibble landscape, high nibble portrait |
+| 43 | `event_count` | counts camera events ✅ |
+| 44 | `kws_extend` | wake-word flags |
+| 45 | `led_enable` | Tiny 3: status light on/off ✅ (see "OBSBOT Tiny 3") |
+| 46 | `doa_set` | Tiny 3: sound-source assisted tracking and range |
 
 ## OBSBOT Tiny 3 (`3564:ff02`)
 
@@ -177,6 +222,12 @@ Earlier tests: the Tiny SE's gesture commands (`c430`, `4431`, `4433`,
 On startup the SDK also sends the system module (dst 0d, `c81a`) a shell
 command, `touch /app/private/resolution.conf`, so it can run commands on
 the camera's Linux system. Nothing here sends that.
+
+**Status light: on/off and brightness are separate.** Short setting `1a`
+with 1–3 sets the brightness ([33]) and switches the light on ([45] = 1).
+With 0 it switches the light off ([45] = 0) and leaves the brightness at
+[33], unlike the Tiny SE, where [33] drops to 0. Switching on again means
+writing the brightness from [33].
 
 Independent Tiny 3 notes, which agree with the above where they overlap:
 [joshualambert/obsbot-tiny3-linux](https://github.com/joshualambert/obsbot-tiny3-linux)

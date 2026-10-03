@@ -221,6 +221,15 @@ pub struct VendorBinding {
     pub level: Option<Level>,
     /// The level assumed before one has been seen (see `level`).
     pub default_level: Option<i64>,
+    /// Status byte holding the level, for cameras that keep it apart from
+    /// the switch (the Tiny 3's status light: brightness at 33, on/off at
+    /// 45). Switching on writes the level found there.
+    pub level_status: Option<usize>,
+    /// Raw status values the camera reports while a change is in progress
+    /// (e.g. AI mode 6, "switching"); the last settled value is shown
+    /// instead.
+    #[serde(default)]
+    pub transient: Vec<i64>,
 }
 
 /// A host-side lock (OBSBOT Center's AI lock): locking saves `restore`
