@@ -196,6 +196,47 @@ profiles use lands on the field the SDK names. The struct is
 
 ---
 
+### Vox SE wireless microphone (Tiny 3)
+
+The Vox SE pairs with a receiver inside the Tiny 3 (up to two mics, TX1
+and TX2). `libdev` exports a full mic API that its header doesn't declare
+(`cameraGetTWSInfoR`, `cameraTX*`, `cameraSetTWS*`, `cameraSetAudioSourceR`,
+`cameraSetAudioSelect`); the data types (`DevTWSInfo`, `DevTXType`,
+`DevTWSKeyType`, `AudioSelectAttr`) are in the header. Traced on a Tiny 3
+(firmware 6.6.8.3) with no mic paired:
+
+| Call | Frame | Result |
+|---|---|---|
+| Mic info (`cameraGetTWSInfoR`) | query dst 02 `02c0` | 16 bytes, all 0 without mics |
+| Auto audio select, read | query dst 02 `828a` | `01 00 00`: auto supported, off, no pairing record |
+| Auto audio select, write | dst 02 `c28a`, u8 | ✅ 1 made the camera pick the built-in mics (source 0) |
+| Selected audio source, read | query dst 02 `428a` | u8, 0 built-in |
+| Audio source, write (`cameraSetAudioSourceR`) | | ✅ 3 set status [40] bits 0–2 to 3 (Bluetooth) |
+| Per-mic reads: battery, charging, mute, gain, name, version, serial | query to dst `58` (TX1) / `98` (TX2), e.g. `1330` | no answer without a paired mic |
+| Pair enable/disable for TXn (`cameraTXSetPairEnabled`) | flags 0x05 to dst `58`/`98`, `13 0c` on / `53 0c` off | sent *to the mic*, so it can't start pairing |
+| Clear pairing for TXn | flags 0x05 to dst `58`/`98`, `93 0e` | not tested |
+| `cameraDevBluetoothMatchU` | nothing sent | |
+| `setBlePairingEnable(on, 0)` | dst `13` `0e0c`, u8 | BLE radio (remote control?); no effect on [41] |
+
+**Pairing from Linux isn't solved.** None of these put the camera into
+pairing (status [41] stayed 0), and taking the mic out of its case with
+auto select on didn't pair either. OBSBOT's guide pairs through OBSBOT
+Center (Audio → OBSBOT Microphone → add TX1/TX2, while holding the mic's
+button for 6 s), and says the mic reconnects on its own afterwards.
+
+- [ ] **Pair once with OBSBOT Center** (Windows or macOS), then continue on
+  Linux. With a mic paired, trace and test the per-mic reads and writes.
+- [ ] **Capture that pairing session** (`docs/CAPTURING.md`) to find the
+  camera-side pairing command.
+- [ ] **P2: Mic status.** Battery, charging and online state per mic (from
+  `DevTWSInfo` or the per-mic reads) in the More tab, maybe in the tray.
+- [ ] **P2: Mute and gain per mic.**
+- [ ] **P2: Button function.** `cameraSetTWSKeyTypeR`: track, switch
+  tracking mode, zoom 1x, record.
+- [ ] **P2: Audio source.** Built-in vs. wireless, and auto select.
+- [ ] **P3: Mic options.** `cameraSetTWSFuncR` (button, vibration, LED,
+  noise suppression, auto shutdown), `cameraSetTWSSoundModeR` (mono/stereo).
+
 ## 4. Other models
 
 - [ ] **Tiny 3 Lite (`3564:ff04`).** Same SDK family (`ObsbotProdTiny3Lite
