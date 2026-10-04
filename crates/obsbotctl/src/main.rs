@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, bail, Context, Result};
 use clap::{Parser, Subcommand};
 use obsbot_core::transport::uvc_xu;
-use obsbot_core::v4l2::UvcQuery;
+use obsbot_core::transport::v4l2::UvcQuery;
 use obsbot_core::{discover, CameraInfo, Device, FeatureId, FeatureKind};
 
 #[derive(Parser)]

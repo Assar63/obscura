@@ -36,11 +36,13 @@ impl Device {
             }
             Some(Binding::Lock(l)) => self.set_lock(&l.lock, value != 0)?,
             Some(Binding::Alsa(a)) => {
-                let card = crate::audio::find_card(&self.info.usb_path)
+                let card = crate::transport::audio::find_card(&self.info.usb_path)
                     .ok_or_else(|| Error::Audio("no USB audio found for this camera".into()))?;
                 match a.alsa {
-                    AlsaControl::CaptureVolume => crate::audio::set_volume(card, value)?,
-                    AlsaControl::CaptureSwitch => crate::audio::set_switch(card, value != 0)?,
+                    AlsaControl::CaptureVolume => crate::transport::audio::set_volume(card, value)?,
+                    AlsaControl::CaptureSwitch => {
+                        crate::transport::audio::set_switch(card, value != 0)?
+                    }
                 }
             }
             Some(Binding::Vendor(b)) => {

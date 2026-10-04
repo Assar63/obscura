@@ -42,6 +42,9 @@ event_queue = true
 # Receiver for OBSBOT's Vox SE wireless microphones (query `02c0`).
 wireless_mics = true
 
+# Status block layout: OBSBOT SDK `CameraStatus::tiny` (docs/protocol.md).
+status_layout = "tiny"
+
 [[match]]
 vendor_id = 0x3564
 product_id = 0xff02

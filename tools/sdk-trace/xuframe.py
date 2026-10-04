@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build, and optionally send, one framed command for XU selector 2, encoded
-exactly like crates/obsbot-core/src/protocol.rs (encode_command).
+exactly like crates/obsbot-core/src/vendor/protocol.rs (encode_command).
 
     xuframe.py DST CMD PAYLOAD [--flags 25] [--send /dev/videoN]
 
@@ -51,7 +51,7 @@ def frame(seq, dst, cmd, payload, flags=0x25):
 
 
 def selftest():
-    # 11-gesture-locked-target capture (protocol.rs locked_target_matches_capture)
+    # 11-gesture-locked-target capture (vendor/protocol.rs locked_target_matches_capture)
     assert frame(0x20, 4, bytes.fromhex("c430"), b"\0")[:17].hex() == \
         "aa2520000c00abda0a04c4300100e63f00"
 

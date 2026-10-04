@@ -3,7 +3,7 @@
 use crate::error::Result;
 use crate::features::{ChoiceOption, FeatureKind};
 use crate::profile::V4l2Binding;
-use crate::v4l2::{ControlInfo, VideoNode, CTRL_TYPE_MENU};
+use crate::transport::v4l2::{ControlInfo, VideoNode, CTRL_TYPE_MENU};
 
 /// Refines the catalog kind with the ranges/menus the driver reports.
 pub fn describe(info: &ControlInfo, binding: &V4l2Binding, kind: &FeatureKind) -> FeatureKind {

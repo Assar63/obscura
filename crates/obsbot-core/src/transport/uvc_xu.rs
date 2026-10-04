@@ -6,7 +6,7 @@
 
 use crate::error::Result;
 use crate::log;
-use crate::v4l2::{UvcQuery, VideoNode};
+use crate::transport::v4l2::{UvcQuery, VideoNode};
 
 /// Length in bytes of an XU control (UVC GET_LEN).
 pub fn len(node: &VideoNode, unit: u8, selector: u8) -> Result<u16> {

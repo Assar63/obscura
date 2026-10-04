@@ -18,11 +18,11 @@ use crate::log;
 use crate::profile::{
     AlsaControl, Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding,
 };
-use crate::protocol::{
+use crate::transport::v4l2::VideoNode;
+use crate::transport::{uvc_xu, v4l2_ctrl};
+use crate::vendor::protocol::{
     self, encode_command, encode_query, encode_short, encode_value, ValueEncoding,
 };
-use crate::transport::{uvc_xu, v4l2_ctrl};
-use crate::v4l2::VideoNode;
 
 mod gimbal;
 mod info;

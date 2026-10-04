@@ -364,7 +364,7 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 
 4. **Register** the file in `BUILTIN` in `crates/obsbot-core/src/profile.rs`,
    and add a test that encodes a command and compares it byte-for-byte with a
-   captured packet (see `crates/obsbot-core/src/protocol.rs`).
+   captured packet (see `crates/obsbot-core/src/vendor/protocol.rs`).
 
 Pull requests with captures and profiles for other models are very welcome.
 Please leave the raw `.pcapng` files out of the repository: they're large and

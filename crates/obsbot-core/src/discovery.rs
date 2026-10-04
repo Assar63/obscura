@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::profile::OBSBOT_VENDOR_IDS;
-use crate::v4l2::VideoNode;
+use crate::transport::v4l2::VideoNode;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CameraInfo {

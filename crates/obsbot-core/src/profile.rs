@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::error::{Error, Result};
 use crate::features::FeatureId;
-use crate::protocol::ValueEncoding;
+use crate::vendor::protocol::ValueEncoding;
 
 /// USB vendor IDs used by OBSBOT (Remo Tech). To be confirmed against the
 /// Tiny SE's descriptors from the captures.
@@ -298,8 +298,15 @@ pub enum Binding {
     Alsa(AlsaBinding),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StatusLayout {
+    /// `CameraStatus::tiny` in OBSBOT's SDK; see `vendor::status`.
+    Tiny,
+}
+
 /// A control of the camera's USB audio, through its ALSA mixer (see
-/// `audio.rs`).
+/// `transport::audio`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AlsaBinding {
@@ -325,8 +332,9 @@ pub struct DeviceProfile {
     /// its own parents) unless this profile sets it, except `match`.
     pub inherits: Option<String>,
     /// Inherited parts to leave out: feature ids, or `presets`,
-    /// `gimbal_velocity`, `firmware`, `system_info`, `event_queue`,
-    /// `wireless_mics` (e.g. the Meet 2 drops the Tiny SE's gimbal).
+    /// `gimbal_velocity`, `firmware`, `status_layout`, `system_info`,
+    /// `event_queue`, `wireless_mics` (e.g. the Meet 2 drops the Tiny SE's
+    /// gimbal).
     #[serde(default)]
     pub drop: Vec<String>,
     /// Vendor gimbal velocity command, used for joystick control.
@@ -339,6 +347,10 @@ pub struct DeviceProfile {
     pub presets: Option<Presets>,
     /// Where OBSBOT publishes this model's latest firmware.
     pub firmware: Option<crate::firmware::FirmwareSource>,
+    /// Layout of the selector 6 status block, for the live status, logging
+    /// what the camera changes on its own, and the wireless mic state. Only
+    /// `tiny` (OBSBOT SDK `CameraStatus::tiny`) is known.
+    pub status_layout: Option<StatusLayout>,
     /// Whether the camera's event queue (status[43], query `021d`) may be
     /// read: verified per model, since unknown queries can hang a camera.
     #[serde(default)]
@@ -385,6 +397,7 @@ impl DeviceProfile {
             p.presets = p.presets.or(base.presets);
             p.gimbal_velocity = p.gimbal_velocity.or(base.gimbal_velocity);
             p.firmware = p.firmware.or(base.firmware);
+            p.status_layout = p.status_layout.or(base.status_layout);
             for (id, b) in base.features {
                 p.features.entry(id).or_insert(b);
             }
@@ -394,6 +407,7 @@ impl DeviceProfile {
                 "presets" => p.presets = None,
                 "gimbal_velocity" => p.gimbal_velocity = None,
                 "firmware" => p.firmware = None,
+                "status_layout" => p.status_layout = None,
                 "system_info" => p.system_info = false,
                 "event_queue" => p.event_queue = false,
                 "wireless_mics" => p.wireless_mics = false,
@@ -469,7 +483,7 @@ mod tests {
 
     #[test]
     fn tiny_se_bindings_match_captures() {
-        use crate::protocol::{encode_short, encode_value};
+        use crate::vendor::protocol::{encode_short, encode_value};
         let p = DeviceProfile::for_usb(0x3564, 0xfeff);
         assert!(p.system_info);
         let short = |id: FeatureId, value: i64| {
@@ -541,6 +555,7 @@ mod tests {
         assert!(p.gimbal_velocity.is_some());
         assert_eq!(p.firmware.as_ref().map(|f| f.key.as_str()), Some("tiny3"));
         assert!(p.event_queue);
+        assert_eq!(p.status_layout, Some(StatusLayout::Tiny));
         assert!(p.wireless_mics);
         let Binding::Vendor(ai) = &p.features[&FeatureId::AiMode] else {
             panic!("AI mode is not a vendor binding");
@@ -575,6 +590,8 @@ mod tests {
         let meet_se = DeviceProfile::for_usb(0x3564, 0xfefe);
         assert!(meet_se.presets.is_none() && meet_se.gimbal_velocity.is_none());
         assert!(meet_se.features.contains_key(&FeatureId::MirrorImage));
+        assert_eq!(meet_se.status_layout, Some(StatusLayout::Tiny));
+        assert_eq!(DeviceProfile::for_usb(0x1234, 0x5678).status_layout, None);
         assert!(!meet_se.features.contains_key(&FeatureId::GimbalReset));
     }
 

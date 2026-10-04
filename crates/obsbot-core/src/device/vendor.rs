@@ -21,7 +21,7 @@ impl Device {
             &self.node,
             protocol::XU_UNIT,
             protocol::SEL_STATUS,
-            crate::v4l2::UvcQuery::GetCur,
+            crate::transport::v4l2::UvcQuery::GetCur,
         )
         .ok()
     }
@@ -56,7 +56,7 @@ impl Device {
                 &self.node,
                 protocol::XU_UNIT,
                 protocol::SEL_COMMAND,
-                crate::v4l2::UvcQuery::GetCur,
+                crate::transport::v4l2::UvcQuery::GetCur,
             )?;
             match protocol::decode_response(&frame, seq, cmd) {
                 Some((protocol::FLAGS_RESPONSE, p)) => return Ok(Some(p.to_vec())),

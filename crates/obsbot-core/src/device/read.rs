@@ -157,12 +157,15 @@ impl Device {
                 state.supported = true;
                 state.value = Some(self.locked.lock().unwrap().is_some() as i64);
             }
-            Some(Binding::Alsa(a)) => match crate::audio::find_card(&self.info.usb_path) {
+            Some(Binding::Alsa(a)) => match crate::transport::audio::find_card(&self.info.usb_path)
+            {
                 None => state.reason = Some("no USB audio found for this camera".into()),
                 Some(card) => {
                     let read = match a.alsa {
-                        AlsaControl::CaptureVolume => crate::audio::volume(card),
-                        AlsaControl::CaptureSwitch => crate::audio::switch(card).map(i64::from),
+                        AlsaControl::CaptureVolume => crate::transport::audio::volume(card),
+                        AlsaControl::CaptureSwitch => {
+                            crate::transport::audio::switch(card).map(i64::from)
+                        }
                     };
                     match read {
                         Ok(v) => {

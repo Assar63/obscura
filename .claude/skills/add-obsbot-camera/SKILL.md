@@ -47,7 +47,7 @@ should see.
   --stream-mmap --stream-to=/dev/null`). Only one app can stream at a time,
   so ask before taking the camera from the user.
 - **Status lag**: the status block reflects a write ~1–2.5 s later
-  (`STATUS_LAG` in `device.rs`).
+  (`STATUS_LAG` in `crates/obsbot-core/src/device/mod.rs`).
 - **Gestures get missed** now and then; the status light blinks twice when
   one is recognised. Ask the user to repeat before concluding anything.
 - A snap-confined process can't be killed from outside, even with sudo
@@ -150,7 +150,7 @@ cargo test -p obsbot-core --all-features
 (cd app && pnpm install --frozen-lockfile && pnpm check && pnpm build)
 ```
 
-- Add a byte-exact test in `protocol.rs` for each new frame encoding,
+- Add a byte-exact test in `vendor/protocol.rs` for each new frame encoding,
   using the traced or captured bytes.
 - Record measurements in `docs/protocol.md` (a section per model when it
   differs), tick or add items in `TODO.md`, and update `README.md`.

@@ -1,6 +1,9 @@
 //! Device information: firmware, update check, live status, wireless mics.
 
 use super::*;
+use crate::profile::StatusLayout;
+use crate::vendor::mics::{self, MicSlot};
+use crate::vendor::status::{self, LiveStatus, StatusBlock, AI_MODE_SWITCHING};
 
 impl Device {
     /// Compares the camera's firmware with the latest on OBSBOT's download
@@ -23,12 +26,15 @@ impl Device {
     }
 
     /// The camera's live state decoded from the status block, if it has one.
-    pub fn live_status(&self) -> Option<crate::status::LiveStatus> {
+    pub fn live_status(&self) -> Option<LiveStatus> {
+        if self.profile.status_layout != Some(StatusLayout::Tiny) {
+            return None;
+        }
         let block = self.status_block()?;
         self.observe(&block);
-        let mut st = crate::status::decode(&block)?;
+        let mut st = status::decode(&block)?;
         st.ai_mode_label = match st.ai_mode {
-            6 => "switching…".to_string(),
+            AI_MODE_SWITCHING => "switching…".to_string(),
             v => self.declared_kind(FeatureId::AiMode).format(v as i64),
         };
         Some(st)
@@ -37,15 +43,15 @@ impl Device {
     /// The wireless microphone slots (Vox SE), if the camera has a
     /// receiver: online state from the status block, battery and the rest
     /// from the mic info query.
-    pub fn wireless_mics(&self) -> Option<Vec<crate::status::MicSlot>> {
-        if !self.profile.wireless_mics {
+    pub fn wireless_mics(&self) -> Option<Vec<MicSlot>> {
+        if !self.profile.wireless_mics || self.profile.status_layout != Some(StatusLayout::Tiny) {
             return None;
         }
-        let status41 = *self.status_block()?.get(41)?;
+        let mic = StatusBlock(&self.status_block()?).mic()?;
         let info = self
             .query(protocol::DST_CAMERA, protocol::CMD_MIC_INFO)
             .unwrap_or_default();
-        Some(crate::status::decode_mics(&info, status41))
+        Some(mics::decode_mics(&info, mic))
     }
 
     /// Firmware version (e.g. "6.4.4.1") and serial number, for cameras

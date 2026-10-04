@@ -17,7 +17,7 @@ terms it comes with before tracing it. Never commit SDK files.
 | `evprobe.cpp` | Registers the SDK's event and status callbacks and logs everything it receives, with timestamps. This is how the camera's event queue (`021d`) was found. |
 | `evnames.py` | Adds `RmEventType` names to `evprobe` output: `evnames.py <SDK dir> < ev.log`. |
 | `xustatus.py` | Reads the selector 6 status block (read-only). `--raw` prints all 60 bytes. |
-| `xuframe.py` | Builds a selector 2 frame exactly like `protocol.rs`, and sends it with `--send`. |
+| `xuframe.py` | Builds a selector 2 frame exactly like `vendor/protocol.rs`, and sends it with `--send`. |
 | `build.sh` | Builds `xulog.so`, `gprobe`, `micprobe` and `evprobe` into `build/` (git-ignored). |
 
 ```sh
