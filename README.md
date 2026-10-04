@@ -337,8 +337,12 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 
    This prints each command with its destination, command ID and payload, and
    only the bytes of the polled status block that changed.
-3. **Write a profile** in `profiles/<model>.toml`, starting from
-   [`profiles/tiny-se.toml`](profiles/tiny-se.toml). Match it by USB ID,
+3. **Write a profile** in `profiles/<model>.toml`. If the model works like
+   one already supported, inherit it and only add what differs, as
+   [`profiles/tiny-3-lite.toml`](profiles/tiny-3-lite.toml) and
+   [`profiles/meet-2.toml`](profiles/meet-2.toml) do (`inherits`, and
+   `drop` for parts the model lacks). Otherwise start from
+   [`profiles/tiny-se.toml`](profiles/tiny-se.toml): match it by USB ID,
    inherit the standard controls, and bind features:
 
    ```toml

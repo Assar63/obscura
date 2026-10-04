@@ -78,11 +78,12 @@ tools/sdk-trace/xustatus.py /dev/videoN --raw   # selector 6 status block
 
 ## 2. Write the profile
 
-1. Copy the closest profile (`tiny-3.toml` for the Tiny 3 family,
-   `tiny-se.toml`/`tiny-2.toml` for older Tinys, `meet-2.toml` without a
-   gimbal) to `profiles/<model>.toml`. Set `id`, `name` and `[[match]]`
-   `product_id`, and write in the header comment what was verified and
-   how.
+1. Create `profiles/<model>.toml` that **inherits** the closest profile
+   (`tiny-3` for the Tiny 3 family, `tiny-se` for older Tinys, `meet-2`
+   without a gimbal) and only adds what differs: `id`, `name`, `[[match]]`
+   `product_id`, overrides, and `drop = [...]` for inherited parts the
+   model lacks (see `tiny-3-lite.toml`, `meet-2.toml`). Inheritance is
+   recursive. Write in the header comment what was verified and how.
 2. Register it in `BUILTIN` in `crates/obsbot-core/src/profile.rs` and
    add a test next to `tiny_3_matches_by_product_id`.
 3. Add it to the "Supported cameras" table in `README.md`, honestly

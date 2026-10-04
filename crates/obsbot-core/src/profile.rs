@@ -321,8 +321,14 @@ pub struct DeviceProfile {
     pub name: String,
     #[serde(default, rename = "match")]
     pub matches: Vec<UsbMatch>,
-    /// Profile whose features this one starts from.
+    /// Profile this one starts from: everything it has (resolved through
+    /// its own parents) unless this profile sets it, except `match`.
     pub inherits: Option<String>,
+    /// Inherited parts to leave out: feature ids, or `presets`,
+    /// `gimbal_velocity`, `firmware`, `system_info`, `event_queue`,
+    /// `wireless_mics` (e.g. the Meet 2 drops the Tiny SE's gimbal).
+    #[serde(default)]
+    pub drop: Vec<String>,
     /// Vendor gimbal velocity command, used for joystick control.
     pub gimbal_velocity: Option<GimbalVelocity>,
     /// Whether the camera answers the system module's firmware version and
@@ -358,29 +364,48 @@ impl DeviceProfile {
             .iter()
             .map(|(name, text)| Self::parse(name, text).expect("builtin profile must parse"))
             .collect();
-        parsed
-            .iter()
-            .map(|p| {
-                let mut p = p.clone();
-                if let Some(parent) = p
-                    .inherits
-                    .as_ref()
-                    .and_then(|id| parsed.iter().find(|q| &q.id == id))
-                {
-                    p.system_info |= parent.system_info;
-                    if p.presets.is_none() {
-                        p.presets = parent.presets.clone();
-                    }
-                    if p.gimbal_velocity.is_none() {
-                        p.gimbal_velocity = parent.gimbal_velocity.clone();
-                    }
-                    for (id, b) in &parent.features {
-                        p.features.entry(*id).or_insert_with(|| b.clone());
-                    }
+        parsed.iter().map(|p| p.resolve(&parsed, 0)).collect()
+    }
+
+    /// This profile with everything it inherits filled in (see `inherits`
+    /// and `drop`). Panics on an unknown parent or a loop: built-in
+    /// profiles are checked by the tests.
+    fn resolve(&self, all: &[DeviceProfile], depth: usize) -> DeviceProfile {
+        assert!(depth < 8, "profile inheritance loop at `{}`", self.id);
+        let mut p = self.clone();
+        if let Some(parent) = &self.inherits {
+            let base = all
+                .iter()
+                .find(|q| &q.id == parent)
+                .unwrap_or_else(|| panic!("profile `{}`: unknown parent `{parent}`", self.id))
+                .resolve(all, depth + 1);
+            p.system_info |= base.system_info;
+            p.event_queue |= base.event_queue;
+            p.wireless_mics |= base.wireless_mics;
+            p.presets = p.presets.or(base.presets);
+            p.gimbal_velocity = p.gimbal_velocity.or(base.gimbal_velocity);
+            p.firmware = p.firmware.or(base.firmware);
+            for (id, b) in base.features {
+                p.features.entry(id).or_insert(b);
+            }
+        }
+        for name in &self.drop {
+            match name.as_str() {
+                "presets" => p.presets = None,
+                "gimbal_velocity" => p.gimbal_velocity = None,
+                "firmware" => p.firmware = None,
+                "system_info" => p.system_info = false,
+                "event_queue" => p.event_queue = false,
+                "wireless_mics" => p.wireless_mics = false,
+                feature => {
+                    let id = FeatureId::from_name(feature).unwrap_or_else(|| {
+                        panic!("profile `{}`: can't drop unknown `{feature}`", self.id)
+                    });
+                    p.features.remove(&id);
                 }
-                p
-            })
-            .collect()
+            }
+        }
+        p
     }
 
     /// The generic profile applies standard UVC controls to any camera.
@@ -535,6 +560,22 @@ mod tests {
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)
         ));
+    }
+
+    #[test]
+    fn inheritance_is_recursive_and_drops() {
+        // tiny-3-lite -> tiny-3 -> generic-uvc
+        let lite = DeviceProfile::for_usb(0x3564, 0xff04);
+        assert!(matches!(
+            lite.features[&FeatureId::Contrast],
+            Binding::V4l2(_)
+        ));
+        assert!(lite.features.contains_key(&FeatureId::GestureControl));
+        // meet-se -> meet-2 (drops the gimbal) -> tiny-se
+        let meet_se = DeviceProfile::for_usb(0x3564, 0xfefe);
+        assert!(meet_se.presets.is_none() && meet_se.gimbal_velocity.is_none());
+        assert!(meet_se.features.contains_key(&FeatureId::MirrorImage));
+        assert!(!meet_se.features.contains_key(&FeatureId::GimbalReset));
     }
 
     #[test]
