@@ -6,7 +6,8 @@
 **OBSCura: Unofficial control panel for OBSBOT webcams.**
 
 A Linux configuration tool for OBSBOT webcams: AI tracking,
-gesture control, gimbal, mirror and image settings, with a live preview.
+gesture control, gimbal, mirror and image settings, microphones (including
+OBSBOT's Vox SE wireless mics), with a live preview and a diagnostics view.
 Built with Rust, Tauri 2 and Svelte.
 
 OBSBOT's own *OBSBOT Center* only runs on Windows and macOS. On Linux the
@@ -43,73 +44,73 @@ using a vendor protocol reverse-engineered from USB captures.
 | Camera | USB ID | Status |
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
-| OBSBOT Tiny 2 | `3564:fef8` | Assumed supported, cross-checked (see below) |
-| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets, incl. Vox SE wireless mics (firmware 6.6.8.3, see below) |
-| OBSBOT Tiny 3 Lite | `3564:ff04` | Assumed like the Tiny 3, unverified (see `profiles/tiny-3-lite.toml`) |
-| OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed supported, unverified (see below) |
-| OBSBOT Tiny 4K | `3564:fef4` | Assumed supported, unverified (see below) |
-| OBSBOT Meet 2 | `3564:fefb` | Assumed supported minus gimbal features, unverified (see below) |
-| OBSBOT Meet SE | `3564:fefe` | Assumed supported minus gimbal features, unverified (see below) |
-| Other OBSBOT models | `3564:*` | Standard UVC controls only (see below) |
+| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets, including Vox SE wireless mics (firmware 6.6.8.3) |
+| OBSBOT Tiny 3 Lite | `3564:ff04` | Assumed like the Tiny 3, unverified |
+| OBSBOT Tiny 2 | `3564:fef8` | Assumed like the Tiny SE, cross-checked (see below) |
+| OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed like the Tiny SE, unverified |
+| OBSBOT Tiny 4K | `3564:fef4` | Assumed like the Tiny SE, unverified |
+| OBSBOT Meet 2 | `3564:fefb` | Assumed like the Tiny SE without the gimbal, unverified |
+| OBSBOT Meet SE | `3564:fefe` | Assumed like the Meet 2, unverified |
+| Other OBSBOT models | `3564:*` | Standard UVC controls only |
 | Any other UVC webcam | – | Standard UVC controls, with `--all` / `OBSBOT_ALL_CAMERAS=1` |
 
-Other OBSBOT models (Meet, Meet 4K, …) are detected and get the
-standard webcam controls. Their vendor features stay disabled until someone
-contributes USB captures, because command IDs and status layouts may differ
-between models.
+The **Tiny SE** and **Tiny 3** were tested on real cameras: the Tiny SE from
+OBSBOT Center captures, the Tiny 3 from Linux, with the commands it doesn't
+share with the Tiny SE (gestures, extra AI modes, Vox SE) recorded from
+OBSBOT's SDK. The Tiny 3 doesn't answer the Tiny SE's preset commands, so it
+has no presets yet.
 
-The Tiny 2, Tiny 3, Tiny 2 Lite, Tiny 4K, Meet 2 and Meet SE are exceptions:
-`profiles/tiny-2.toml`, `tiny-3.toml`, `tiny-2-lite.toml`, `tiny-4k.toml`,
-`meet-2.toml` and `meet-se.toml` reuse the Tiny SE's vendor bindings on the
-assumption that they share the same protocol. This is **unverified** for
-each specific model, but it isn't a blind guess either — OBSBOT's own SDK
-groups the other five under one status-block struct internally (a
-different one from plain Meet/Meet 4K), and
-[cgevans/tiny2](https://github.com/cgevans/tiny2), an independent
-from-scratch reverse-engineering of the Tiny 2, confirms several of the
-same command and tag IDs this project captured for the Tiny SE. The Tiny 3 was
-tested on a real camera: it has the same Extension Unit and status block
-layout, and most settings were set and read back. Its gesture settings use
-a different command, recorded from OBSBOT's SDK and tested on the camera;
-its preset commands also differ and are left unbound (details in
-`profiles/tiny-3.toml`). Meet 2 and Meet SE don't have
-the Tiny line's mechanical gimbal, so gimbal velocity, presets and gimbal
-reset/reverse are left unbound for them rather than guessed. If something
-doesn't work, or you can capture one of these models' traffic, see
+The other models' profiles **inherit** a tested one (`profiles/*.toml`): the
+Tiny 2 family, Tiny 4K and Meet line the Tiny SE's, the Tiny 3 Lite the
+Tiny 3's. That's unverified per model, but not a blind guess: OBSBOT's own
+SDK groups all of them under one status-block layout (a different one from
+the plain Meet/Meet 4K), and [cgevans/tiny2](https://github.com/cgevans/tiny2),
+an independent reverse-engineering of the Tiny 2, confirms several of the
+same command IDs. The Meet 2 and Meet SE have no mechanical gimbal, so their
+profiles leave out gimbal velocity, presets and gimbal reset/reverse.
+
+Other OBSBOT models (Meet, Meet 4K, …) get the standard webcam controls;
+their vendor features stay off until someone records their traffic, since
+command IDs and status layouts differ between models. If something doesn't
+work, or you can record a model's traffic, see
 [Adding support for another camera](#adding-support-for-another-camera).
 
 ## Features
 
-Status on the Tiny SE:
-
-| Area | Feature | Status |
-|---|---|---|
-| AI tracking | Human / Group / Hand Tracking modes | ✅ |
-| Gesture control | Master switch, Locked Target, Zoom, Dynamic Zoom, Direction Flip, Zoom Factor (1–4×) | ✅ |
-| View & gimbal | Joystick (velocity control), speed, view reset | ✅ |
-| View & gimbal | Manual zoom (1–4×), View and Gimbal Reverse | ✅ |
-| View & gimbal | Presets: save, recall and rename 3 camera-side presets (also in the tray menu) | ✅ |
-| Image | Mirror image (on the camera, so every app sees it) | ✅ |
-| Image | Brightness, contrast, saturation, sharpness, hue | ✅ |
-| Image | Auto/manual focus, auto/manual exposure, gain, white balance, anti-flicker | ✅ |
-| Image | HDR, Global/Face AF and AE modes, exposure compensation | ✅ |
-| AI tracking | AI lock | ✅ |
-| Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ |
-| Audio | Mic during sleep, noise reduction, auto gain, disable microphone, radio distance | ✅ |
-| Device | Status light and brightness, firmware version | ✅ |
-| Device | Firmware update check against OBSBOT's download page (on request; updating stays with OBSBOT Center) | ✅ Tiny 3 |
-| Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ |
-| Device | Hot-plug and reboot recovery | ✅ |
-| Panel | Tray indicator with quick toggles and show/hide | ✅ |
-| Pending captures | Custom sleep background, factory reset | 🚧 greyed out |
-| Out of scope | Beauty/background effects, portrait mode, rotate/flip, recording, firmware updates | ❌ ¹ |
+| Area | Feature | Tiny SE | Tiny 3 |
+|---|---|---|---|
+| AI tracking | Human / Group / Hand Tracking, AI lock | ✅ | ✅ |
+| AI tracking | Whiteboard, Desk, Voice Tracking modes | – | ✅ |
+| Gesture control | Master switch, Locked Target (palm), Zoom ("L"), Dynamic Zoom, Zoom Factor (1–4×) | ✅ | ✅ |
+| Gesture control | Direction Flip | ✅ | – |
+| View & gimbal | Joystick (velocity), view reset, manual zoom (1–4×) | ✅ | ✅ |
+| View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
+| View & gimbal | Presets: save, recall and rename 3 camera-side presets (also in the tray menu) | ✅ | – |
+| Image | Mirror image (on the camera, so every app sees it) | ✅ | ✅ |
+| Image | Brightness, contrast, saturation, sharpness, hue | ✅ | ✅ |
+| Image | Focus, exposure and white balance, each Auto / Manual; gain, anti-flicker | ✅ | ✅ |
+| Image | HDR, Global/Face AF and AE modes, exposure compensation | ✅ | ✅ |
+| Audio | Microphone on/off and level (the camera's USB audio, any webcam) | ✅ | ✅ |
+| Audio | Mic during sleep, noise reduction, auto gain, disable microphone, pickup distance | ✅ | ✅ |
+| Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, audio source | – | ✅ |
+| Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ | ✅ |
+| Device | Status light and brightness, firmware version | ✅ | ✅ |
+| Device | Firmware update check against OBSBOT's download page (on request) | – | ✅ |
+| Diagnostics | Live camera state, activity log, camera events (target lost/found, gesture and voice changes) | ✅ | ✅ |
+| Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ | ✅ |
+| Device | Hot-plug and reboot recovery | ✅ | ✅ |
+| Panel | Tray indicator with quick toggles and show/hide | ✅ | ✅ |
+| Pending captures | Custom sleep background, factory reset | 🚧 | 🚧 |
+| Out of scope | Beauty/background effects, portrait mode, rotate/flip, recording, firmware updates | ❌ ¹ | ❌ ¹ |
 
 ¹ In OBSBOT Center these effects (and portrait mode, rotate and flip) run on
-the PC, not the camera. Firmware
-flashing is deliberately never implemented.
+the PC, not the camera. Firmware flashing is deliberately never implemented:
+the update check only points you to OBSBOT Center.
+
+² Bound like the Tiny SE's; not tested on a Tiny 3.
 
 Controls that aren't supported yet are still shown, greyed out, with a tooltip
-explaining why. The layout matches the official app.
+explaining why. The layout follows the official app.
 
 ## Installing
 
@@ -127,9 +128,11 @@ sudo snap connect obscura:alsa                   # optional: microphone level/sw
 sudo snap alias obscura.obsbotctl obsbotctl      # optional: plain `obsbotctl`
 ```
 
-The snap uses the GNOME 46 runtime (which provides WebKitGTK), and only
-needs the `camera` interface to reach the camera. It never needs raw USB
-access.
+The snap uses the GNOME 46 runtime (which provides WebKitGTK) and never
+needs raw USB access. Interfaces: `camera` (required) reaches the camera;
+`hardware-observe` shows its USB details; `alsa` sets the microphone's
+on/off and level; `network` is only used when you check for a firmware
+update (it's connected automatically).
 
 ### From source
 
@@ -187,10 +190,15 @@ Run `obscura` (or `pnpm tauri dev` from `app/` during development).
 - **Bottom bar:** AI tracking modes (Human / Group / Hand Tracking, plus
   Whiteboard / Desk / Voice Tracking on the Tiny 3) and the AI lock.
 - **Image tab:** presets, the gimbal joystick and zoom, and image adjustments.
-- **Audio tab:** the camera's microphone: disable, noise reduction, auto gain,
-  pickup distance, and the microphone during sleep.
+- **Audio tab:** the camera's microphone (on/off, level, noise reduction,
+  auto gain, pickup distance, disable, during sleep) and, on the Tiny 3
+  series, **Wireless Microphones**: two Vox SE slots with battery, mute and
+  gain, guided pairing (press Pair, then hold the mic's button for 6 s) and
+  the audio source.
 - **More tab:** device sleep, status light, the panel indicator, other
   settings, and device details (with a firmware update check).
+- **Ctrl+Shift+D** opens the **Diagnostics** window: the camera's live state
+  and an activity log (see [Troubleshooting](#troubleshooting)).
 
 Settings are written to the camera itself, so they apply to every app that
 uses it (Zoom, Meet, OBS, …). You don't need to keep OBSCura running.
@@ -207,7 +215,8 @@ the time. Its menu offers:
 
 - **Show / Hide OBSCura**: starts the full app, and quits it again, so the
   heavy GUI only uses memory while it's open.
-- **AI tracking**: Off, Human, Group or Hand tracking.
+- **AI tracking**: the camera's modes (Off, Human, Group, Hand tracking, and
+  Whiteboard, Desk and Voice Tracking on the Tiny 3).
 - **Gesture control** and **Mirror image** on/off.
 - **Re-center camera**, and **Presets** to move to one stored on the camera.
 - **Start at login**: the indicator's autostart entry (inside the snap,
@@ -243,6 +252,10 @@ obsbotctl dump --json
 obsbotctl status                   # live state: power, AI mode, zoom, fps…
 obsbotctl firmware                 # is newer firmware on OBSBOT's download page?
 obsbotctl events                   # follow camera events: target lost, gestures…
+obsbotctl mics                     # Vox SE slots: connected, battery
+obsbotctl set mic_pair_tx1 1       # pair TX1, then hold the mic's button ~6 s
+obsbotctl set mic_tx1_gain -3      # wireless mic gain (-12..12)
+obsbotctl set mic_level -6         # camera microphone level in dB (0 = full)
 obsbotctl get ai_mode
 obsbotctl set ai_mode human        # off | human | group | "hand tracking"
 obsbotctl set ai_mode human --check  # …and report whether the camera took it
@@ -271,22 +284,24 @@ labels or numbers for choices, and numbers in display units for ranges
 
 There is also a hidden `obsbotctl raw` command for low-level Extension Unit
 access, used during reverse engineering. **Only replay commands you have seen
-in captures.** The camera has crashed and rebooted from malformed commands.
+in captures or SDK traces.** The camera has crashed and rebooted from
+malformed commands.
 
 ## How it works
 
 ```
-┌────────────────────┐   ┌──────────┐
-│ app/ (Tauri+Svelte)│   │ obsbotctl│
-└─────────┬──────────┘   └────┬─────┘
-          └──────┬────────────┘
-         ┌───────▼────────┐    profiles/*.toml
-         │  obsbot-core   │◄── (per-model feature bindings)
-         └───────┬────────┘
-     ┌───────────┼─────────────────┬───────────────────┐
-  V4L2 controls  UVC XU (unit 2)   UVC XU (unit 2)     V4L2 streaming
-  VIDIOC_S_CTRL  selector 2:       selector 6:         (MJPEG preview)
-                 framed commands   settings + status
+┌────────────────────┐ ┌───────────┐ ┌───────────────────┐
+│ app/ (Tauri+Svelte)│ │ obsbotctl │ │ obscura-indicator │
+└─────────┬──────────┘ └─────┬─────┘ └─────────┬─────────┘
+          └──────────────────┼─────────────────┘
+                     ┌───────▼────────┐    profiles/*.toml
+                     │  obsbot-core   │◄── (per-model feature bindings)
+                     └───────┬────────┘
+     ┌──────────────┬────────┴───────┬──────────────┬──────────────┐
+  V4L2 controls  UVC XU unit 2    UVC XU unit 2   V4L2 streaming  ALSA mixer
+  VIDIOC_S_CTRL  selector 2:      selector 6:     (MJPEG preview) (mic level)
+                 framed commands, settings +
+                 queries, events  status block
 ```
 
 - **Standard controls** (image, focus, exposure, white balance, pan/tilt/zoom)
@@ -297,9 +312,12 @@ in captures.** The camera has crashed and rebooted from malformed commands.
   - **Selector 2** carries 60-byte framed commands with two CRC-16/USB
     checksums (the camera silently drops frames with a bad checksum).
   - **Selector 6** takes short `[id, len, value]` settings, and reading it
-    returns a status block reflecting the current state.
+    returns a status block reflecting the current state, including how many
+    camera events are queued (fetched with a selector 2 query).
 - **Profiles** (`profiles/*.toml`) map each catalog feature to a transport
-  binding, so supporting a new model is data, not code.
+  binding, so supporting a new model is data, not code. A profile can
+  inherit another and only add or `drop` what differs.
+- **The microphone level** is the camera's USB audio mixer, through ALSA.
 - **Preview** captures MJPEG on its own file handle and sends JPEG bytes to the
   webview over a Tauri channel, with flow control so frames drop rather than
   queue.
@@ -465,7 +483,21 @@ Close it, or close this app's preview; settings still work either way.
 
 **A setting flips back for a moment**: the camera updates its status block
 about a second after a command. The app hides this lag, but the CLI's `dump`
-can show the old value if run immediately after a `set`.
+can show the old value if run immediately after a `set`; use
+`set … --check` to wait and confirm.
+
+**A gesture does nothing**: the status light blinks twice when the camera
+recognises a gesture. No blinks means it wasn't recognised: hold the gesture
+still for 2–3 s beside your face with your fingers spread, in good light.
+The camera must be awake (it ignores most changes while asleep).
+
+**The microphone is too quiet**: two levels apply. OBSCura's **Level** is the
+camera's own (in dB, 0 = full); your system's input volume for the camera is
+a second one on top, and the two don't follow each other.
+
+**A Vox SE won't pair**: press **Pair** in OBSCura first, then hold the mic's
+button for about 6 s until its light flashes fast. The camera needs to be
+awake. Once paired, the mic reconnects on its own.
 
 **`Corrupt JPEG data: … extraneous bytes before marker` in the terminal**:
 harmless. It's WebKit's JPEG decoder complaining about padding in the camera's

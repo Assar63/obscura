@@ -1,7 +1,10 @@
 # Captures
 
 What's still needed from OBSBOT Center on Windows, and what each capture
-should tell us. Setup, Wireshark settings and pacing are the same as in
+should tell us. These are for the **Tiny SE**, the camera the original
+captures came from; `NOTES.md` has what was observed during them. The
+recordings themselves (`*.pcapng`) are git-ignored: they're large and
+contain video. For the Tiny 3, see the roadmap in [`TODO.md`](../TODO.md). Setup, Wireshark settings and pacing are the same as in
 [`docs/CAPTURING.md`](../docs/CAPTURING.md) §1.1–1.3. In short:
 
 - Stay on firmware **6.4.4.1**.

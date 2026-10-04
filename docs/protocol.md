@@ -1,11 +1,27 @@
-# OBSBOT Tiny SE protocol notes
+# OBSBOT vendor protocol
 
-Device: `3564:feff` "OBSBOT Tiny SE", Remo Tech Co., Ltd., bcdDevice 5.10,
-firmware v6.4.4.1. Decoded from the USB captures in `captures/` (decoder:
-`tools/capture/obsbot_pcap.py`) and confirmed on the camera from Linux unless
-marked *unverified*. Entries from the 2026-09-27 batch (sleep, HDR, AF/AE
-modes, audio, device sleep, status light, AI lock, queries) were also set and
-read back on the camera from Linux.
+What OBSCura knows about how OBSBOT cameras are controlled over USB, and how
+each piece was found. Measured on two cameras:
+
+- **Tiny SE** (`3564:feff`, firmware 6.4.4.1): decoded from USB captures of
+  OBSBOT Center (`captures/`, decoder `tools/capture/obsbot_pcap.py`) and
+  confirmed from Linux unless marked *unverified*. Entries from the
+  2026-09-27 batch (sleep, HDR, AF/AE modes, audio, device sleep, status
+  light, AI lock, queries) were also set and read back from Linux.
+- **Tiny 3** (`3564:ff02`, firmware 6.6.8.3): tested from Linux; the
+  commands it doesn't share with the Tiny SE (gestures, extra AI modes,
+  events, Vox SE) were recorded from the traffic of OBSBOT's SDK
+  (`tools/sdk-trace/`). See [OBSBOT Tiny 3](#obsbot-tiny-3-3564ff02).
+
+Sections: [Channels](#channels) · [Framed commands](#framed-commands-selector-2)
+· [Commands](#commands) · [Short settings](#short-settings-selector-6)
+· [Standard UVC controls](#standard-uvc-controls-used-by-obsbot-center)
+· [Status block layout](#status-block-layout-selector-6)
+· [Tiny 3: gestures, AI modes, events, Vox SE](#obsbot-tiny-3-3564ff02)
+
+In code: frames and encodings are in `crates/obsbot-core/src/vendor/`
+(`protocol`, `status`, `events`, `mics`), per-model bindings in
+`profiles/*.toml`.
 
 ## Channels
 

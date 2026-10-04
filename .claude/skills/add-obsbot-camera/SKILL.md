@@ -40,12 +40,14 @@ should see.
   and a sleeping camera ignores most writes (zoom, Human tracking). Check
   `obsbotctl status` (Power). For long tests: `obsbotctl set auto_sleep
   off`, and switch it back on afterwards.
-- **Some features need a video stream**: on the Tiny 3, Human tracking and
-  gesture recognition only work while something streams (the app's
-  preview, OBS, or `timeout 60 v4l2-ctl -d /dev/videoN
+- **Some features need a video stream**: on the Tiny 3, Human tracking is
+  ignored unless something streams, since it has to see someone. Stream
+  with the app's preview, OBS, or `timeout 60 v4l2-ctl -d /dev/videoN
   --set-fmt-video=width=1280,height=720,pixelformat=MJPG -p 15
-  --stream-mmap --stream-to=/dev/null`). Only one app can stream at a time,
+  --stream-mmap --stream-to=/dev/null`. Only one app can stream at a time,
   so ask before taking the camera from the user.
+- **A sleeping camera drops its Vox SE mics**; they come back when it
+  wakes and the mic is switched on.
 - **Status lag**: the status block reflects a write ~1–2.5 s later
   (`STATUS_LAG` in `crates/obsbot-core/src/device/mod.rs`).
 - **Gestures get missed** now and then; the status light blinks twice when
@@ -92,13 +94,24 @@ tools/sdk-trace/xustatus.py /dev/videoN --raw   # selector 6 status block
    download page. The key is the model's entry in the page's embedded data
    (`<key>:{firmware:{… version:"v…"}}`); `obsbotctl firmware` tests it.
 
-Binding options worth knowing (all in `profile.rs`, `VendorBinding`):
-`frames` (selector 2 commands with `prefix`, `value` encoding, `flags`,
-fixed `payload`), `short` (selector 6 `[id, len, value]`), `status`
-offset with `status_value`/`status_mask`, `query` readback (with `flags`,
-`payload`, `offsets`, `value = "f32"`, `scale`), `invert`, `level` +
-`default_level` + `level_status` for switch/level pairs, `transient`
-status values, and `options` to replace a choice list for one model.
+Profile options worth knowing (all in `profile.rs`):
+
+- **Profile level:** `inherits` + `drop` (feature ids, or `presets`,
+  `gimbal_velocity`, `firmware`, `status_layout`, …), `status_layout =
+  "tiny"` (enables the live status, event logging and mic state; offsets
+  live only in `vendor/status.rs`), `event_queue` (only after verifying
+  query `021d` on the model), `wireless_mics` (Vox SE receiver),
+  `system_info`, `[presets]`, `[gimbal_velocity]`, `[firmware]`.
+- **Vendor bindings** (`VendorBinding`): `frames` (selector 2 commands
+  with `prefix`, `value` encoding `u8`/`i8`/`u16`/`u32`/`f32`, `flags`,
+  fixed `payload`), `short` (selector 6 `[id, len, value]`), `status`
+  offset with `status_value`/`status_mask`, `query` readback (`flags`,
+  `payload`, `offsets`, `mask`, `value`, `scale`), `invert`, `level` +
+  `default_level` + `level_status` for switch/level pairs, `transient`
+  status values, and `options` to replace a choice list for one model.
+- **Other bindings:** `v4l2` (standard controls, with `map`/`offset`/
+  `scale`), `lock` (host-side AI lock), `alsa` (`capture-volume` or
+  `capture-switch` of the camera's USB audio).
 
 ## 3. Verify every feature
 

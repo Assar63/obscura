@@ -1,5 +1,15 @@
 # Capturing OBSBOT Center USB traffic (Windows)
 
+How to record what OBSBOT Center sends the camera, so OBSCura can do the same.
+It was written for the Tiny SE captures; for another model, use that camera
+wherever this says Tiny SE. What still needs recording is listed in
+[`captures/README.md`](../captures/README.md).
+
+**On Linux, with OBSBOT's SDK**, there's an alternative that needs no
+Windows: record the frames the SDK sends instead
+([`tools/sdk-trace/`](../tools/sdk-trace/README.md)). That's how the Tiny 3's
+gestures, events and Vox SE commands were found.
+
 ### 1.1 One-time setup
 1. **Firmware:** OBSBOT Center shows "Device 1 update". Choose now whether to update, then **don't change firmware again** until all captures are done. Updating first is recommended, so the protocol we decode matches current firmware. Note the final firmware version in `NOTES.md`.
 2. Install **Wireshark for Windows** (https://www.wireshark.org/download.html, 64-bit installer). On the component screen, **check "USBPcap"**, and accept the USBPcap driver install. **Reboot** when it finishes.

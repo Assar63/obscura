@@ -3,7 +3,8 @@
 Tools for finding a camera's vendor commands on Linux, without Windows
 captures: call a function of OBSBOT's own SDK (`libdev`) and record the
 Extension Unit frames it sends, then implement and test those frames in
-OBSCura. This is how the Tiny 3's gesture command was found.
+OBSCura. This is how the Tiny 3's gesture command, its event queue and
+the Vox SE wireless mic commands were found.
 
 **No SDK code is in this repository.** Download OBSBOT's SDK yourself
 (<https://www.obsbot.com/sdk>), unpack it outside the repo, and check the
