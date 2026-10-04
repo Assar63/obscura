@@ -63,6 +63,7 @@ export type LogEntry = {
 export type LiveStatus = {
   power: string;
   ai_mode: number;
+  ai_mode_label: string;
   ai_sub_mode: number;
   zoom: number;
   fov: string | null;
@@ -91,6 +92,8 @@ export const api = {
   /** Activity log entries newer than `since` (0 for all). */
   getLog: (since: number) => invoke<LogEntry[]>("get_log", { since }),
   liveStatus: () => invoke<LiveStatus | null>("live_status"),
+  /** Opens the Diagnostics window, or closes it if it's open. */
+  toggleDiagnostics: () => invoke<void>("toggle_diagnostics"),
   /** Compares the camera's firmware with OBSBOT's download page (network). */
   checkFirmwareUpdate: () => invoke<UpdateCheck>("check_firmware_update"),
   setFeature: (id: string, value: number) =>

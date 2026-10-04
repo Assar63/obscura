@@ -11,6 +11,9 @@ pub struct LiveStatus {
     pub power: String,
     /// AI mode value (status[24]); 6 means a mode change is in progress.
     pub ai_mode: u8,
+    /// The AI mode's name from the camera's profile ("switching…" for 6);
+    /// filled in by `Device::live_status`.
+    pub ai_mode_label: String,
     /// AI sub-mode (status[28]): framing within human tracking.
     pub ai_sub_mode: u8,
     /// Zoom factor from the zoom ratio (status[4..6], 0-100 = 1x-4x).
@@ -40,6 +43,7 @@ pub fn decode(block: &[u8]) -> Option<LiveStatus> {
     Some(LiveStatus {
         power,
         ai_mode: b(24)?,
+        ai_mode_label: String::new(),
         ai_sub_mode: b(28)?,
         zoom: 1.0 + ratio.min(100) as f32 * 3.0 / 100.0,
         fov: match b(17)? {

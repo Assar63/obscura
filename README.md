@@ -414,9 +414,10 @@ editing a profile.
 
 ## Troubleshooting
 
-**Seeing what happens**: More → Diagnostics shows the camera's live state
-and an activity log of what you changed, with a warning when the camera
-ignores a change. For a full debug log, start the app (or `obsbotctl`, or
+**Seeing what happens**: press **Ctrl+Shift+D** in OBSCura to open the
+Diagnostics window (again to close it). Keep it beside the main window: it
+shows the camera's live state and an activity log of what you change, with
+a warning when the camera ignores a change. For a full debug log, start the app (or `obsbotctl`, or
 the indicator) from a terminal with `OBSCURA_TRACE=1`; it then also prints
 every frame sent to and read from the camera:
 

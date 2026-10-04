@@ -114,7 +114,30 @@ impl Device {
 
     /// The camera's live state decoded from the status block, if it has one.
     pub fn live_status(&self) -> Option<crate::status::LiveStatus> {
-        crate::status::decode(&self.status_block()?)
+        let mut st = crate::status::decode(&self.status_block()?)?;
+        st.ai_mode_label = match st.ai_mode {
+            6 => "switching…".to_string(),
+            v => self.declared_kind(FeatureId::AiMode).format(v as i64),
+        };
+        Some(st)
+    }
+
+    /// A feature's kind as the profile declares it (catalog, or the
+    /// profile's own `options`), without reading the camera.
+    pub fn declared_kind(&self, id: FeatureId) -> FeatureKind {
+        match self.profile.features.get(&id) {
+            Some(Binding::Vendor(b)) if !b.options.is_empty() => FeatureKind::Choice {
+                options: b
+                    .options
+                    .iter()
+                    .map(|(value, label)| ChoiceOption {
+                        value: *value,
+                        label: label.clone(),
+                    })
+                    .collect(),
+            },
+            _ => id.def().kind,
+        }
     }
 
     /// Reads the vendor status block (selector 6), if the device has one.
@@ -576,16 +599,7 @@ impl Device {
             Some(Binding::Vendor(b)) => {
                 state.supported = true;
                 if !b.options.is_empty() {
-                    state.kind = FeatureKind::Choice {
-                        options: b
-                            .options
-                            .iter()
-                            .map(|(value, label)| ChoiceOption {
-                                value: *value,
-                                label: label.clone(),
-                            })
-                            .collect(),
-                    };
+                    state.kind = self.declared_kind(id);
                 }
                 let written = self.written.lock().unwrap().get(&id).copied();
                 let raw = status.and_then(|block| Self::status_value(b, block));

@@ -7,7 +7,7 @@ use obsbot_core::{
     discover, log, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo, LiveStatus,
 };
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 pub struct AppState(pub Mutex<Option<Device>>);
 
@@ -138,6 +138,27 @@ pub fn check_firmware_update(
     let source = source.ok_or_else(|| format!("No firmware download page is known for {name}"))?;
     let current = current.ok_or("The camera didn't report its firmware version")?;
     obsbot_core::firmware::check(&source, &current)
+}
+
+/// Opens the Diagnostics window, or closes it when it's open (Ctrl+Shift+D
+/// in the main window). Async: creating a window from a sync command can
+/// deadlock.
+#[tauri::command(async)]
+pub fn toggle_diagnostics(app: AppHandle) -> CmdResult<()> {
+    if let Some(window) = app.get_webview_window("diagnostics") {
+        return window.close().map_err(err);
+    }
+    WebviewWindowBuilder::new(
+        &app,
+        "diagnostics",
+        WebviewUrl::App("index.html#diagnostics".into()),
+    )
+    .title("OBSCura Diagnostics")
+    .inner_size(440.0, 620.0)
+    .min_inner_size(320.0, 300.0)
+    .build()
+    .map(|_| ())
+    .map_err(err)
 }
 
 /// The camera's live state from its status block (`None` without one).

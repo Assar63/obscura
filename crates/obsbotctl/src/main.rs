@@ -342,13 +342,11 @@ fn main() -> Result<()> {
             let Some(st) = dev.live_status() else {
                 bail!("{} has no vendor status block", dev.profile.name);
             };
-            let ai = dev.feature(FeatureId::AiMode);
-            let ai_label = match st.ai_mode {
-                6 => "switching…".to_string(),
-                v => ai.kind.format(v as i64),
-            };
             println!("Power:        {}", st.power);
-            println!("AI mode:      {ai_label} (sub-mode {})", st.ai_sub_mode);
+            println!(
+                "AI mode:      {} (sub-mode {})",
+                st.ai_mode_label, st.ai_sub_mode
+            );
             println!("Zoom:         {:.2}x", st.zoom);
             println!("FOV:          {}", st.fov.unwrap_or("-"));
             println!("Stream fps:   {}", st.fps);
