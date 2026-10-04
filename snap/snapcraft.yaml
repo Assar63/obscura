@@ -46,6 +46,12 @@ platforms:
   amd64:
   arm64:
 
+# The snap ships libasound and its alsa.conf; without this, libasound looks
+# for /usr/share/alsa/alsa.conf, which isn't in the snap's view, and the
+# microphone controls disappear.
+environment:
+  ALSA_CONFIG_PATH: $SNAP/usr/share/alsa/alsa.conf
+
 apps:
   obscura:
     command: bin/obscura
