@@ -151,9 +151,10 @@ offsets, for profiles with `status_layout = "tiny"`.
   standard UVC white balance to manual with the given temperature (here
   2000 K), which the Auto | Manual control already covers; the Tail 2 R/B
   gain read returns −1.
-- [ ] **Boot mode and boot position.** `boot_mode` [32]; `cameraSetBootModeU`
-  and `aiSetGimbalBootPosR`: the AI mode and gimbal position the camera
-  starts in.
+- [ ] **Boot mode and boot position.** *Tested, not kept:* `cameraSetBootModeU`
+  sends short `19 01 <mode << 4 | sub>` and status[32] reads it back (`20`
+  for Human), but after unplugging the camera [32] was 00 again and it
+  started with AI off (6.6.8.3). `aiSetGimbalBootPosR` not traced.
 - [ ] **Portrait mode.** `vertical` [12], `cameraSetVerticalModeU` ("the
   device will restart automatically"). The Tiny 3 manual mentions portrait
   mode. Restarting makes it a careful, confirm-first action.

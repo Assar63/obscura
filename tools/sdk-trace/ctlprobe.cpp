@@ -21,6 +21,7 @@
 // ctlprobe twssound <mode>             cameraSetTWSSoundModeR (DevTWSSoundMode)
 // ctlprobe gimget <type>               aiGetGimbalParaR (bool and float)
 // ctlprobe gimbool|gimfloat <type> <value>  aiSetGimbalParaR
+// ctlprobe bootmode <mode> <sub>       cameraSetBootModeU (AiWorkModeType, AiSubModeType)
 // ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
 // ctlprobe presetlist                  aiGetGimbalPresetListR
 // ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
@@ -147,6 +148,8 @@ int main(int argc, char **argv) {
         r = dev->aiSetGimbalParaR((Device::DevGimbalParaType)arg(2), arg(3) != 0);
     } else if (cmd == "gimfloat" && argc == 4) {
         r = dev->aiSetGimbalParaR((Device::DevGimbalParaType)arg(2), (float)atof(argv[3]));
+    } else if (cmd == "bootmode" && argc == 4) {
+        r = dev->cameraSetBootModeU((Device::AiWorkModeType)arg(2), (Device::AiSubModeType)arg(3));
     } else if (cmd == "gimbalstate" && argc == 2) {
         Device::AiGimbalStateInfo g{};
         r = dev->aiGetGimbalStateR(&g);
