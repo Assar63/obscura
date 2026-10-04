@@ -264,6 +264,35 @@ mod tests {
     }
 
     #[test]
+    fn tiny_3_tracking_and_voice_match_sdk_traffic() {
+        // aiSetControlParaR(human, speed mode, fast) and its read, then
+        // cameraSetAudioCtrlStateU(Hi Tiny, on), traced on a Tiny 3.
+        let mut payload = vec![0, 0, 0, 0, 5, 0, 0, 0];
+        payload.extend(encode_value(ValueEncoding::U32, 3, 1));
+        assert_eq!(
+            encode_command(5, 0x04, [0x44, 0x54], &payload)[..27],
+            padded(
+                "aa 25 05 00 0c 00 da 8b 0a 04 44 54 0c 00 84 71 \
+                 00 00 00 00 05 00 00 00 03 00 00"
+            )[..27]
+        );
+        assert_eq!(
+            encode_query(
+                5,
+                0x04,
+                [0x84, 0x54],
+                FLAGS_QUERY_SLOT,
+                &[0, 0, 0, 0, 5, 0, 0, 0]
+            )[..24],
+            padded("aa 21 05 00 0c 00 9f bb 0a 04 84 54 08 00 7a ee 00 00 00 00 05 00 00 00")[..24]
+        );
+        assert_eq!(
+            encode_short(0x15, &[0x00, 0x01])[..4],
+            [0x15, 0x02, 0x00, 0x01]
+        );
+    }
+
+    #[test]
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(

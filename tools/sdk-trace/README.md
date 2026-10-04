@@ -15,11 +15,12 @@ terms it comes with before tracing it. Never commit SDK files.
 | `xulog.c` | `LD_PRELOAD` shim: logs every `UVCIOC_CTRL_QUERY` (unit, selector, request, bytes) to stderr. `libdev` talks to the camera through plain `ioctl` on `/dev/videoN`, so this needs no root. |
 | `gprobe.cpp` | Calls the SDK's gesture functions (`aiGet/SetGestureParaR`), with a `=== marker` line before each call so the log lines up with the API. |
 | `micprobe.cpp` | Calls the Vox SE / audio functions. They're exported by `libdev` but not declared in its header, so they're bound by symbol name (`nm -D` lists them). |
+| `ctlprobe.cpp` | Calls header-declared settings: field of view, AI mode and sub-mode, tracking mode/speed, control parameters (`aiGet/SetControlParaR`), voice control, run status. |
 | `evprobe.cpp` | Registers the SDK's event and status callbacks and logs everything it receives, with timestamps. This is how the camera's event queue (`021d`) was found. |
 | `evnames.py` | Adds `RmEventType` names to `evprobe` output: `evnames.py <SDK dir> < ev.log`. |
 | `xustatus.py` | Reads the selector 6 status block (read-only). `--raw` prints all 60 bytes. |
 | `xuframe.py` | Builds a selector 2 frame exactly like `vendor/protocol.rs`, and sends it with `--send`. |
-| `build.sh` | Builds `xulog.so`, `gprobe`, `micprobe` and `evprobe` into `build/` (git-ignored). |
+| `build.sh` | Builds `xulog.so`, `gprobe`, `micprobe`, `evprobe` and `ctlprobe` into `build/` (git-ignored). |
 
 ```sh
 SDK=~/obsbot/sdk-work/libdev_v2.1.0_8 tools/sdk-trace/build.sh

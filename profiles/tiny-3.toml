@@ -120,6 +120,14 @@ short = { id = 0x14 }
 query = { dst = 0x04, cmd = "0468", offsets = [0], value = "f32", scale = 100 }
 frames = [{ dst = 0x02, cmd = "4219", prefix = "02000000", value = "u32" }]
 
+# Field of view (SDK cameraSetFovU): short setting 0x04, read at status[17].
+# 0 86°, 1 78°, 2 65°; the camera reports 3 ("none") while a gesture zoom
+# is active. Traced from the SDK and checked on the picture (Tiny 3, 6.6.8.3).
+[features.field_of_view]
+status = 17
+short = { id = 0x04 }
+transient = [3]
+
 # Re-center, as OBSBOT Center's View & Gimbal reset icon does: a query
 # (8438, payload 01) then 0439 with flags 0x05. Writing UVC pan/tilt 0
 # doesn't move the gimbal back after velocity moves.
@@ -156,6 +164,21 @@ short = { id = 0x16, value = "u16" }
 [features.sleep]
 status = 2
 frames = [{ dst = 0x02, cmd = "c2a0", value = "u32" }]
+
+# Tracking control parameters for human targets (SDK aiSetControlParaR /
+# aiGetControlParaR): write dst 04 `4454` with u32 target (0 human), u32
+# parameter, then the value; read with query `8454` (flags 0x21) and the
+# target and parameter as payload. Parameter 5 is the gimbal speed mode
+# (0 super lazy, 1 lazy, 2 slow = the camera's default, 3 fast, 4 crazy),
+# parameter 0 motion mode (fast-moving subjects). Both stored and read
+# back on a Tiny 3 (6.6.8.3); status[36] doesn't follow them.
+[features.tracking_speed]
+query = { dst = 0x04, cmd = "8454", flags = 0x21, payload = "0000000005000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4454", prefix = "0000000005000000", value = "u32" }]
+
+[features.tracking_motion]
+query = { dst = 0x04, cmd = "8454", flags = 0x21, payload = "0000000000000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4454", prefix = "0000000000000000" }]
 
 # OBSBOT Center's AI lock is host-side: it turns AI tracking and gestures
 # off, and unlocking restores the AI mode (not the gestures).
@@ -268,6 +291,54 @@ frames = [{ dst = 0x98, cmd = "d32d" }]
 [features.mic_tx2_gain]
 query = { dst = 0x02, cmd = "02c0", offsets = [6], value = "i8" }
 frames = [{ dst = 0x98, cmd = "532d", value = "u32" }]
+
+# Voice control (SDK cameraSetAudioCtrlStateU): short setting 0x15, [command,
+# value]. Commands 0-6 switch one voice command each, read back as bit n of
+# status[21]; 100 is the voice zoom (0-100 = 1x-4x, status[22]) and 101 the
+# language (0 Chinese, 1 English, status[20]). Traced from the SDK and read
+# back on a Tiny 3 (6.6.8.3).
+[features.voice_hi_tiny]
+status = 21
+status_mask = 0x01
+short = { id = 0x15, prefix = "00" }
+
+[features.voice_sleep_tiny]
+status = 21
+status_mask = 0x02
+short = { id = 0x15, prefix = "01" }
+
+[features.voice_track_me]
+status = 21
+status_mask = 0x04
+short = { id = 0x15, prefix = "02" }
+
+[features.voice_unlock_me]
+status = 21
+status_mask = 0x08
+short = { id = 0x15, prefix = "03" }
+
+[features.voice_zoom_in]
+status = 21
+status_mask = 0x10
+short = { id = 0x15, prefix = "04" }
+
+[features.voice_zoom_out]
+status = 21
+status_mask = 0x20
+short = { id = 0x15, prefix = "05" }
+
+[features.voice_presets]
+status = 21
+status_mask = 0x40
+short = { id = 0x15, prefix = "06" }
+
+[features.voice_zoom_factor]
+status = 22
+short = { id = 0x15, prefix = "64" }
+
+[features.voice_language]
+status = 20
+short = { id = 0x15, prefix = "65" }
 
 # Device sleep: one i16 setting in seconds, negated while auto sleep is off.
 [features.auto_sleep]

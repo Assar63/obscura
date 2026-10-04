@@ -84,30 +84,35 @@ offsets, for profiles with `status_layout = "tiny"`.
   Tiny 3 profile lists them (new `options` binding field), the app shows them
   in a second column next to Group/Hand, and the tray menu follows the
   camera's list.
-- [ ] **Human tracking framing (AI sub-mode).** `AiSubModeType`: Normal,
-  Upper Body, Close-up, Headless, Lower Body, at [28]. joshualambert writes
-  it as the 4th byte of `16 02 02 <sub>`. OBSBOT Center calls this "Auto
-  Zoom" on the Tiny 3, and brendanwelsh found the Tiny 2 framing command
-  ignored, so test on the picture. Also compare with `auto_frame` [42].
-- [ ] **Field of view: 86° / 78° / 65°.** `cameraSetFovU(FovType)`, status
-  [17]. joshualambert confirmed short setting `04 01 <level>` changes the
-  picture on a Tiny 3 Lite. A small choice control in the Image tab.
-- [ ] **Tracking speed / mode.** Status [36] `ai_tracker_speed` (0 normal,
-  2 motion). The Tiny 3 preset struct names speeds 5 super lazy, 6 slow,
-  7 fast, and OBSBOT's OSC table has Tracking Speed (slow, standard, fast)
-  and Tracking Mode (headroom, standard, motion) for the Tiny 3. Candidates:
-  `aiSetTrackingModeR(AiVerticalTrackType)`, `aiSetTrackSpeedTypeR`, and
-  `aiSetControlParaR(Human, Motion)`. Trace all three to find the one the
-  Tiny 3 acts on.
-- [ ] **Voice control.** The Tiny 3 manual lists "Hi Tiny", "Sleep Tiny",
-  "Track Me", "Unlock Me", "Zoom in Closer", "Zoom out Further" and
-  "Position One/Two/Three". `cameraSetAudioCtrlStateU(AudioCtrlCmdType,
-  state)` switches each command, sets the language (status [20]) and the
-  voice zoom factor ([22–23]); status [21] holds one bit per command.
-  Add a Voice Control card under More, next to Gesture Control.
-- [ ] **Privacy mode.** `DevStatus` 4 = privacy: "stream will not be fetched
-  from the device". Try `cameraSetDevRunStatusR(DevStatusPrivacy)` and
-  read [9]. Could be a privacy button next to Sleep.
+- [ ] **Human tracking framing (AI sub-mode).** *Tested, not working on
+  firmware 6.6.8.3:* the SDK's `cameraSetAiModeU(Human, sub)` sends short
+  setting `16 02 02 <sub>`; the camera stores it (status[28] follows) but
+  the picture and zoom don't change (alternated normal/close-up while being
+  tracked). Matches brendanwelsh's "framing value discarded". Left unbound;
+  retest after a firmware update. OBSBOT's notes for 6.6.10.1 and 6.6.11.1
+  don't mention framing.
+- [x] **Field of view: 86° / 78° / 65°.** *Done:* short setting `04 01
+  <level>`, status[17]; checked on the picture. Image tab, next to zoom.
+- [x] **Tracking speed / mode.** *Done:* the SDK's control parameters
+  (`aiSetControlParaR`, human target): write dst 04 `4454` (u32 target,
+  u32 parameter, value), read with query `8454`. Parameter 5 is the speed
+  mode (0 super lazy … 2 default … 4 crazy): stored, read back, and the
+  camera visibly lagged at 0 and snapped after at 4. Parameter 0 is motion
+  mode: stored and read back; its effect wasn't checked separately.
+  Status[36] doesn't follow either. `aiSetTrackingModeR` (`c40c`,
+  standard/headroom/motion) and `aiSetTrackSpeedTypeR` (`4409`) have no
+  readback and are left out (brendanwelsh found `c40c` ignored).
+- [x] **Voice control.** *Done:* short setting `15 02 <command> <value>`
+  (SDK `cameraSetAudioCtrlStateU`). Commands 0-6 (Hi Tiny, Sleep Tiny,
+  Track Me, Unlock Me, Zoom In, Zoom Out, presets) are bit n of status[21]
+  (the SDK header's bit list is in another order); 100 is the voice zoom
+  (0-100 = 1x-4x, status[22]), 101 the language (status[20]). Tested by
+  voice: "Unlock Me" and "Track Me" switched tracking, and "Unlock Me" was
+  ignored once switched off. Audio tab → Voice Control.
+- [x] **Privacy mode.** *Tested:* the SDK's `cameraSetDevRunStatusR(4)`
+  sends the same frame as sleep (`c2a0` u32 1) and the camera reports
+  itself asleep (status[9] = 3), so it isn't a separate mode on the Tiny 3;
+  Sleep covers it.
 
 ### P3: needs more work or may not apply
 
@@ -229,6 +234,15 @@ button. See docs/protocol.md.
 ---
 
 ## 5. Tooling
+
+- [ ] **Two programs querying the camera at once.** Query replies come back
+  through one slot on the camera (selector 2), so when the app and
+  `obsbotctl` query at the same moment, one can read the other's reply
+  and time out ("unavailable" in `obsbotctl dump` while the app is open).
+  Retrying on a mismatched sequence number, or serialising through the
+  running app, would fix it.
+- [ ] **Firmware 6.6.10.1's new gesture toggle** ("Motion Capture to
+  Avatar"): after updating, trace `aiSetGestureParaR` types beyond 8.
 
 - [x] **Add the SDK trace tooling to `tools/`.** *Done:* `tools/sdk-trace/`,
   with a build script and README; the workflow is also in the

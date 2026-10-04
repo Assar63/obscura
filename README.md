@@ -84,6 +84,8 @@ work, or you can record a model's traffic, see
 | Gesture control | Master switch, Locked Target (palm), Zoom ("L"), Dynamic Zoom, Zoom Factor (1–4×) | ✅ | ✅ |
 | Gesture control | Direction Flip | ✅ | – |
 | View & gimbal | Joystick (velocity), view reset, manual zoom (1–4×) | ✅ | ✅ |
+| View & gimbal | Field of view (86° / 78° / 65°) | – | ✅ |
+| AI tracking | Tracking speed (5 steps), motion mode | – | ✅ |
 | View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
 | View & gimbal | Presets: save, recall and rename 3 camera-side presets (also in the tray menu) | ✅ | – |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ | ✅ |
@@ -93,6 +95,7 @@ work, or you can record a model's traffic, see
 | Audio | Microphone on/off and level (the camera's USB audio, any webcam) | ✅ | ✅ |
 | Audio | Mic during sleep, noise reduction, auto gain, disable microphone, pickup distance | ✅ | ✅ |
 | Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, audio source | – | ✅ |
+| Audio | Voice control: switch each spoken command, language, voice zoom | – | ✅ |
 | Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ | ✅ |
 | Device | Status light and brightness, firmware version | ✅ | ✅ |
 | Device | Firmware update check against OBSBOT's download page (on request) | – | ✅ |

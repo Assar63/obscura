@@ -149,7 +149,19 @@
       <Joystick disabled={!gimbalSupported} onmove={joystick} onrelease={joystickRelease} />
     </div>
     <Feature id="zoom" />
+    <Feature id="field_of_view" hideUnsupported />
   </Card>
+
+  {#if device.supported("tracking_speed") || device.supported("tracking_motion")}
+    <Card title="Tracking">
+      <Feature id="tracking_speed" variant="select" hideUnsupported />
+      <Feature
+        id="tracking_motion"
+        description="For fast-moving subjects."
+        hideUnsupported
+      />
+    </Card>
+  {/if}
 
   <Card title="Image Adj.">
     <Feature id="hdr" />

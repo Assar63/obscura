@@ -103,12 +103,15 @@ features! {
     // AI tracking (bottom bar)
     AiMode                "ai_mode" => "ai", "AI Mode", choice(&[(0, "Off"), (2, "Human"), (1, "Group"), (3, "Hand Tracking")]);
     AiLock                "ai_lock" => "ai", "AI Lock", FeatureKind::Toggle;
+    TrackingSpeed         "tracking_speed" => "ai", "Tracking Speed", choice(&[(0, "Very Slow"), (1, "Slow"), (2, "Normal"), (3, "Fast"), (4, "Very Fast")]);
+    TrackingMotion        "tracking_motion" => "ai", "Motion Mode", FeatureKind::Toggle;
 
     // View and gimbal
     GimbalSpeed           "gimbal_speed" => "gimbal", "Gimbal Speed", choice(&[(0, "Slow"), (1, "Med."), (2, "Fast")]);
     Pan                   "pan" => "gimbal", "Pan", range(-100, 100, 1, None);
     Tilt                  "tilt" => "gimbal", "Tilt", range(-100, 100, 1, None);
     Zoom                  "zoom" => "gimbal", "Manual Zoom", range(100, 400, 100, Some("x"));
+    FieldOfView           "field_of_view" => "gimbal", "Field of View", choice(&[(0, "86°"), (1, "78°"), (2, "65°")]);
     GimbalReset           "gimbal_reset" => "gimbal", "Reset View", FeatureKind::Action;
     GimbalReverse         "gimbal_reverse" => "gimbal", "View and Gimbal Reverse", FeatureKind::Toggle;
 
@@ -152,6 +155,17 @@ features! {
     MicTx1Gain            "mic_tx1_gain" => "wireless", "TX1 Gain", range(-12, 12, 1, None);
     MicTx2Mute            "mic_tx2_mute" => "wireless", "TX2 Mute", FeatureKind::Toggle;
     MicTx2Gain            "mic_tx2_gain" => "wireless", "TX2 Gain", range(-12, 12, 1, None);
+
+    // Voice control (Tiny 3 series)
+    VoiceHiTiny           "voice_hi_tiny" => "voice", "\"Hi, Tiny\" (wake up)", FeatureKind::Toggle;
+    VoiceSleepTiny        "voice_sleep_tiny" => "voice", "\"Sleep, Tiny\"", FeatureKind::Toggle;
+    VoiceTrackMe          "voice_track_me" => "voice", "\"Track Me\"", FeatureKind::Toggle;
+    VoiceUnlockMe         "voice_unlock_me" => "voice", "\"Unlock Me\"", FeatureKind::Toggle;
+    VoiceZoomIn           "voice_zoom_in" => "voice", "\"Zoom in Closer\"", FeatureKind::Toggle;
+    VoiceZoomOut          "voice_zoom_out" => "voice", "\"Zoom out Further\"", FeatureKind::Toggle;
+    VoicePresets          "voice_presets" => "voice", "\"Position One/Two/Three\"", FeatureKind::Toggle;
+    VoiceZoomFactor       "voice_zoom_factor" => "voice", "Voice Zoom", choice(&[(17, "1.5x"), (33, "2x"), (50, "2.5x"), (67, "3x"), (83, "3.5x"), (100, "4x")]);
+    VoiceLanguage         "voice_language" => "voice", "Voice Language", choice(&[(1, "English"), (0, "Chinese")]);
 
     // Device sleep
     AutoSleep             "auto_sleep" => "sleep", "Auto Sleep", FeatureKind::Toggle;

@@ -248,6 +248,25 @@ Gestures themselves queue nothing: a palm shows as status[24] changing
 also has Vox SE events (`kEvtTipsTWS…`: connect, battery, mute, …), which
 should come through the same queue once a mic is paired.
 
+**Field of view, tracking and voice control** (traced from the SDK, tested
+on the camera, firmware 6.6.8.3):
+
+| Feature | Write | Readback | Tested |
+|---|---|---|---|
+| Field of view (`cameraSetFovU`) | short `04 01 <0/1/2>` (86°/78°/65°) | status[17]; reads 3 ("none") during a gesture zoom | ✅ the picture visibly crops |
+| Human framing (`cameraSetAiModeU`) | short `16 02 02 <sub>` | status[28] | ❌ stored, but the picture doesn't change |
+| Tracking control parameter (`aiSetControlParaR`, human target) | dst 04 `4454`: u32 target 0, u32 parameter, value | query `8454` (flags 0x21), payload target + parameter | |
+| ↳ parameter 5, speed mode | 0 super lazy, 1 lazy, 2 slow (default), 3 fast, 4 crazy | | ✅ visibly lags at 0, snaps after at 4 |
+| ↳ parameter 0, motion mode | u8 0/1 | | stored and read back; effect not checked |
+| `aiSetTrackingModeR`, `aiSetTrackSpeedTypeR` | dst 04 `c40c` u8, `4409` u8 | none | not used (no readback; `c40c` found ignored by brendanwelsh) |
+| Voice control (`cameraSetAudioCtrlStateU`) | short `15 02 <command> <value>` | commands 0–6: bit n of status[21]; 100 voice zoom (0–100 = 1x–4x) at status[22]; 101 language (0 Chinese, 1 English) at status[20] | ✅ "Unlock Me"/"Track Me" by voice, ignored when switched off |
+| Privacy (`cameraSetDevRunStatusR(4)`) | sends `c2a0` u32 1 | status[9] = 3 | same as sleep; not a separate mode |
+
+Status[36] (`ai_tracker_speed`) didn't follow any of the tracking settings.
+The voice command bits are 0 Hi Tiny, 1 Sleep Tiny, 2 Track Me, 3 Unlock Me,
+4 Zoom In, 5 Zoom Out, 6 presets (the SDK header lists them in another
+order).
+
 **Vox SE wireless microphones: two slots, TX1 and TX2.** Frames traced from
 OBSBOT's SDK; commands for a mic go to the mic itself, dst `0x58` (TX1) or
 `0x98` (TX2), relayed by the camera.
