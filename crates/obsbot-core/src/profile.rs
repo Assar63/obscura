@@ -129,6 +129,9 @@ pub struct FrameSpec {
     pub prefix: Vec<u8>,
     #[serde(default = "u8_enc")]
     pub value: ValueEncoding,
+    /// Constant bytes after the value.
+    #[serde(default, deserialize_with = "hex_bytes")]
+    pub suffix: Vec<u8>,
     /// For `f32`: the float sent is `value / divisor`.
     #[serde(default = "one")]
     pub divisor: i64,

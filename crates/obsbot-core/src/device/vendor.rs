@@ -85,6 +85,7 @@ impl Device {
             let payload = f.payload.clone().unwrap_or_else(|| {
                 let mut p = f.prefix.clone();
                 p.extend(encode_value(f.value, value, f.divisor));
+                p.extend(&f.suffix);
                 p
             });
             let seq = self.seq.fetch_add(1, Ordering::Relaxed);

@@ -15,6 +15,10 @@
 // ctlprobe doafindback <0|1>           cameraSetDoaFindBack
 // ctlprobe doarange <n>                cameraSetDoaRange
 // ctlprobe audiodistance <n>           cameraSetAudioDistanceU
+// ctlprobe wbget                       cameraGetWhiteBalanceR (both overloads)
+// ctlprobe wbset <type> <param>        cameraSetWhiteBalanceR (DevWhiteBalanceType)
+// ctlprobe twsfunc <type> <0|1> <param>  cameraSetTWSFuncR (DevTWSFuncType)
+// ctlprobe twssound <mode>             cameraSetTWSSoundModeR (DevTWSSoundMode)
 // ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
 // ctlprobe presetlist                  aiGetGimbalPresetListR
 // ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
@@ -39,6 +43,9 @@ extern "C" int32_t _ZN6Device19cameraSetAudioModeUENS_9AudioModeE(Device *, Devi
 extern "C" int32_t _ZN6Device20cameraSetDoaFindBackEh(Device *, unsigned char);
 extern "C" int32_t _ZN6Device17cameraSetDoaRangeEh(Device *, unsigned char);
 extern "C" int32_t _ZN6Device23cameraSetAudioDistanceUEh(Device *, unsigned char);
+extern "C" int32_t _ZN6Device17cameraSetTWSFuncRENS_14DevTWSFuncTypeEbs(Device *, Device::DevTWSFuncType, bool,
+                                                                        short);
+extern "C" int32_t _ZN6Device22cameraSetTWSSoundModeRENS_15DevTWSSoundModeE(Device *, Device::DevTWSSoundMode);
 
 static void mark(const std::string &s) { fprintf(stderr, "=== %s\n", s.c_str()); fflush(stderr); }
 static void onChanged(std::string, bool, void *) {}
@@ -105,6 +112,26 @@ int main(int argc, char **argv) {
         r = _ZN6Device17cameraSetDoaRangeEh(dev.get(), (unsigned char)arg(2));
     } else if (cmd == "audiodistance" && argc == 3) {
         r = _ZN6Device23cameraSetAudioDistanceUEh(dev.get(), (unsigned char)arg(2));
+    } else if (cmd == "wbget" && argc == 2) {
+        Device::DevWhiteBalanceType t{};
+        int32_t p = 0;
+        int r1 = dev->cameraGetWhiteBalanceR(t, p);
+        char buf[200];
+        snprintf(buf, sizeof buf, "-> simple ret %d: type %d param %d", r1, (int)t, p);
+        mark(buf);
+        Device::WhiteBalanceSetting w{};
+        int r2 = dev->cameraGetWhiteBalanceR(w);
+        snprintf(buf, sizeof buf, "-> full ret %d: mode %d param %d manual_gain %d b %d r %d xab %d ygm %d", r2,
+                 (int)w.light_mode, w.param, w.is_manual_gain, w.user_manual_b_gain, w.user_manual_r_gain,
+                 w.xab_offset, w.ygm_offset);
+        mark(buf);
+    } else if (cmd == "wbset" && argc == 4) {
+        r = dev->cameraSetWhiteBalanceR((Device::DevWhiteBalanceType)arg(2), arg(3));
+    } else if (cmd == "twsfunc" && argc == 5) {
+        r = _ZN6Device17cameraSetTWSFuncRENS_14DevTWSFuncTypeEbs(dev.get(), (Device::DevTWSFuncType)arg(2),
+                                                                arg(3) != 0, (short)arg(4));
+    } else if (cmd == "twssound" && argc == 3) {
+        r = _ZN6Device22cameraSetTWSSoundModeRENS_15DevTWSSoundModeE(dev.get(), (Device::DevTWSSoundMode)arg(2));
     } else if (cmd == "gimbalstate" && argc == 2) {
         Device::AiGimbalStateInfo g{};
         r = dev->aiGetGimbalStateR(&g);

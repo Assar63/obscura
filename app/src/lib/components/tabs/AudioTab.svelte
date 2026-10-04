@@ -136,7 +136,9 @@
         </p>
       {/if}
 
+      <Feature id="mic_button_enabled" hideUnsupported />
       <Feature id="mic_button" variant="select" />
+      <Feature id="mic_led" hideUnsupported />
       <Feature id="audio_source" />
       <Feature id="audio_auto_select" />
     </Card>

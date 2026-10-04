@@ -319,6 +319,15 @@ mod tests {
     }
 
     #[test]
+    fn vox_se_option_matches_sdk_traffic() {
+        // cameraSetTWSFuncR(LED, off, 0), traced on a Tiny 3.
+        assert_eq!(
+            encode_command(5, 0x02, [0x82, 0xc0], &[0x02, 0x00, 0x00, 0x00])[..20],
+            padded("aa 25 05 00 0c 00 68 85 0a 02 82 c0 04 00 bf bf 02 00 00 00")[..20]
+        );
+    }
+
+    #[test]
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(

@@ -269,6 +269,20 @@ mic info [0]. 0 human tracking, 1 switch tracking mode, 2 zoom to 1.0x,
 3 record (in OBSBOT Center). ✅ with 2, a press zoomed the camera from 2x to
 1x.
 
+**Vox SE options** (`cameraSetTWSFuncR`, exported, not in the header): dst 02
+`82c0` [function u8, on/off u8, parameter i16], for both mics; read back at
+mic info [1] bit n. Functions: 0 button, 1 vibration, 2 LED, 3 noise
+suppression (parameter: level 1–3; [2] bits 2–3 on/off, [3]/[4] level),
+4 auto suspend, 5 shutdown. Mic info [1] = `27` by default (button,
+vibration, LED and shutdown on; sound mode mono in bits 3–4). ✅ LED: went
+dark and came back. ✅ Button: with it off, a press no longer switched
+tracking. The others aren't used yet.
+
+The SDK's white balance types (Daylight, Tungsten, …) aren't presets on the
+Tiny 3: `cameraSetWhiteBalanceR(Daylight, 0)` set the standard UVC controls
+to manual and 2000 K (the parameter, clamped). The Tail 2 R/B gain read
+returns −1.
+
 **Field of view, tracking and voice control** (traced from the SDK, tested
 on the camera, firmware 6.6.8.3):
 

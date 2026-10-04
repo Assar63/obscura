@@ -145,10 +145,11 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [ ] **Tracking zone / composition.** `aiSetControlParaR`: pan/pitch lock,
   limited tracking zone, composition offsets (headroom). Equivalent to
   OBSBOT Center's Zone Tracking. Big UI work.
-- [ ] **White balance presets and R/B gain.** `cameraSetWhiteBalanceR`
-  (DevWhiteBalanceType: daylight, fluorescent, tungsten, cloudy, … R/B
-  gain); OBSBOT's OSC table marks WB shift and R/B gain "Only for Tiny 3".
-  Mind the "last written WB control wins" quirk in joshualambert's notes.
+- [x] **White balance presets and R/B gain.** *Not a camera feature on
+  the Tiny 3:* the SDK's `cameraSetWhiteBalanceR(Daylight, 0)` only sets the
+  standard UVC white balance to manual with the given temperature (here
+  2000 K), which the Auto | Manual control already covers; the Tail 2 R/B
+  gain read returns −1.
 - [ ] **Boot mode and boot position.** `boot_mode` [32]; `cameraSetBootModeU`
   and `aiSetGimbalBootPosR`: the AI mode and gimbal position the camera
   starts in.
@@ -177,7 +178,9 @@ offsets, for profiles with `status_layout = "tiny"`.
   camera made itself. `obsbotctl events` follows them live.
 - [ ] **Decode more event types** (16 is unknown). With a Vox SE paired,
   run `obsbotctl events` while connecting, muting and charging it: the
-  SDK's `kEvtTipsTWS…` events should arrive through the same queue.
+  SDK's `kEvtTipsTWS…` events should arrive through the same queue. Also seen: source 0x71,
+  type 37, value 773, and "audio source" 0 then 3 while a Vox SE came out
+  of its case.
 
 ### Vox SE wireless microphone (Tiny 3)
 
@@ -226,8 +229,10 @@ button. See docs/protocol.md.
   Microphones card (human tracking, switch tracking mode, zoom to 1.0x;
   "record" left out, it's for OBSBOT Center). Tested with a button press.
 - [x] **P2: Audio source.** Built-in vs. wireless, and auto select. *Done:* audio source and auto-select controls.
-- [ ] **P3: Mic options.** `cameraSetTWSFuncR` (button, vibration, LED,
-  noise suppression, auto shutdown), `cameraSetTWSSoundModeR` (mono/stereo).
+- [ ] **P3: Mic options.** `cameraSetTWSFuncR`: dst 02 `82c0` [function,
+  on/off, i16 parameter], read back at mic info [1] bit n. *Done:* LED and
+  button lock (both tested). Open: vibration, noise suppression (level
+  1–3), auto suspend, shutdown, `cameraSetTWSSoundModeR` (mono/stereo).
 
 ## 4. Other models
 
