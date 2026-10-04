@@ -158,10 +158,13 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [ ] **Factory reset.** `cameraSetRestoreFactorySettingsR` ("all"). Tracing
   it means actually resetting the camera, so do it last and only on
   purpose. Unlocks the greyed-out Factory Reset button.
-- [ ] **HDR availability.** [30] `hdr_support`: grey out HDR when the
-  current mode can't use it, instead of letting the switch do nothing.
-- [ ] **Show stream fps.** [31] is the camera's current fps; could feed the
-  preview's format display.
+- [ ] **HDR availability.** [30] `hdr_support` ("hdr is support or not at
+  current mode"): grey out HDR when the current mode can't use it. *Not
+  done:* on a Tiny 3 (6.6.8.3) it reads 0 at 1080p 30 fps MJPG with HDR on,
+  a mode OBSBOT doesn't restrict, so its meaning on this model is unclear.
+  Needs readings across modes (60 fps, portrait, 4K) before it's used.
+- [x] **Show stream fps.** [31] is the camera's current fps. *Done:* shown
+  in the Diagnostics window.
 
 ---
 
