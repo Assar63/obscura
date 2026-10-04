@@ -78,9 +78,6 @@
 
   /** Show a dependent control when its parent is in `state`, or when the
    * parent is unsupported (so the full layout is still visible). */
-  function when(parent: string, state: boolean): boolean {
-    return !device.supported(parent) || device.on(parent) === state;
-  }
 
   const gimbalSupported = $derived(
     device.gimbalVelocity || device.supported("pan") || device.supported("tilt"),
@@ -159,18 +156,13 @@
 
   <Card title="Image Adj.">
     <Feature id="hdr" />
-    <Feature id="auto_focus" />
-    {#if when("auto_focus", true)}<Feature id="auto_focus_mode" />{/if}
-    {#if when("auto_focus", false)}<Feature id="focus" hideUnsupported={device.supported("auto_focus")} />{/if}
-    <Feature id="auto_exposure" />
-    {#if when("auto_exposure", true)}
-      <Feature id="auto_exposure_mode" label="Auto Exposure Mode" />
-      <Feature id="exposure_compensation" />
-    {/if}
-    {#if when("auto_exposure", false)}
-      <Feature id="exposure" hideUnsupported={device.supported("auto_exposure")} />
-      <Feature id="gain" hideUnsupported />
-    {/if}
+    <AutoManual label="Focus" autoId="auto_focus" auto={["auto_focus_mode"]} manual={["focus"]} />
+    <AutoManual
+      label="Exposure"
+      autoId="auto_exposure"
+      auto={["auto_exposure_mode", "exposure_compensation"]}
+      manual={["exposure", "gain"]}
+    />
     <Feature id="anti_flicker" />
     <AutoManual
       label="White Balance"
