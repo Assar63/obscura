@@ -64,6 +64,16 @@ key = "tiny3"
 slots = 3
 format = "i16"
 
+# How fast the gimbal moves to a preset (SDK aiSetGimbalParaR, preset
+# speed): dst 04 `443f` [u32 parameter 5, f32 speed], read with query `843f`
+# (flags 0x21, payload u32 parameter). The SDK lists 0.1-0.8; the camera
+# starts at 1.0. Values here are x10. Tested: a 60-degree recall took 1.6 s
+# at 1.0 and 14.3 s at 0.1. The same command's pan/pitch limits are stored
+# but didn't limit UVC or joystick moves, so they're left out.
+[features.preset_speed]
+query = { dst = 0x04, cmd = "843f", flags = 0x21, payload = "05000000", offsets = [0], value = "f32", scale = 10 }
+frames = [{ dst = 0x04, cmd = "443f", prefix = "05000000", value = "f32", divisor = 10 }]
+
 # Joystick: [roll, pitch, yaw] float32 velocity, resent ~10 Hz, zeros to stop.
 # Seen in OBSBOT Center captures with magnitudes up to ~8.5. Positive yaw
 # turns the view right; positive pitch tilts it down, so "up" is negated

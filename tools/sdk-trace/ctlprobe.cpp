@@ -19,6 +19,8 @@
 // ctlprobe wbset <type> <param>        cameraSetWhiteBalanceR (DevWhiteBalanceType)
 // ctlprobe twsfunc <type> <0|1> <param>  cameraSetTWSFuncR (DevTWSFuncType)
 // ctlprobe twssound <mode>             cameraSetTWSSoundModeR (DevTWSSoundMode)
+// ctlprobe gimget <type>               aiGetGimbalParaR (bool and float)
+// ctlprobe gimbool|gimfloat <type> <value>  aiSetGimbalParaR
 // ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
 // ctlprobe presetlist                  aiGetGimbalPresetListR
 // ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
@@ -132,6 +134,19 @@ int main(int argc, char **argv) {
                                                                 arg(3) != 0, (short)arg(4));
     } else if (cmd == "twssound" && argc == 3) {
         r = _ZN6Device22cameraSetTWSSoundModeRENS_15DevTWSSoundModeE(dev.get(), (Device::DevTWSSoundMode)arg(2));
+    } else if (cmd == "gimget" && argc == 3) {
+        bool b = false;
+        float f = 0;
+        auto t = (Device::DevGimbalParaType)arg(2);
+        int rb = dev->aiGetGimbalParaR(t, b);
+        int rf = dev->aiGetGimbalParaR(t, f);
+        char buf[160];
+        snprintf(buf, sizeof buf, "-> bool ret %d %d | float ret %d %g", rb, b, rf, f);
+        mark(buf);
+    } else if (cmd == "gimbool" && argc == 4) {
+        r = dev->aiSetGimbalParaR((Device::DevGimbalParaType)arg(2), arg(3) != 0);
+    } else if (cmd == "gimfloat" && argc == 4) {
+        r = dev->aiSetGimbalParaR((Device::DevGimbalParaType)arg(2), (float)atof(argv[3]));
     } else if (cmd == "gimbalstate" && argc == 2) {
         Device::AiGimbalStateInfo g{};
         r = dev->aiGetGimbalStateR(&g);

@@ -138,10 +138,11 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [x] **Wireless mic status.** [41] `wireless_mic` (pairing, TX0/TX1
   online). Read-only display in Device details, if someone has the mic. *Done:* Audio → Wireless
   Microphones shows each slot from [41] and the mic info query.
-- [ ] **Gimbal limits, pan reverse, preset speed.** `aiSetGimbalParaR`
-  (tail2 and later): pan/pitch min/max, pan reverse, preset speed
-  (0.1–0.8). Might replace the Tiny SE "View and Gimbal Reverse" command,
-  which has no readback.
+- [ ] **Gimbal limits, pan reverse, preset speed.** `aiSetGimbalParaR`:
+  dst 04 `443f` [u32 parameter, value], query `843f`. *Preset speed done*
+  (tested by timing a recall: 1.6 s at 1.0, 14.3 s at 0.1). *Pan limits:*
+  stored, but UVC pan and joystick moves went past them on 6.6.8.3; maybe
+  they only apply to tracking. Pan reverse untested.
 - [ ] **Tracking zone / composition.** `aiSetControlParaR`: pan/pitch lock,
   limited tracking zone, composition offsets (headroom). Equivalent to
   OBSBOT Center's Zone Tracking. Big UI work.

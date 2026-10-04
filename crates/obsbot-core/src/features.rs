@@ -112,6 +112,7 @@ features! {
     Tilt                  "tilt" => "gimbal", "Tilt", range(-100, 100, 1, None);
     Zoom                  "zoom" => "gimbal", "Manual Zoom", range(100, 400, 100, Some("x"));
     FieldOfView           "field_of_view" => "gimbal", "Field of View", choice(&[(0, "86°"), (1, "78°"), (2, "65°")]);
+    PresetSpeed           "preset_speed" => "gimbal", "Preset Speed", choice(&[(1, "Slowest"), (2, "Slower"), (4, "Slow"), (6, "Medium"), (8, "Fast"), (10, "Fastest")]);
     GimbalReset           "gimbal_reset" => "gimbal", "Reset View", FeatureKind::Action;
     GimbalReverse         "gimbal_reverse" => "gimbal", "View and Gimbal Reverse", FeatureKind::Toggle;
 

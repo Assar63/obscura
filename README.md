@@ -84,7 +84,7 @@ work, or you can record a model's traffic, see
 | Gesture control | Master switch, Locked Target (palm), Zoom ("L"), Dynamic Zoom, Zoom Factor (1–4×) | ✅ | ✅ |
 | Gesture control | Direction Flip | ✅ | – |
 | View & gimbal | Joystick (velocity), view reset, manual zoom (1–4×) | ✅ | ✅ |
-| View & gimbal | Field of view (86° / 78° / 65°) | – | ✅ |
+| View & gimbal | Field of view (86° / 78° / 65°), preset speed | – | ✅ |
 | AI tracking | Tracking speed (5 steps), motion mode, sound-assisted tracking | – | ✅ |
 | View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
 | View & gimbal | Presets: save and recall 3 camera-side presets (also in the tray menu); rename on the Tiny SE, delete on the Tiny 3 | ✅ | ✅ |

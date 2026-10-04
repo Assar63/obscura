@@ -328,6 +328,17 @@ mod tests {
     }
 
     #[test]
+    fn tiny_3_preset_speed_matches_sdk_traffic() {
+        // aiSetGimbalParaR(preset speed, 0.1), traced on a Tiny 3.
+        let mut payload = vec![5, 0, 0, 0];
+        payload.extend(encode_value(ValueEncoding::F32, 1, 10));
+        assert_eq!(
+            encode_command(5, DST_GIMBAL, [0x44, 0x3f], &payload)[..22],
+            padded("aa 25 05 00 0c 00 9b 64 0a 04 44 3f 08 00 d0 5f 05 00 00 00 cd cc cc 3d")[..22]
+        );
+    }
+
+    #[test]
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(
