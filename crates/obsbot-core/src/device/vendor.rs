@@ -35,7 +35,7 @@ impl Device {
 
     /// Sends a query with `flags` and `payload`; `None` if the camera
     /// answers that there is nothing there (e.g. an empty preset slot).
-    pub(super) fn query_with(
+    pub fn query_with(
         &self,
         dst: u8,
         cmd: [u8; 2],

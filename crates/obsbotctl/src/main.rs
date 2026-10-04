@@ -104,6 +104,8 @@ enum Preset {
     Recall { slot: u32 },
     /// Rename SLOT.
     Rename { slot: u32, name: String },
+    /// Empty SLOT (Tiny 3).
+    Delete { slot: u32 },
 }
 
 /// Converts a 1-based slot number from the command line to the camera's.
@@ -141,6 +143,12 @@ enum Raw {
         dst: String,
         /// Command ID as captured, e.g. `0401`.
         cmd: String,
+        /// Frame flags, e.g. `21` for queries that take a slot or index.
+        #[arg(long, default_value = "01")]
+        flags: String,
+        /// Query payload as hex bytes, e.g. `00000000`.
+        #[arg(long, default_value = "")]
+        payload: String,
     },
 }
 
@@ -432,6 +440,7 @@ fn main() -> Result<()> {
                 }
                 Preset::Recall { slot } => dev.recall_preset(slot_index(*slot)?)?,
                 Preset::Rename { slot, name } => dev.rename_preset(slot_index(*slot)?, name)?,
+                Preset::Delete { slot } => dev.delete_preset(slot_index(*slot)?)?,
             }
         }
         Command::Gimbal { right, up, ms } => {
@@ -515,14 +524,26 @@ fn main() -> Result<()> {
                     uvc_xu::set(node, *unit, *selector, &bytes)?;
                     println!("ok");
                 }
-                Raw::Query { dst, cmd } => {
+                Raw::Query {
+                    dst,
+                    cmd,
+                    flags,
+                    payload,
+                } => {
                     let [dst] = parse_hex(dst)?[..] else {
                         bail!("dst must be one byte, e.g. 04");
                     };
                     let cmd: [u8; 2] = parse_hex(cmd)?
                         .try_into()
                         .map_err(|_| anyhow!("cmd must be two bytes, e.g. 0401"))?;
-                    let payload = dev.query(dst, cmd)?;
+                    let [flags] = parse_hex(flags)?[..] else {
+                        bail!("flags must be one byte, e.g. 21");
+                    };
+                    let Some(payload) = dev.query_with(dst, cmd, flags, &parse_hex(payload)?)?
+                    else {
+                        println!("(nothing there)");
+                        return Ok(());
+                    };
                     println!(
                         "{}",
                         payload

@@ -282,6 +282,20 @@ pub struct GimbalVelocity {
 #[serde(deny_unknown_fields)]
 pub struct Presets {
     pub slots: u32,
+    /// How presets are stored and listed (see `docs/protocol.md`).
+    #[serde(default)]
+    pub format: PresetFormat,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PresetFormat {
+    /// Tiny SE: angles and zoom as f32, names readable (`043b`).
+    #[default]
+    F32,
+    /// Tiny 3: angles and zoom as int16 x 100, slots listed by `043d`;
+    /// names can be written but not read back.
+    I16,
 }
 
 fn one_f() -> f32 {
@@ -551,7 +565,8 @@ mod tests {
     fn tiny_3_matches_by_product_id() {
         let p = DeviceProfile::for_usb(0x3564, 0xff02);
         assert_eq!(p.id, "tiny-3");
-        assert!(p.presets.is_none());
+        let presets = p.presets.as_ref().expect("Tiny 3 presets");
+        assert_eq!((presets.slots, presets.format), (3, PresetFormat::I16));
         assert!(p.gimbal_velocity.is_some());
         assert_eq!(p.firmware.as_ref().map(|f| f.key.as_str()), Some("tiny3"));
         assert!(p.event_queue);

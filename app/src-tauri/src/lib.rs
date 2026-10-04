@@ -39,6 +39,7 @@ pub fn run() {
             commands::save_preset,
             commands::rename_preset,
             commands::recall_preset,
+            commands::delete_preset,
             commands::get_autostart,
             commands::set_autostart,
             preview::start_preview,

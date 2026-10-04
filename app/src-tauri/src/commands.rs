@@ -29,6 +29,10 @@ pub struct Snapshot {
     /// Camera-side gimbal presets by slot (`None` = empty); empty if the
     /// camera has none.
     presets: Vec<Option<String>>,
+    /// Preset names can be read back, so renaming is useful.
+    preset_rename: bool,
+    /// Preset slots can be emptied.
+    preset_delete: bool,
     features: Vec<FeatureState>,
 }
 
@@ -97,6 +101,8 @@ pub fn open_camera(state: State<AppState>, path: PathBuf) -> CmdResult<Snapshot>
         gimbal_velocity: device.has_gimbal_velocity(),
         firmware: device.firmware_info(),
         presets: device.presets().unwrap_or_default(),
+        preset_rename: device.preset_names_readable(),
+        preset_delete: device.preset_delete_supported(),
         features: device.read_all(),
     };
     *state.0.lock().unwrap() = Some(device);
@@ -214,6 +220,15 @@ pub fn rename_preset(
     let guard = state.0.lock().unwrap();
     let device = guard.as_ref().ok_or("no camera open")?;
     device.rename_preset(slot, &name).map_err(err)?;
+    device.presets().map_err(err)
+}
+
+/// Empties a preset slot; returns the updated preset names.
+#[tauri::command]
+pub fn delete_preset(state: State<AppState>, slot: u32) -> CmdResult<Vec<Option<String>>> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    device.delete_preset(slot).map_err(err)?;
     device.presets().map_err(err)
 }
 

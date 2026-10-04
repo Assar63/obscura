@@ -60,6 +60,10 @@ pub const CMD_PRESET_RECALL: [u8; 2] = [0xc4, 0x39];
 pub const CMD_PRESET_NAME: [u8; 2] = [0x84, 0x3a];
 /// Preset name query (flags 0x21, payload slot u32).
 pub const CMD_PRESET_NAME_QUERY: [u8; 2] = [0x04, 0x3b];
+/// Empties a preset slot: slot u32 (Tiny 3).
+pub const CMD_PRESET_DELETE: [u8; 2] = [0x84, 0x39];
+/// Stored preset slots, one byte each (Tiny 3).
+pub const CMD_PRESET_LIST: [u8; 2] = [0x04, 0x3d];
 
 const MAGIC: u8 = 0xaa;
 const FLAGS_COMMAND: u8 = 0x25;
@@ -289,6 +293,28 @@ mod tests {
         assert_eq!(
             encode_short(0x15, &[0x00, 0x01])[..4],
             [0x15, 0x02, 0x00, 0x01]
+        );
+    }
+
+    #[test]
+    fn tiny_3_presets_match_sdk_traffic() {
+        // aiAddGimbalPresetR(slot 2, yaw 30, pitch -10, zoom 1.5) and
+        // aiDelGimbalPresetR(2), traced on a Tiny 3.
+        let mut save = 2u32.to_le_bytes().to_vec();
+        for v in [3000i16, -1000, 0, 150] {
+            save.extend(v.to_le_bytes());
+        }
+        // The SDK's last 12 bytes; the camera stores its own values there
+        // (OBSCura sends zeros, which the camera treats the same).
+        save.extend(hex("8c ff 8c ff d8 00 d8 00 00 00 00 00"));
+        assert_eq!(
+            encode_command(5, DST_GIMBAL, CMD_PRESET_SAVE, &save)[..26],
+            padded("aa 25 05 00 0c 00 1b 66 0a 04 44 39 18 00 e6 80 02 00 00 00 b8 0b 18 fc 00 00")
+                [..26]
+        );
+        assert_eq!(
+            encode_command(5, DST_GIMBAL, CMD_PRESET_DELETE, &2u32.to_le_bytes())[..20],
+            padded("aa 25 05 00 0c 00 4b 66 0a 04 84 39 04 00 bf bf 02 00 00 00")[..20]
         );
     }
 

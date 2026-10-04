@@ -44,7 +44,7 @@ using a vendor protocol reverse-engineered from USB captures.
 | Camera | USB ID | Status |
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
-| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets, including Vox SE wireless mics (firmware 6.6.8.3) |
+| OBSBOT Tiny 3 | `3564:ff02` | Supported, including Vox SE wireless mics (firmware 6.6.8.3) |
 | OBSBOT Tiny 3 Lite | `3564:ff04` | Assumed like the Tiny 3, unverified |
 | OBSBOT Tiny 2 | `3564:fef8` | Assumed like the Tiny SE, cross-checked (see below) |
 | OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed like the Tiny SE, unverified |
@@ -57,8 +57,8 @@ using a vendor protocol reverse-engineered from USB captures.
 The **Tiny SE** and **Tiny 3** were tested on real cameras: the Tiny SE from
 OBSBOT Center captures, the Tiny 3 from Linux, with the commands it doesn't
 share with the Tiny SE (gestures, extra AI modes, Vox SE) recorded from
-OBSBOT's SDK. The Tiny 3 doesn't answer the Tiny SE's preset commands, so it
-has no presets yet.
+OBSBOT's SDK. The Tiny 3's presets store their values differently and their
+names can't be read back, so its presets are numbered (Preset 1–3).
 
 The other models' profiles **inherit** a tested one (`profiles/*.toml`): the
 Tiny 2 family, Tiny 4K and Meet line the Tiny SE's, the Tiny 3 Lite the
@@ -87,14 +87,14 @@ work, or you can record a model's traffic, see
 | View & gimbal | Field of view (86° / 78° / 65°) | – | ✅ |
 | AI tracking | Tracking speed (5 steps), motion mode | – | ✅ |
 | View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
-| View & gimbal | Presets: save, recall and rename 3 camera-side presets (also in the tray menu) | ✅ | – |
+| View & gimbal | Presets: save and recall 3 camera-side presets (also in the tray menu); rename on the Tiny SE, delete on the Tiny 3 | ✅ | ✅ |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ | ✅ |
 | Image | Brightness, contrast, saturation, sharpness, hue | ✅ | ✅ |
 | Image | Focus, exposure and white balance, each Auto / Manual; gain, anti-flicker | ✅ | ✅ |
 | Image | HDR, Global/Face AF and AE modes, exposure compensation | ✅ | ✅ |
 | Audio | Microphone on/off and level (the camera's USB audio, any webcam) | ✅ | ✅ |
 | Audio | Mic during sleep, noise reduction, auto gain, disable microphone, pickup distance | ✅ | ✅ |
-| Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, audio source | – | ✅ |
+| Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, button function, audio source | – | ✅ |
 | Audio | Voice control: switch each spoken command, language, voice zoom | – | ✅ |
 | Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ | ✅ |
 | Device | Status light and brightness, firmware version | ✅ | ✅ |

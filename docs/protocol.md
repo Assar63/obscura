@@ -248,6 +248,27 @@ Gestures themselves queue nothing: a palm shows as status[24] changing
 also has Vox SE events (`kEvtTipsTWS…`: connect, battery, mute, …), which
 should come through the same queue once a mic is paired.
 
+**Presets on the Tiny 3** (traced from the SDK, tested on the camera,
+firmware 6.6.8.3). The Tiny 3 keeps the Tiny SE's recall frame but stores
+presets differently:
+
+| Operation | Frame | Notes |
+|---|---|---|
+| Save (`aiAddGimbalPresetR`) | dst 04 `4439`, 24 bytes: slot u32; yaw, pitch, roll, zoom as int16 ×100; 12 more bytes | The camera fills the last 12 bytes itself (reads back `10 00 10 00 53 00 53 00 64 00 00 00` whatever was sent). The SDK stores exactly the values given, not the current position. |
+| Name (`aiSetGimbalPresetNameWithIdR`) | `843a`: slot u32 + name | Write-only: `043b` gets no answer, and the SDK has no name reader for this model. |
+| Recall (`aiTrgGimbalPresetR`) | `c439`: slot u32, 1.0 ×4 | Same as the Tiny SE. ✅ the camera turned and zoomed to the stored values. |
+| Delete (`aiDelGimbalPresetR`) | `8439`: slot u32 | |
+| List (`aiGetGimbalPresetListR`) | query `043d` | Stored slots, one byte each; "nothing there" (flags 0x09) when empty. |
+| Info (`aiGetGimbalPresetInfoWithIdR`) | query `443a`, flags 0x21, payload slot u32 + 1 byte | The saved values as above. |
+| Current position | query `0466` without payload | Motor pitch at [8], yaw at [10], ×0.1° (Tiny SE offsets). With the Tiny SE's payload byte `01` it gets no answer. |
+
+OBSCura saves the current position (from `0466`) and zoom (`0468`) this way.
+
+**Vox SE button** (`cameraSetTWSKeyTypeR`): dst 02 `42c0` u8, read back at
+mic info [0]. 0 human tracking, 1 switch tracking mode, 2 zoom to 1.0x,
+3 record (in OBSBOT Center). ✅ with 2, a press zoomed the camera from 2x to
+1x.
+
 **Field of view, tracking and voice control** (traced from the SDK, tested
 on the camera, firmware 6.6.8.3):
 

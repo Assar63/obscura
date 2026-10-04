@@ -14,7 +14,7 @@
 # light, HDR, AI mode, AF mode, sleep/resume, manual zoom (the camera ramps
 # it at about 0.2x per second), joystick and re-center (gimbal position
 # query `0466`), the firmware/serial queries, and the gesture switches.
-# Presets differ from the Tiny SE and are left unbound; the audio and
+# Presets use their own format (see [presets] below); the audio and
 # device-sleep settings read back sensibly but haven't been written. See
 # "Adding support for another camera" in README.md.
 #
@@ -54,8 +54,15 @@ product_id = 0xff02
 page = "https://www.obsbot.com/download/obsbot-tiny-3-series"
 key = "tiny3"
 
-# No [presets]: the preset list query (dst 04 `043b`) gets no response on
-# the Tiny 3, so the Tiny SE's preset commands aren't used here.
+# Gimbal presets: 3 slots (the voice commands say "Position One/Two/Three").
+# Traced from OBSBOT's SDK: save dst 04 `4439` (slot u32, yaw, pitch, roll,
+# zoom as int16 x 100, 12 bytes the camera fills itself), recall `c439` as
+# on the Tiny SE, delete `8439`, list `043d` (stored slots, one byte each).
+# Names are written with `843a` but the Tiny SE's name query `043b` gets no
+# answer. Position query `0466` needs no payload here.
+[presets]
+slots = 3
+format = "i16"
 
 # Joystick: [roll, pitch, yaw] float32 velocity, resent ~10 Hz, zeros to stop.
 # Seen in OBSBOT Center captures with magnitudes up to ~8.5. Positive yaw
@@ -291,6 +298,15 @@ frames = [{ dst = 0x98, cmd = "d32d" }]
 [features.mic_tx2_gain]
 query = { dst = 0x02, cmd = "02c0", offsets = [6], value = "i8" }
 frames = [{ dst = 0x98, cmd = "532d", value = "u32" }]
+
+# What a short press of the Vox SE's button does (SDK cameraSetTWSKeyTypeR,
+# for both mics): dst 02 `42c0` u8, read back at mic info [0]. 0 human
+# tracking (default), 1 switch tracking mode, 2 zoom to 1.0x; 3 ("record")
+# triggers a recording in OBSBOT Center on the PC and is left out. Tested: a
+# press with 2 zoomed the camera from 2x to 1x.
+[features.mic_button]
+query = { dst = 0x02, cmd = "02c0", offsets = [0] }
+frames = [{ dst = 0x02, cmd = "42c0" }]
 
 # Voice control (SDK cameraSetAudioCtrlStateU): short setting 0x15, [command,
 # value]. Commands 0-6 switch one voice command each, read back as bit n of

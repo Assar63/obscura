@@ -128,9 +128,16 @@
             <button class="ghost icon" title="Save the current view to {name}" onclick={() => device.savePreset(slot, name)}>
               <Icon name="target" size={14} />
             </button>
-            <button class="ghost icon" title="Rename" onclick={() => startRename(slot)}>
-              <Icon name="pencil" size={14} />
-            </button>
+            {#if device.presetRename}
+              <button class="ghost icon" title="Rename" onclick={() => startRename(slot)}>
+                <Icon name="pencil" size={14} />
+              </button>
+            {/if}
+            {#if device.presetDelete}
+              <button class="ghost icon" title="Delete {name}" onclick={() => device.deletePreset(slot)}>
+                <Icon name="trash" size={14} />
+              </button>
+            {/if}
           </div>
         {/if}
       {/each}

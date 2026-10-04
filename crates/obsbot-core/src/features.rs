@@ -155,6 +155,7 @@ features! {
     MicTx1Gain            "mic_tx1_gain" => "wireless", "TX1 Gain", range(-12, 12, 1, None);
     MicTx2Mute            "mic_tx2_mute" => "wireless", "TX2 Mute", FeatureKind::Toggle;
     MicTx2Gain            "mic_tx2_gain" => "wireless", "TX2 Gain", range(-12, 12, 1, None);
+    MicButton             "mic_button" => "wireless", "Mic Button", choice(&[(0, "Human Tracking"), (1, "Switch Tracking Mode"), (2, "Zoom to 1.0x")]);
 
     // Voice control (Tiny 3 series)
     VoiceHiTiny           "voice_hi_tiny" => "voice", "\"Hi, Tiny\" (wake up)", FeatureKind::Toggle;

@@ -117,12 +117,13 @@ offsets, for profiles with `status_layout = "tiny"`.
 
 ### P3: needs more work or may not apply
 
-- [ ] **Presets.** The Tiny SE's preset query (`043b`) gets no answer from
-  the Tiny 3, and brendanwelsh found preset *recall* works but *writing*
-  is ignored. Trace `aiGetGimbalPresetListR`, `aiTrgGimbalPresetR`,
-  `aiAddGimbalPresetR`, and `aiSetGimbalPresetNameWithIdR`. The Tiny 3's
-  `PresetsAction` also stores framing (`auto_frame`), AI mode (desk,
-  whiteboard, speech), tracking speed and white balance per preset.
+- [x] **Presets.** *Done:* save `4439` with int16 ×100 values, recall
+  `c439`, delete `8439`, list `043d`; position query `0466` without a
+  payload. Names are write-only (`043b` doesn't answer), so slots show as
+  Preset 1–3, with delete instead of rename. Tested: a preset saved by
+  OBSCura at −40° and 1.5x was recalled from the centre. Per-preset extras
+  (`PresetsAction`: framing, AI mode, tracking speed, white balance) are
+  not traced.
 - [ ] **Audio mode / beamforming.** `AudioModeType` (Tiny 3): Omni, Stereo,
   Front, Back, Dipole, Music; status [40] bits 3–7 (Tiny 3 reads stereo).
   Find the setter by tracing; there's no obvious `cameraSet…` for it in the
@@ -214,8 +215,10 @@ button. See docs/protocol.md.
 - [x] **P2: Mute and gain per mic.** *Done:* `d32d` (mute, u8) and `532d` (gain,
   i32) to the mic; readback from `02c0` [2] bits and [5]/[6]. Gain is
   offered as -12..+12 (the mic stores -30..+30; OBSBOT publishes no range).
-- [ ] **P2: Button function.** `cameraSetTWSKeyTypeR`: track, switch
-  tracking mode, zoom 1x, record.
+- [x] **P2: Button function.** `cameraSetTWSKeyTypeR`: dst 02 `42c0` u8,
+  read back at mic info [0]. *Done:* Mic Button in the Wireless
+  Microphones card (human tracking, switch tracking mode, zoom to 1.0x;
+  "record" left out, it's for OBSBOT Center). Tested with a button press.
 - [x] **P2: Audio source.** Built-in vs. wireless, and auto select. *Done:* audio source and auto-select controls.
 - [ ] **P3: Mic options.** `cameraSetTWSFuncR` (button, vibration, LED,
   noise suppression, auto shutdown), `cameraSetTWSSoundModeR` (mono/stereo).

@@ -11,6 +11,13 @@
 // ctlprobe ctlbool|ctlint|ctlfloat <target> <para> <value>
 // ctlprobe voice <cmd> <state>         cameraSetAudioCtrlStateU
 // ctlprobe runstatus <n>               cameraSetDevRunStatusR (DevStatus)
+// ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
+// ctlprobe presetlist                  aiGetGimbalPresetListR
+// ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
+// ctlprobe presettrg <id>              aiTrgGimbalPresetR
+// ctlprobe presetadd <id> <name> [yaw pitch zoom]  aiAddGimbalPresetR
+// ctlprobe presetname <id> <name>      aiSetGimbalPresetNameWithIdR
+// ctlprobe presetdel <id>              aiDelGimbalPresetR
 //
 // Product type defaults to the Tiny 3; set OBSBOT_PRODUCT=<ObsbotProductType
 // number> to drive another model.
@@ -77,6 +84,47 @@ int main(int argc, char **argv) {
         r = dev->cameraSetAudioCtrlStateU((Device::AudioCtrlCmdType)arg(2), arg(3));
     } else if (cmd == "runstatus" && argc == 3) {
         r = dev->cameraSetDevRunStatusR((Device::DevStatus)arg(2));
+    } else if (cmd == "gimbalstate" && argc == 2) {
+        Device::AiGimbalStateInfo g{};
+        r = dev->aiGetGimbalStateR(&g);
+        char buf[200];
+        snprintf(buf, sizeof buf, "-> euler r %g p %g y %g | motor r %g p %g y %g", g.roll_euler,
+                 g.pitch_euler, g.yaw_euler, g.roll_motor, g.pitch_motor, g.yaw_motor);
+        mark(buf);
+        float xyz[3] = {0, 0, 0};
+        int ra = dev->gimbalGetAttitudeInfoR(xyz);
+        snprintf(buf, sizeof buf, "-> attitude ret %d: %g %g %g", ra, xyz[0], xyz[1], xyz[2]);
+        mark(buf);
+    } else if (cmd == "presetlist" && argc == 2) {
+        Device::DevDataArray ids{};
+        r = dev->aiGetGimbalPresetListR(&ids);
+        std::string l = "-> ids:";
+        for (int i = 0; i < ids.len && i < 16; i++) l += " " + std::to_string(ids.data_int32[i]);
+        mark(l + " (len " + std::to_string(ids.len) + ")");
+    } else if (cmd == "presetinfo" && argc == 3) {
+        Device::PresetPosInfo p{};
+        r = dev->aiGetGimbalPresetInfoWithIdR(&p, arg(2));
+        char buf[200];
+        snprintf(buf, sizeof buf, "-> id %d roll %g pitch %g yaw %g zoom %g name '%.*s'", p.id, p.roll,
+                 p.pitch, p.yaw, p.zoom, p.name_len > 0 && p.name_len <= 64 ? p.name_len : 0, p.name);
+        mark(buf);
+    } else if (cmd == "presettrg" && argc == 3) {
+        r = dev->aiTrgGimbalPresetR(arg(2));
+    } else if (cmd == "presetadd" && (argc == 4 || argc == 7)) {
+        Device::PresetPosInfo p{};
+        p.id = arg(2);
+        if (argc == 7) {
+            p.yaw = (float)atof(argv[4]);
+            p.pitch = (float)atof(argv[5]);
+            p.zoom = (float)atof(argv[6]);
+        }
+        p.name_len = (int)strnlen(argv[3], 63);
+        memcpy(p.name, argv[3], p.name_len);
+        r = dev->aiAddGimbalPresetR(&p);
+    } else if (cmd == "presetname" && argc == 4) {
+        r = dev->aiSetGimbalPresetNameWithIdR(argv[3], arg(2));
+    } else if (cmd == "presetdel" && argc == 3) {
+        r = dev->aiDelGimbalPresetR(arg(2));
     } else {
         mark("bad arguments");
         return 2;

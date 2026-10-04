@@ -13,6 +13,10 @@ class DeviceStore {
   firmware = $state<Snapshot["firmware"]>(null);
   /** Camera-side gimbal presets by slot; null for an empty slot. */
   presets = $state<(string | null)[]>([]);
+  /** Preset names can be read back (renaming is useful). */
+  presetRename = $state(true);
+  /** Preset slots can be emptied. */
+  presetDelete = $state(false);
   /** Joystick drives the gimbal by velocity rather than absolute nudges. */
   gimbalVelocity = $state(false);
   features = $state<Record<string, FeatureState>>({});
@@ -101,6 +105,8 @@ class DeviceStore {
       this.profileName = snap.profile_name;
       this.firmware = snap.firmware;
       this.presets = snap.presets;
+      this.presetRename = snap.preset_rename;
+      this.presetDelete = snap.preset_delete;
       this.gimbalVelocity = snap.gimbal_velocity;
       this.#apply(snap.features);
       this.error = null;
@@ -160,6 +166,15 @@ class DeviceStore {
   async renamePreset(slot: number, name: string) {
     try {
       this.presets = await api.renamePreset(slot, name);
+      this.error = null;
+    } catch (e) {
+      this.error = String(e);
+    }
+  }
+
+  async deletePreset(slot: number) {
+    try {
+      this.presets = await api.deletePreset(slot);
       this.error = null;
     } catch (e) {
       this.error = String(e);

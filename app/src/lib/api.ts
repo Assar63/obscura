@@ -49,6 +49,8 @@ export type Snapshot = {
   firmware: { version: string; serial: string | null } | null;
   /** Preset names by slot; null for an empty slot. */
   presets: (string | null)[];
+  preset_rename: boolean;
+  preset_delete: boolean;
   features: FeatureState[];
 };
 
@@ -127,6 +129,7 @@ export const api = {
   renamePreset: (slot: number, name: string) =>
     invoke<(string | null)[]>("rename_preset", { slot, name }),
   recallPreset: (slot: number) => invoke<void>("recall_preset", { slot }),
+  deletePreset: (slot: number) => invoke<(string | null)[]>("delete_preset", { slot }),
   previewReady: () => invoke<void>("preview_ready"),
   stopPreview: () => invoke<void>("stop_preview"),
 };
