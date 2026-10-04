@@ -1,60 +1,49 @@
 <script lang="ts">
   // The camera's microphones, and OBSBOT's Vox SE wireless microphones
-  // (Tiny 3 series: two slots, TX1 and TX2).
+  // (Tiny 3 series: two slots, TX1 and TX2). The slots come from the device
+  // store's regular poll.
   import { onDestroy } from "svelte";
-  import { api, type MicSlot } from "../api";
-  import { device } from "../device.svelte";
-  import Card from "./Card.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
-  import Feature from "./Feature.svelte";
+  import type { MicSlot } from "../../api";
+  import { device } from "../../device.svelte";
+  import Card from "../ui/Card.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Feature from "../controls/Feature.svelte";
 
-  const POLL_MS = 2000;
   const PAIR_TIMEOUT_MS = 90_000;
 
-  let mics = $state<MicSlot[] | null>(null);
-  // Pairing in progress: slot, start time, and how it ended.
+  // Pairing in progress: slot, a timeout, and how it ended.
   let pairing = $state<number | null>(null);
-  let pairStart = 0;
+  let pairTimer: ReturnType<typeof setTimeout> | undefined;
   let pairResult = $state<{ slot: number; ok: boolean } | null>(null);
 
   let forgetSlot = $state(1);
   let confirmForget = $state(false);
 
-  async function poll() {
-    if (!device.current) {
-      mics = null;
-      return;
+  // Done as soon as the camera reports the slot online.
+  $effect(() => {
+    if (pairing !== null && device.mics?.find((m) => m.slot === pairing)?.connected) {
+      clearTimeout(pairTimer);
+      pairResult = { slot: pairing, ok: true };
+      pairing = null;
     }
-    try {
-      mics = await api.wirelessMics();
-    } catch {
-      mics = null;
-    }
-    if (pairing !== null) {
-      const slot = mics?.find((m) => m.slot === pairing);
-      if (slot?.connected) {
-        pairResult = { slot: pairing, ok: true };
-        pairing = null;
-      } else if (Date.now() - pairStart > PAIR_TIMEOUT_MS) {
-        device.set("mic_pair_stop", 1);
-        pairResult = { slot: pairing, ok: false };
-        pairing = null;
-      }
-    }
-  }
-
-  void poll();
-  const timer = setInterval(() => void poll(), POLL_MS);
-  onDestroy(() => clearInterval(timer));
+  });
+  onDestroy(() => clearTimeout(pairTimer));
 
   function pair(slot: number) {
     pairResult = null;
     pairing = slot;
-    pairStart = Date.now();
     device.set(`mic_pair_tx${slot}`, 1);
+    clearTimeout(pairTimer);
+    pairTimer = setTimeout(() => {
+      if (pairing === null) return;
+      device.set("mic_pair_stop", 1);
+      pairResult = { slot: pairing, ok: false };
+      pairing = null;
+    }, PAIR_TIMEOUT_MS);
   }
 
   function cancel() {
+    clearTimeout(pairTimer);
     device.set("mic_pair_stop", 1);
     pairing = null;
   }
@@ -83,9 +72,9 @@
     <Feature id="mic_during_sleep" />
   </Card>
 
-  {#if mics}
+  {#if device.mics}
     <Card title="Wireless Microphones">
-      {#each mics as m (m.slot)}
+      {#each device.mics as m (m.slot)}
         <div class="slot-group">
           <div class="slot">
             <span class="dot" class:on={m.connected}></span>

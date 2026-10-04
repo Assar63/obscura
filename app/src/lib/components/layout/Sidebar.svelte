@@ -1,7 +1,7 @@
 <script lang="ts">
-  import ImageTab from "./ImageTab.svelte";
-  import AudioTab from "./AudioTab.svelte";
-  import MoreTab from "./MoreTab.svelte";
+  import ImageTab from "../tabs/ImageTab.svelte";
+  import AudioTab from "../tabs/AudioTab.svelte";
+  import MoreTab from "../tabs/MoreTab.svelte";
 
   let tab = $state<"image" | "audio" | "more">("image");
 </script>

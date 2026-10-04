@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { device } from "../device.svelte";
-  import { preview as stream } from "../preview.svelte";
-  import Feature from "./Feature.svelte";
+  import { device } from "../../device.svelte";
+  import { preview as stream } from "../../preview.svelte";
+  import Feature from "../controls/Feature.svelte";
 
   let { preview }: { preview: boolean } = $props();
 

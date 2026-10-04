@@ -2,10 +2,10 @@
   import { onMount } from "svelte";
   import { device } from "./lib/device.svelte";
   import { api } from "./lib/api";
-  import TopBar from "./lib/components/TopBar.svelte";
-  import PreviewArea from "./lib/components/PreviewArea.svelte";
-  import BottomBar from "./lib/components/BottomBar.svelte";
-  import Sidebar from "./lib/components/Sidebar.svelte";
+  import TopBar from "./lib/components/layout/TopBar.svelte";
+  import PreviewArea from "./lib/components/layout/PreviewArea.svelte";
+  import BottomBar from "./lib/components/layout/BottomBar.svelte";
+  import Sidebar from "./lib/components/layout/Sidebar.svelte";
 
   let preview = $state(true);
 

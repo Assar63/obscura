@@ -3,9 +3,9 @@
   // an Auto | Manual switch on the auto toggle feature, with the manual
   // controls below it in Manual, or the auto-only ones in Auto. Without the
   // auto toggle, the manual controls are shown on their own.
-  import { device } from "../device.svelte";
+  import { device } from "../../device.svelte";
   import Feature from "./Feature.svelte";
-  import Segmented from "./Segmented.svelte";
+  import Segmented from "../ui/Segmented.svelte";
 
   let {
     label,

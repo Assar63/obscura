@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ChoiceOption } from "../api";
+  import type { ChoiceOption } from "../../api";
 
   let {
     options,

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { device } from "../device.svelte";
-  import Card from "./Card.svelte";
-  import Feature from "./Feature.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
-  import Toggle from "./Toggle.svelte";
-  import { api, type UpdateCheck } from "../api";
+  import { device } from "../../device.svelte";
+  import Card from "../ui/Card.svelte";
+  import Feature from "../controls/Feature.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Toggle from "../ui/Toggle.svelte";
+  import { api, type UpdateCheck } from "../../api";
 
   let confirmReset = $state(false);
 

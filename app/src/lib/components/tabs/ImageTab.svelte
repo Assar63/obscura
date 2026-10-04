@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { device } from "../device.svelte";
-  import Card from "./Card.svelte";
-  import Feature from "./Feature.svelte";
-  import AutoManual from "./AutoManual.svelte";
-  import Joystick from "./Joystick.svelte";
-  import Segmented from "./Segmented.svelte";
-  import Icon from "./Icon.svelte";
+  import { device } from "../../device.svelte";
+  import Card from "../ui/Card.svelte";
+  import Feature from "../controls/Feature.svelte";
+  import AutoManual from "../controls/AutoManual.svelte";
+  import Joystick from "../ui/Joystick.svelte";
+  import Segmented from "../ui/Segmented.svelte";
+  import Icon from "../ui/Icon.svelte";
 
   // Gimbal speed only scales joystick moves; OBSBOT Center sends nothing to
   // the camera for it. Remembered per machine.

@@ -3,10 +3,10 @@
   // the feature's kind. Unsupported features render disabled with the reason
   // as a tooltip, so the layout matches OBSBOT Center even before the vendor
   // protocol is implemented.
-  import { device } from "../device.svelte";
-  import Toggle from "./Toggle.svelte";
-  import Segmented from "./Segmented.svelte";
-  import SliderNumber from "./SliderNumber.svelte";
+  import { device } from "../../device.svelte";
+  import Toggle from "../ui/Toggle.svelte";
+  import Segmented from "../ui/Segmented.svelte";
+  import SliderNumber from "../ui/SliderNumber.svelte";
 
   let {
     id,

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { device } from "../device.svelte";
-  import Icon from "./Icon.svelte";
-  import Popover from "./Popover.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
-  import { preview } from "../preview.svelte";
+  import { device } from "../../device.svelte";
+  import Icon from "../ui/Icon.svelte";
+  import Popover from "../ui/Popover.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import { preview } from "../../preview.svelte";
 
   // OBSBOT Center's Portrait mode and rotate/flip buttons send nothing to
   // the camera: they transform its virtual camera output on the PC, so

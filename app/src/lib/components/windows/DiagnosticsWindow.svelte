@@ -4,7 +4,7 @@
   // it. It talks to the backend only; it doesn't load the main window's
   // device store, which would poll the camera a second time.
   import { onDestroy } from "svelte";
-  import { api, type LiveStatus, type LogEntry } from "../api";
+  import { api, type LiveStatus, type LogEntry } from "../../api";
 
   const POLL_MS = 1000;
   const KEEP = 500;

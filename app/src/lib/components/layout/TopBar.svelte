@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { device } from "../device.svelte";
-  import Icon from "./Icon.svelte";
-  import Popover from "./Popover.svelte";
-  import Feature from "./Feature.svelte";
+  import { device } from "../../device.svelte";
+  import Icon from "../ui/Icon.svelte";
+  import Popover from "../ui/Popover.svelte";
+  import Feature from "../controls/Feature.svelte";
 
   let { preview = $bindable(true) }: { preview?: boolean } = $props();
 
