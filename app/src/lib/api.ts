@@ -52,6 +52,26 @@ export type Snapshot = {
   features: FeatureState[];
 };
 
+export type LogEntry = {
+  seq: number;
+  time_ms: number;
+  level: "trace" | "info" | "warn";
+  message: string;
+};
+
+/** Live camera state decoded from the status block (crates/obsbot-core/src/status.rs). */
+export type LiveStatus = {
+  power: string;
+  ai_mode: number;
+  ai_sub_mode: number;
+  zoom: number;
+  fov: string | null;
+  fps: number;
+  light_level: number;
+  event_count: number;
+  raw: string;
+};
+
 export type PreviewConfig = { width: number; height: number; fps: number };
 export type PreviewFormat = PreviewConfig;
 
@@ -61,6 +81,9 @@ export const api = {
   listCameras: () => invoke<CameraInfo[]>("list_cameras"),
   openCamera: (path: string) => invoke<Snapshot>("open_camera", { path }),
   getFeatures: () => invoke<FeatureState[]>("get_features"),
+  /** Activity log entries newer than `since` (0 for all). */
+  getLog: (since: number) => invoke<LogEntry[]>("get_log", { since }),
+  liveStatus: () => invoke<LiveStatus | null>("live_status"),
   setFeature: (id: string, value: number) =>
     invoke<FeatureState[]>("set_feature", { id, value }),
   /** Starts streaming JPEG frames to `onFrame`. Call `previewReady` after

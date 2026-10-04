@@ -234,8 +234,10 @@ obsbotctl dump                     # every supported feature and its value
 obsbotctl dump --unsupported       # ...including the unsupported ones and why
 obsbotctl dump --json
 
+obsbotctl status                   # live state: power, AI mode, zoom, fps…
 obsbotctl get ai_mode
 obsbotctl set ai_mode human        # off | human | group | "hand tracking"
+obsbotctl set ai_mode human --check  # …and report whether the camera took it
 obsbotctl set gesture_control on
 obsbotctl set gesture_zoom_factor 2.5
 obsbotctl set mirror_image off
@@ -403,6 +405,21 @@ The dev watcher doesn't track `profiles/`. Restart `pnpm tauri dev` after
 editing a profile.
 
 ## Troubleshooting
+
+**Seeing what happens**: More → Diagnostics shows the camera's live state
+and an activity log of what you changed, with a warning when the camera
+ignores a change. For a full debug log, start the app (or `obsbotctl`, or
+the indicator) from a terminal with `OBSCURA_TRACE=1`; it then also prints
+every frame sent to and read from the camera:
+
+```sh
+OBSCURA_TRACE=1 obscura
+```
+
+**Human tracking doesn't start**: the camera only starts human tracking
+while it's streaming video, since it has to see someone. Open the preview
+or start your call first. Group, Hand Tracking and the other modes don't
+need this.
 
 **"No OBSBOT camera found"**: check that `obsbotctl list --all` shows the
 camera and that you can open `/dev/videoN` (see

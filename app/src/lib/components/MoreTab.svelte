@@ -4,6 +4,7 @@
   import Feature from "./Feature.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Toggle from "./Toggle.svelte";
+  import DiagnosticsCard from "./DiagnosticsCard.svelte";
   import { api } from "../api";
 
   let confirmReset = $state(false);
@@ -94,6 +95,8 @@
       <p class="note">No camera connected.</p>
     {/if}
   </Card>
+
+  <DiagnosticsCard />
 </div>
 
 <ConfirmDialog

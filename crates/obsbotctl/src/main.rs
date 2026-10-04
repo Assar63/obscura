@@ -37,7 +37,21 @@ enum Command {
     Get { feature: String },
     /// Write one feature: `on`/`off`, a choice label, or a number in display
     /// units (e.g. `zoom 1.5`).
-    Set { feature: String, value: String },
+    Set {
+        feature: String,
+        value: String,
+        /// Wait for the camera's status to catch up, then report whether it
+        /// took the new value.
+        #[arg(long)]
+        check: bool,
+    },
+    /// Show the camera's live state (power, AI mode, zoom, stream fps…)
+    /// decoded from its status block.
+    Status {
+        /// Also print the raw status block.
+        #[arg(long)]
+        raw: bool,
+    },
     /// List the raw V4L2 controls the driver exposes.
     Controls,
     /// Gimbal presets stored on the camera (slots are numbered from 1).
@@ -272,7 +286,11 @@ fn main() -> Result<()> {
                 ),
             }
         }
-        Command::Set { feature, value } => {
+        Command::Set {
+            feature,
+            value,
+            check,
+        } => {
             let dev = open(&cli)?;
             let id = feature_id(feature)?;
             let kind = dev.feature(id).kind;
@@ -282,12 +300,48 @@ fn main() -> Result<()> {
                     describe_kind(&kind)
                 )
             })?;
+            let before = obsbot_core::log::since(0).last().map_or(0, |e| e.seq);
             let s = dev.set(id, raw)?;
             println!(
                 "{} = {}",
                 feature,
                 s.value.map_or("?".into(), |v| s.kind.format(v))
             );
+            if *check {
+                std::thread::sleep(std::time::Duration::from_secs(3));
+                dev.feature(id);
+                let warnings: Vec<_> = obsbot_core::log::since(before)
+                    .into_iter()
+                    .filter(|e| e.level == obsbot_core::log::Level::Warn)
+                    .collect();
+                if warnings.is_empty() {
+                    println!("checked: the camera took it");
+                }
+                for w in warnings {
+                    eprintln!("warning: {}", w.message);
+                }
+            }
+        }
+        Command::Status { raw } => {
+            let dev = open(&cli)?;
+            let Some(st) = dev.live_status() else {
+                bail!("{} has no vendor status block", dev.profile.name);
+            };
+            let ai = dev.feature(FeatureId::AiMode);
+            let ai_label = match st.ai_mode {
+                6 => "switching…".to_string(),
+                v => ai.kind.format(v as i64),
+            };
+            println!("Power:        {}", st.power);
+            println!("AI mode:      {ai_label} (sub-mode {})", st.ai_sub_mode);
+            println!("Zoom:         {:.2}x", st.zoom);
+            println!("FOV:          {}", st.fov.unwrap_or("-"));
+            println!("Stream fps:   {}", st.fps);
+            println!("Light level:  {}", st.light_level);
+            println!("Event count:  {}", st.event_count);
+            if *raw {
+                println!("Raw:          {}", st.raw);
+            }
         }
         Command::Preset(p) => {
             let dev = open(&cli)?;

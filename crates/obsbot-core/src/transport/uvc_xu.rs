@@ -5,6 +5,7 @@
 //! read-only probe used by `obsbotctl raw` to map a camera's XU layout.
 
 use crate::error::Result;
+use crate::log;
 use crate::v4l2::{UvcQuery, VideoNode};
 
 /// Length in bytes of an XU control (UVC GET_LEN).
@@ -25,10 +26,18 @@ pub fn info(node: &VideoNode, unit: u8, selector: u8) -> Result<u8> {
 pub fn get(node: &VideoNode, unit: u8, selector: u8, query: UvcQuery) -> Result<Vec<u8>> {
     let mut buf = vec![0u8; len(node, unit, selector)? as usize];
     node.xu_query(unit, selector, query, &mut buf)?;
+    log::trace(format!(
+        "XU GET  unit {unit} sel {selector}: {}",
+        log::hex(&buf)
+    ));
     Ok(buf)
 }
 
 pub fn set(node: &VideoNode, unit: u8, selector: u8, data: &[u8]) -> Result<()> {
+    log::trace(format!(
+        "XU SET  unit {unit} sel {selector}: {}",
+        log::hex(data)
+    ));
     let mut buf = data.to_vec();
     node.xu_query(unit, selector, UvcQuery::SetCur, &mut buf)
 }

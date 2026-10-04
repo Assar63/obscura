@@ -10,6 +10,7 @@ use serde::Serialize;
 use crate::discovery::CameraInfo;
 use crate::error::{Error, Result};
 use crate::features::{ChoiceOption, FeatureId, FeatureKind};
+use crate::log;
 use crate::profile::{Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding};
 use crate::protocol::{
     self, encode_command, encode_query, encode_short, encode_value, ValueEncoding,
@@ -66,6 +67,9 @@ pub struct Device {
     levels: Mutex<HashMap<usize, i64>>,
     /// Last value read that wasn't transient (see `VendorBinding::transient`).
     settled: Mutex<HashMap<FeatureId, i64>>,
+    /// Writes not yet compared with the camera's readback, so the log can
+    /// warn when the camera ignored one.
+    unverified: Mutex<HashMap<FeatureId, (i64, Instant)>>,
     /// Values saved by a host-side lock, while locked.
     locked: Mutex<Option<Vec<(FeatureId, i64)>>>,
 }
@@ -84,8 +88,14 @@ impl Device {
             written: Mutex::new(HashMap::new()),
             levels: Mutex::new(HashMap::new()),
             settled: Mutex::new(HashMap::new()),
+            unverified: Mutex::new(HashMap::new()),
             locked: Mutex::new(None),
         })
+    }
+
+    /// The camera's live state decoded from the status block, if it has one.
+    pub fn live_status(&self) -> Option<crate::status::LiveStatus> {
+        crate::status::decode(&self.status_block()?)
     }
 
     /// Reads the vendor status block (selector 6), if the device has one.
@@ -577,6 +587,10 @@ impl Device {
                     Some((v, at)) if at.elapsed() < STATUS_LAG => Some(v),
                     w => read.or(w.map(|(v, _)| v)),
                 };
+                let transient = raw.is_some_and(|r| b.transient.contains(&r));
+                if !transient {
+                    self.verify_write(id, read, &state);
+                }
                 // A level is inactive while its switch is off.
                 if b.level == Some(Level::Magnitude) {
                     state.active = raw.is_none_or(|r| r > 0);
@@ -588,6 +602,29 @@ impl Device {
             }
         }
         state
+    }
+
+    /// Once the status lag has passed after a write, logs a warning if the
+    /// camera reports something else than what was written.
+    fn verify_write(&self, id: FeatureId, read: Option<i64>, state: &FeatureState) {
+        let mut unverified = self.unverified.lock().unwrap();
+        let Some(&(wanted, at)) = unverified.get(&id) else {
+            return;
+        };
+        if at.elapsed() < STATUS_LAG {
+            return;
+        }
+        unverified.remove(&id);
+        match read {
+            Some(got) if got != wanted => log::warn(format!(
+                "{}: asked for {}, but the camera reports {}.{}",
+                state.label,
+                state.kind.format(wanted),
+                state.kind.format(got),
+                ignored_hint(id, wanted),
+            )),
+            _ => {}
+        }
     }
 
     pub fn read_all(&self) -> Vec<FeatureState> {
@@ -612,6 +649,21 @@ impl Device {
     /// toggling Auto WB activates Temperature).
     pub fn set(&self, id: FeatureId, value: i64) -> Result<FeatureState> {
         let current = self.feature(id);
+        let wanted = current.kind.format(value);
+        let result = self.set_checked(id, value, &current);
+        match &result {
+            Ok(_) => log::info(format!("{}: set to {wanted}", current.label)),
+            Err(e) => log::warn(format!("{}: setting {wanted} failed: {e}", current.label)),
+        }
+        result
+    }
+
+    fn set_checked(
+        &self,
+        id: FeatureId,
+        value: i64,
+        current: &FeatureState,
+    ) -> Result<FeatureState> {
         if !current.supported {
             return Err(Error::Unsupported(id.name().to_string()));
         }
@@ -628,12 +680,32 @@ impl Device {
                     .lock()
                     .unwrap()
                     .insert(id, (value, Instant::now()));
+                if b.status.is_some() || b.query.is_some() {
+                    self.unverified
+                        .lock()
+                        .unwrap()
+                        .insert(id, (value, Instant::now()));
+                }
                 // Frames like the gesture master switch also set sub-features.
                 self.mark_related(b, value);
             }
             None => return Err(Error::Unsupported(id.name().to_string())),
         }
         Ok(self.feature(id))
+    }
+}
+
+/// Why the camera may have ignored a write, for the activity log.
+fn ignored_hint(id: FeatureId, value: i64) -> &'static str {
+    match id {
+        // Measured on a Tiny 3: Human needs the camera to see someone, so it's
+        // ignored without a stream; Group, Hand, Desk and Off are not.
+        FeatureId::AiMode if value == 2 => {
+            " Human tracking only starts while the camera is streaming video: open \
+             the preview or start a call, then try again."
+        }
+        FeatureId::Zoom => " The camera ignores zoom while it sleeps.",
+        _ => "",
     }
 }
 

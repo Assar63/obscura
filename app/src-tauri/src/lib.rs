@@ -30,6 +30,8 @@ pub fn run() {
             commands::open_camera,
             commands::get_features,
             commands::set_feature,
+            commands::get_log,
+            commands::live_status,
             commands::gimbal_move,
             commands::save_preset,
             commands::rename_preset,

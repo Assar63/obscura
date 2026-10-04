@@ -3,7 +3,9 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use obsbot_core::{discover, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo};
+use obsbot_core::{
+    discover, log, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo, LiveStatus,
+};
 use serde::Serialize;
 use tauri::State;
 
@@ -82,6 +84,12 @@ pub fn open_camera(state: State<AppState>, path: PathBuf) -> CmdResult<Snapshot>
         .find(|c| c.path == path)
         .ok_or_else(|| format!("{} is no longer connected", path.display()))?;
     let device = Device::open_auto(info).map_err(err)?;
+    log::info(format!(
+        "Opened {} ({}) with profile {}",
+        device.info.name,
+        device.info.path.display(),
+        device.profile.id
+    ));
     let snapshot = Snapshot {
         info: device.info.clone(),
         profile_id: device.profile.id.clone(),
@@ -103,6 +111,20 @@ pub fn get_features(state: State<AppState>) -> CmdResult<Vec<FeatureState>> {
     // the camera disappearing altogether (ENODEV after unplug or reboot).
     device.node().capability().map_err(err)?;
     Ok(device.read_all())
+}
+
+/// Activity log entries newer than `since` (0 for all), oldest first.
+#[tauri::command]
+pub fn get_log(since: u64) -> Vec<log::Entry> {
+    log::since(since)
+}
+
+/// The camera's live state from its status block (`None` without one).
+#[tauri::command]
+pub fn live_status(state: State<AppState>) -> CmdResult<Option<LiveStatus>> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    Ok(device.live_status())
 }
 
 /// Writes one feature and returns every feature, since a write can change

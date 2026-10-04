@@ -10,9 +10,11 @@ pub mod device;
 pub mod discovery;
 pub mod error;
 pub mod features;
+pub mod log;
 pub mod preview;
 pub mod profile;
 pub mod protocol;
+pub mod status;
 pub mod transport;
 pub mod v4l2;
 
@@ -21,3 +23,4 @@ pub use discovery::{discover, CameraInfo};
 pub use error::{Error, Result};
 pub use features::{FeatureId, FeatureKind};
 pub use profile::DeviceProfile;
+pub use status::LiveStatus;
