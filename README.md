@@ -312,11 +312,17 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 | `docs/protocol.md` | Decoded vendor protocol |
 | `docs/CAPTURING.md` | How to capture OBSBOT Center's USB traffic on Windows |
 | `tools/obsbot_pcap.py` | Decoder for USBPcap captures |
+| `tools/sdk-trace/` | Linux alternative to captures: record the frames OBSBOT's SDK sends (SDK not included) |
+| `tools/bootstrap.sh` | Installs build dependencies and fixes LXD networking for snap builds |
+| `.claude/skills/add-obsbot-camera/` | Claude Code skill: the step-by-step workflow for adding a model or feature |
 
 ## Adding support for another camera
 
 1. **Capture** OBSBOT Center's USB traffic on Windows while using each feature,
-   following [`docs/CAPTURING.md`](docs/CAPTURING.md).
+   following [`docs/CAPTURING.md`](docs/CAPTURING.md). On Linux, if you have
+   OBSBOT's SDK, [`tools/sdk-trace/`](tools/sdk-trace/README.md) records the
+   frames it sends instead. With Claude Code, `/add-obsbot-camera` walks
+   through the whole process.
 2. **Decode** the captures:
 
    ```sh

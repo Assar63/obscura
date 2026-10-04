@@ -253,7 +253,9 @@ button for 6 s), and says the mic reconnects on its own afterwards.
 
 ## 5. Tooling
 
-- [ ] **Add the SDK trace tooling to `tools/`.** Two small files, our own
+- [x] **Add the SDK trace tooling to `tools/`.** *Done:* `tools/sdk-trace/`,
+  with a build script and README; the workflow is also in the
+  `add-obsbot-camera` Claude Code skill. Two small files, our own
   code, no SDK inside:
   - `xulog.c`: an `LD_PRELOAD` shim that logs every `UVCIOC_CTRL_QUERY`
     (unit, selector, request, bytes). `libdev` uses plain `ioctl` on
@@ -264,7 +266,8 @@ button for 6 s), and says the mic reconnects on its own afterwards.
   Build instructions should point at a locally downloaded SDK. Document the
   workflow in `docs/CAPTURING.md` as the Linux alternative to Windows
   captures.
-- [ ] **Never send the SDK's startup shell command.** On start, the SDK
+- [x] **Never send the SDK's startup shell command.** *Done:* noted in
+  `tools/sdk-trace/README.md` and the skill. On start, the SDK
   sends the system module (dst 0d, `c81a`) the text
   `touch /app/private/resolution.conf`. The trace tooling should note this,
   and OBSCura must not copy it.
