@@ -267,7 +267,7 @@ OBSCura saves the current position (from `0466`) and zoom (`0468`) this way.
 **Gimbal parameters** (`aiSetGimbalParaR` / `aiGetGimbalParaR`): write
 dst 04 `443f` [u32 parameter, value], read with query `843f` (flags 0x21,
 payload u32 parameter). Parameters: 0/1 pan min/max (−180/180), 2/3 pitch
-min/max (−90/90), 4 pan reverse (bool), 5 preset speed (f32, 1.0 by
+min/max (−90/90), 4 pan reverse (u8 bool; ✅ joystick "right" went −12.4° normally, +12.3° reversed), 5 preset speed (f32, 1.0 by
 default; the SDK lists 0.1–0.8), 6 roll bias. ✅ Preset speed: a 60° recall
 took 1.6 s at 1.0 and 14.3 s at 0.1. ❌ Pan max 20 was stored but didn't
 stop UVC pan or joystick (velocity) moves at 40° either way.

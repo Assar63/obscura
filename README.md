@@ -86,7 +86,8 @@ work, or you can record a model's traffic, see
 | View & gimbal | Joystick (velocity), view reset, manual zoom (1–4×) | ✅ | ✅ |
 | View & gimbal | Field of view (86° / 78° / 65°), preset speed | – | ✅ |
 | AI tracking | Tracking speed (5 steps), motion mode, sound-assisted tracking | – | ✅ |
-| View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
+| View & gimbal | View and Gimbal Reverse (upside-down mounting) | ✅ | – ² |
+| View & gimbal | Reverse pan control (joystick) | – | ✅ |
 | View & gimbal | Presets: save and recall 3 camera-side presets (also in the tray menu); rename on the Tiny SE, delete on the Tiny 3 | ✅ | ✅ |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ | ✅ |
 | Image | Brightness, contrast, saturation, sharpness, hue | ✅ | ✅ |
@@ -110,7 +111,7 @@ work, or you can record a model's traffic, see
 the PC, not the camera. Firmware flashing is deliberately never implemented:
 the update check only points you to OBSBOT Center.
 
-² Bound like the Tiny SE's; not tested on a Tiny 3.
+² The Tiny SE's command was never tested on a Tiny 3, and OBSBOT's SDK uses a different one there; left out until it's checked (see `TODO.md`).
 
 Controls that aren't supported yet are still shown, greyed out, with a tooltip
 explaining why. The layout follows the official app.

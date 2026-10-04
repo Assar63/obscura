@@ -339,6 +339,15 @@ mod tests {
     }
 
     #[test]
+    fn tiny_3_pan_reverse_matches_sdk_traffic() {
+        // aiSetGimbalParaR(pan reverse, true), traced on a Tiny 3.
+        assert_eq!(
+            encode_command(5, DST_GIMBAL, [0x44, 0x3f], &[4, 0, 0, 0, 1])[..21],
+            padded("aa 25 05 00 0c 00 9b 64 0a 04 44 3f 05 00 fa 5f 04 00 00 00 01")[..21]
+        );
+    }
+
+    #[test]
     fn query_matches_capture() {
         // 02-known-state-readback: firmware version and serial number queries.
         assert_eq!(

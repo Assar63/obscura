@@ -70,6 +70,13 @@ format = "i16"
 # starts at 1.0. Values here are x10. Tested: a 60-degree recall took 1.6 s
 # at 1.0 and 14.3 s at 0.1. The same command's pan/pitch limits are stored
 # but didn't limit UVC or joystick moves, so they're left out.
+# Pan reverse (parameter 4, u8 bool): turns joystick (velocity) moves the
+# other way. Tested: "right" for 2.5 s went to -12.4 degrees normally and
+# +12.3 reversed; UVC pan positions aren't affected.
+[features.pan_reverse]
+query = { dst = 0x04, cmd = "843f", flags = 0x21, payload = "04000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "443f", prefix = "04000000" }]
+
 [features.preset_speed]
 query = { dst = 0x04, cmd = "843f", flags = 0x21, payload = "05000000", offsets = [0], value = "f32", scale = 10 }
 frames = [{ dst = 0x04, cmd = "443f", prefix = "05000000", value = "f32", divisor = 10 }]
@@ -154,9 +161,11 @@ frames = [
   { dst = 0x04, cmd = "0439", flags = 0x05, payload = "" },
 ]
 
-# View and gimbal reverse (upside-down mounting). No readback seen.
-[features.gimbal_reverse]
-frames = [{ dst = 0x04, cmd = "843b" }]
+# Not bound: view and gimbal reverse (upside-down mounting). The Tiny SE's
+# `843b` was never tested here, and OBSBOT's SDK sends dst 04 `043c` u8
+# (aiSetGimbalYawDirReverseR) for it instead; with that on, joystick moves
+# and the status block didn't change, so it's left out until someone
+# checks it against the picture.
 
 # 0 off, 1 group, 2 human, 3 hand tracking
 # AI mode (AiWorkModeType in OBSBOT's SDK). Besides the Tiny SE's modes, the

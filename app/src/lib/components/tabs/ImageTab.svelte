@@ -158,6 +158,7 @@
     <Feature id="zoom" />
     <Feature id="field_of_view" hideUnsupported />
     <Feature id="preset_speed" variant="select" hideUnsupported />
+    <Feature id="pan_reverse" description="Turns the joystick's left and right around." hideUnsupported />
   </Card>
 
   {#if device.supported("tracking_speed") || device.supported("tracking_motion") || device.supported("sound_tracking")}

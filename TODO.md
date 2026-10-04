@@ -140,11 +140,17 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [x] **Wireless mic status.** [41] `wireless_mic` (pairing, TX0/TX1
   online). Read-only display in Device details, if someone has the mic. *Done:* Audio → Wireless
   Microphones shows each slot from [41] and the mic info query.
-- [ ] **Gimbal limits, pan reverse, preset speed.** `aiSetGimbalParaR`:
-  dst 04 `443f` [u32 parameter, value], query `843f`. *Preset speed done*
-  (tested by timing a recall: 1.6 s at 1.0, 14.3 s at 0.1). *Pan limits:*
-  stored, but UVC pan and joystick moves went past them on 6.6.8.3; maybe
-  they only apply to tracking. Pan reverse untested.
+- [x] **Gimbal limits, pan reverse, preset speed.** `aiSetGimbalParaR`:
+  dst 04 `443f` [u32 parameter, value], query `843f`. *Done:* preset speed
+  (a recall took 1.6 s at 1.0, 14.3 s at 0.1) and pan reverse (joystick
+  "right" went −12.4° normally, +12.3° reversed). *Pan limits:* stored,
+  but UVC pan and joystick moves went past them on 6.6.8.3; maybe they only
+  apply to tracking.
+- [ ] **Upside-down mounting on the Tiny 3.** The profile had the Tiny SE's
+  "View and Gimbal Reverse" (`843b`), never tested here; OBSBOT's SDK sends
+  dst 04 `043c` u8 (`aiSetGimbalYawDirReverseR`) instead. With `043c` on,
+  joystick moves didn't change and nothing in the status block did; check
+  the picture before binding it. Unbound for now.
 - [ ] **Tracking zone / composition.** `aiSetControlParaR`: pan/pitch lock,
   limited tracking zone, composition offsets (headroom). Equivalent to
   OBSBOT Center's Zone Tracking. Big UI work.
