@@ -1,10 +1,11 @@
-# TODO: findings from OBSBOT's SDK
+# Roadmap
 
-What OBSCura can correct, improve and add, based on the public headers of
-OBSBOT's SDK (`libdev` 2.1.0: `include/dev/dev.hpp`, `devs.hpp`). Nothing
-here comes from the SDK's binaries, and no SDK code goes into this
-repository. Captures still needed from OBSBOT Center are in
-[`captures/TODO.md`](captures/TODO.md).
+What's done, what's next, and what's known about each open item. Most
+items came from OBSBOT's SDK headers (`libdev` 2.1.0) and tests on a
+Tiny 3; nothing here comes from the SDK's binaries, and no SDK code goes
+into this repository. What still needs recording from OBSBOT Center is in
+[`captures/README.md`](captures/README.md); the protocol itself is in
+[`docs/protocol.md`](docs/protocol.md).
 
 **The headers are not proof.** Their `@category` notes lag behind the
 hardware. `aiSetGestureParaR` is documented as "tail2 and later products"
@@ -24,58 +25,13 @@ useful feature with a clear path, **P3** is nice to have or speculative.
 
 ---
 
-## 1. The status block, decoded
+## 1. The status block
 
-`Device::CameraStatus::tiny` describes the selector 6 status block byte by
-byte. The header says it's used for "tiny, tiny4k, tiny2 series, tinySE,
-meet2, meetSE", and the Tiny 3's block matches it: every offset our
-profiles use lands on the field the SDK names. The struct is
-`#pragma pack(1)`, and bitfields are LSB first.
-
-| Byte | SDK field | OBSCura today | Tiny 3 value seen |
-|---|---|---|---|
-| 0 | `ai_target` / `length` | – | `2e` (46, the length) |
-| 1 | `rvd1` "not used" | docs say "locked target" | 0 |
-| 2 | `rvd2` "not used" | `sleep` (status) | 0 awake, 1 asleep |
-| 3 | `anti_flicker` (PowerLineFreqType) | UVC | 0 |
-| 4–5 | `zoom_ratio`, u16, 0–100 | docs say "tracking state" | 0, `16` (22) while zoomed |
-| 6 | `hdr` | `hdr` ✅ | 0/1 |
-| 7 | `face_ae` | `auto_exposure_mode` ✅ | 1 |
-| 8 | `noise_cancellation` "0 off, 1 on" | `noise_reduction`, 0–3 | 3 |
-| 9 | `dev_status` (1 run, 3 sleep, **4 privacy**) | docs only | 1/3 |
-| 10–11 | `auto_sleep_time`, i16 s, "0 → do not sleep" | `auto_sleep`/`sleep_time`, negative = off | 120 |
-| 12 | `vertical` (portrait mode) | – | 0 |
-| 13 | `face_auto_focus` | `auto_focus_mode` ✅ | 1 |
-| 14 | `auto_focus` | UVC | 1 |
-| 15 | `manual_focus_value` | UVC | 0 |
-| 16 | `sleep_micro` | `mic_during_sleep` ✅ | 1 |
-| 17 | `fov` (FovType: 0 86°, 1 78°, 2 65°, 3 none) | docs say "tracking state" | 0/3 |
-| 19 | `image_flip_hor` | `mirror_image` ✅ | 0 |
-| 20 | `voice_ctrl_language` (0 Chinese, 1 English) | – | 1 |
-| 21 | `voice_ctrl`, bit per voice command | – | 0 |
-| 22–23 | `voice_ctrl_zoom`, u16, 0–100 | – | `21` (33) |
-| 24 | `ai_mode` (AiWorkModeType) | `ai_mode`, 0–3 only | 0, 2, 3, **6** |
-| 25 | `audio_auto_gain` | `auto_gain` ✅ | 1 |
-| 26 | `sleep_bg_type` (bits 0–3 image, 4–7 video) | – | `43` |
-| 27 | `bg_img_idx` | – | 0 |
-| 28 | `ai_sub_mode` (AiSubModeType) | – | 0 |
-| 29 | `bg_img_mirror` | `sleep_background_mirror` ✅ | 0 |
-| 30 | `hdr_support` (HDR possible in this mode) | – | 0 |
-| 31 | `fps` of the current stream | docs say "0x3c/0x1e" | `1e`/`0f` (30/15) |
-| 32 | `boot_mode` (bits 0–4 sub-mode, 5–7 AI mode) | – | 0 |
-| 33 | `led_brightness_level` (0 off, 1–3) | `status_light` ✅ | 3 |
-| 34 | `audio_opt`: bits 0–3 distance (0 near, 1 standard, 2 far), bit 4 UAC enabled | `pickup_distance`, `disable_microphone` ✅ | `10` |
-| 35 | `ble_status` | – | 0 |
-| 36 | `ai_tracker_speed` (0 normal, 2 motion) | – | 0 |
-| 37 | `live_stream_mode` | – | 0 |
-| 38–39 | `gesture_para` (Meet 2 / Meet SE only) | – | 0 |
-| 40 | `audio_mode`: bits 0–2 source, 3–7 AudioModeType | – | `08` (stereo) |
-| 41 | `wireless_mic` (Tiny 3) | – | 0 |
-| 42 | `auto_frame`: low nibble landscape, high nibble portrait | – | 0 |
-| 43 | `event_count`: queued camera events | ✅ read with query `021d` | 10 stale, then 0–1 |
-| 44 | `kws_extend` (wake-word flags) | – | 3 |
-| 45 | `led_enable` | – | 1 |
-| 46 | `doa_set` (Tiny 3): bit 0 sound-source assisted tracking, bits 1–2 range, bit 3 audio mode limit | – | 1 |
+Decoded byte by byte from the SDK's `CameraStatus::tiny`; the table, with
+the bytes measured from Linux, is in
+[`docs/protocol.md`](docs/protocol.md#status-block-layout-selector-6). In
+code, `vendor::status::StatusBlock` is the only place that knows the
+offsets, for profiles with `status_layout = "tiny"`.
 
 ---
 
@@ -99,7 +55,7 @@ profiles use lands on the field the SDK names. The struct is
 - [x] **Pickup distance labels.** *Done:* Close, Standard, Far ("Close"
   is OBSBOT Center's label for 0 on the Tiny SE, so it stays). The SDK names `audio_opt.distance` 0 near,
   1 standard, 2 far. The app shows Close, Medium, Far, with Medium a
-  guess (`captures/TODO.md` §0). Use Near, Standard, Far.
+  guess (`captures/README.md` §0). Use Near, Standard, Far.
 - [x] **Noise reduction range.** The SDK documents `noise_cancellation` as
   0 off, 1 on, but the Tiny SE captures show values 0–3 and the Tiny 3
   reports 3. *Measured:* the Tiny 3 takes and reports 0–3, so the levels

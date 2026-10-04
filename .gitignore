@@ -12,3 +12,7 @@ __pycache__/
 
 # Built snaps
 *.snap
+
+# Editor and IDE settings
+.idea/
+.vscode/

@@ -1,4 +1,4 @@
-# Remaining captures
+# Captures
 
 What's still needed from OBSBOT Center on Windows, and what each capture
 should tell us. Setup, Wireshark settings and pacing are the same as in

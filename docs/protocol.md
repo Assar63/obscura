@@ -2,7 +2,7 @@
 
 Device: `3564:feff` "OBSBOT Tiny SE", Remo Tech Co., Ltd., bcdDevice 5.10,
 firmware v6.4.4.1. Decoded from the USB captures in `captures/` (decoder:
-`tools/obsbot_pcap.py`) and confirmed on the camera from Linux unless
+`tools/capture/obsbot_pcap.py`) and confirmed on the camera from Linux unless
 marked *unverified*. Entries from the 2026-09-27 batch (sleep, HDR, AF/AE
 modes, audio, device sleep, status light, AI lock, queries) were also set and
 read back on the camera from Linux.

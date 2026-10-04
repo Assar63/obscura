@@ -134,7 +134,7 @@ In order of preference:
    markers. Trace reads before writes. Functions missing from the header
    are often exported anyway: `nm -D -C --defined-only libdev.so.1.0.0`.
 3. **Windows capture** of OBSBOT Center: `docs/CAPTURING.md`,
-   `tools/obsbot_pcap.py`, and add what's needed to `captures/TODO.md`.
+   `tools/capture/obsbot_pcap.py`, and add what's needed to `captures/README.md`.
 4. **Probing** only as a last resort, with the user's explicit OK, using
    commands from a related model, one at a time, with an oracle.
 

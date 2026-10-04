@@ -310,17 +310,31 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 
 | Path | Contents |
 |---|---|
-| `crates/obsbot-core/` | Library: discovery, V4L2/XU transports, vendor protocol, profiles, preview |
+| `crates/obsbot-core/` | Library shared by the app, CLI and indicator (layout below) |
 | `crates/obsbotctl/` | Command-line tool |
 | `crates/obscura-indicator/` | Lightweight tray indicator |
-| `app/` | Tauri 2 desktop app: Rust backend in `src-tauri/`, Svelte 5 frontend in `src/` |
+| `app/` | Tauri 2 desktop app: Rust backend in `src-tauri/`, Svelte 5 frontend in `src/` (components in `ui/`, `controls/`, `layout/`, `tabs/`, `windows/`) |
 | `profiles/` | Per-model device profiles (compiled into the binaries) |
 | `docs/protocol.md` | Decoded vendor protocol |
 | `docs/CAPTURING.md` | How to capture OBSBOT Center's USB traffic on Windows |
-| `tools/obsbot_pcap.py` | Decoder for USBPcap captures |
+| `captures/README.md` | Which OBSBOT Center actions still need recording (recordings themselves stay local) |
+| `TODO.md` | Roadmap: done, next, and what's known about each open item |
+| `tools/capture/obsbot_pcap.py` | Decoder for USBPcap captures |
 | `tools/sdk-trace/` | Linux alternative to captures: record the frames OBSBOT's SDK sends (SDK not included) |
 | `tools/bootstrap.sh` | Installs build dependencies and fixes LXD networking for snap builds |
 | `.claude/skills/add-obsbot-camera/` | Claude Code skill: the step-by-step workflow for adding a model or feature |
+
+Inside `crates/obsbot-core/src/`:
+
+| Module | Contents |
+|---|---|
+| `features.rs` | The feature catalog: what OBSCura can show, by id |
+| `profile.rs` | Profiles: how each model binds features (with inheritance) |
+| `device/` | An opened camera: `read`, `write`, `vendor` frames, `observe` (events, camera-side changes), presets, gimbal, info |
+| `transport/` | Hardware access: `v4l2` (video node), `v4l2_ctrl`, `uvc_xu` (Extension Unit), `audio` (ALSA) |
+| `vendor/` | OBSBOT's protocol, no I/O: `protocol` (frames), `status` (status block), `events`, `mics` |
+| `discovery.rs`, `preview.rs`, `companion.rs` | Finding cameras, the MJPEG preview, app/indicator coordination |
+| `log.rs`, `firmware.rs` | Activity log and trace mode; firmware update check |
 
 ## Adding support for another camera
 
@@ -332,7 +346,7 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 2. **Decode** the captures:
 
    ```sh
-   python3 tools/obsbot_pcap.py captures/10-gesture-master.pcapng
+   python3 tools/capture/obsbot_pcap.py captures/10-gesture-master.pcapng
    ```
 
    This prints each command with its destination, command ID and payload, and
