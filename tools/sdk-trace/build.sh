@@ -19,8 +19,8 @@ ln -sf libdev.so.1.0.0 "$lib/libdev.so"
 out="$here/build"
 mkdir -p "$out"
 gcc -shared -fPIC -O2 -o "$out/xulog.so" "$here/xulog.c" -ldl
-for tool in gprobe micprobe; do
+for tool in gprobe micprobe evprobe; do
   g++ -std=c++11 -O1 -w -I"$SDK/include" "$here/$tool.cpp" \
     -L"$lib" -ldev -Wl,-rpath,"$lib" -lpthread -o "$out/$tool"
 done
-echo "built: $out/{xulog.so,gprobe,micprobe}"
+echo "built: $out/{xulog.so,gprobe,micprobe,evprobe}"

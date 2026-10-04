@@ -34,6 +34,11 @@ inherits = "generic-uvc"
 # Firmware version and serial number via system module queries.
 system_info = true
 
+# Camera events (target lost/found, ...) queue up on the camera; status[43]
+# is the queue length and query dst 02 `021d` pops one. Seen in the SDK's
+# traffic, and read from Linux (target lost/found).
+event_queue = true
+
 [[match]]
 vendor_id = 0x3564
 product_id = 0xff02

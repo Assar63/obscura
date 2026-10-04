@@ -169,7 +169,7 @@ matches it too. Bytes marked ✅ were measured from Linux.
 | 40 | `audio_mode` | bits 0–2 source, 3–7 AudioModeType (omni, stereo, front, back, dipole, music) |
 | 41 | `wireless_mic` | Tiny 3 |
 | 42 | `auto_frame` | low nibble landscape, high nibble portrait |
-| 43 | `event_count` | counts some camera events; a recognised zoom gesture left it unchanged ✅ |
+| 43 | `event_count` | number of queued camera events; query `021d` pops one ✅ |
 | 44 | `kws_extend` | wake-word flags |
 | 45 | `led_enable` | Tiny 3: status light on/off ✅ (see "OBSBOT Tiny 3") |
 | 46 | `doa_set` | Tiny 3: sound-source assisted tracking and range |
@@ -215,6 +215,22 @@ purple hand/desk/whiteboard, yellow target lost). Gestures need AI
 recognition running, and a busy background makes them less reliable.
 While a palm gesture starts tracking, status[24] briefly reads 6 before
 settling on 2 (human).
+
+**Camera events: a queue.** The camera queues events and status[43]
+counts them; query dst 02 `021d` (flags 0x01, no payload) pops one. The
+reply is a u32 source (`0x71`), a u32 type and an optional u32 value.
+OBSBOT's SDK polls it every ~2 s (seen in its traffic; it never uses the
+CDC ACM serial port). Read from Linux on a Tiny 3:
+
+| Type | Value | Meaning |
+|---|---|---|
+| 20 | 1 / 0 | tracking target lost / found again (SDK `kEvtInfoTargetLoss`) |
+| 16 | – | unknown; ten had piled up from earlier gesture testing |
+
+Gestures themselves queue nothing: a palm shows as status[24] changing
+(0 ↔ 2), an "L" as the zoom ratio at [4..5] ramping. The SDK's event list
+also has Vox SE events (`kEvtTipsTWS…`: connect, battery, mute, …), which
+should come through the same queue once a mic is paired.
 
 Earlier tests: the Tiny SE's gesture commands (`c430`, `4431`, `4433`,
 `c433`) are accepted and ignored by the Tiny 3.

@@ -308,6 +308,10 @@ pub struct DeviceProfile {
     pub presets: Option<Presets>,
     /// Where OBSBOT publishes this model's latest firmware.
     pub firmware: Option<crate::firmware::FirmwareSource>,
+    /// Whether the camera's event queue (status[43], query `021d`) may be
+    /// read: verified per model, since unknown queries can hang a camera.
+    #[serde(default)]
+    pub event_queue: bool,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -482,6 +486,7 @@ mod tests {
         assert!(p.presets.is_none());
         assert!(p.gimbal_velocity.is_some());
         assert_eq!(p.firmware.as_ref().map(|f| f.key.as_str()), Some("tiny3"));
+        assert!(p.event_queue);
         let Binding::Vendor(ai) = &p.features[&FeatureId::AiMode] else {
             panic!("AI mode is not a vendor binding");
         };

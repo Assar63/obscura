@@ -239,6 +239,7 @@ obsbotctl dump --json
 
 obsbotctl status                   # live state: power, AI mode, zoom, fps…
 obsbotctl firmware                 # is newer firmware on OBSBOT's download page?
+obsbotctl events                   # follow camera events: target lost, gestures…
 obsbotctl get ai_mode
 obsbotctl set ai_mode human        # off | human | group | "hand tracking"
 obsbotctl set ai_mode human --check  # …and report whether the camera took it
@@ -419,7 +420,9 @@ editing a profile.
 **Seeing what happens**: press **Ctrl+Shift+D** in OBSCura to open the
 Diagnostics window (again to close it). Keep it beside the main window: it
 shows the camera's live state and an activity log of what you change, with
-a warning when the camera ignores a change. For a full debug log, start the app (or `obsbotctl`, or
+a warning when the camera ignores a change, plus what the camera does on
+its own: tracking target lost or found, and gesture or voice changes to
+AI mode and zoom. For a full debug log, start the app (or `obsbotctl`, or
 the indicator) from a terminal with `OBSCURA_TRACE=1`; it then also prints
 every frame sent to and read from the camera:
 

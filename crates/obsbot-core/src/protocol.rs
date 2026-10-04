@@ -36,6 +36,13 @@ pub const CMD_VERSION: [u8; 2] = [0x08, 0x04];
 /// Serial number, ASCII.
 pub const CMD_SERIAL: [u8; 2] = [0xc8, 0x18];
 
+/// Camera (ISP) module.
+pub const DST_CAMERA: u8 = 0x02;
+/// Pops one event from the camera's event queue (query, no payload; the
+/// queue length is status[43]). Reply: u32 source, u32 type, and an
+/// optional u32 value. Seen in the traffic of OBSBOT's SDK on a Tiny 3.
+pub const CMD_EVENT: [u8; 2] = [0x02, 0x1d];
+
 /// AI/gimbal module.
 pub const DST_GIMBAL: u8 = 0x04;
 /// Gimbal position query (payload `01`): 24 bytes, i16 angles x10 at 8 and 10.

@@ -24,8 +24,7 @@ pub struct LiveStatus {
     pub fps: u8,
     /// Status light brightness 0-3 (status[33]).
     pub light_level: u8,
-    /// Camera event counter (status[43]); not every recognised gesture
-    /// counts.
+    /// Number of queued camera events (status[43]); see `Device::observe`.
     pub event_count: u8,
     /// The whole block in hex, trailing zeros trimmed.
     pub raw: String,

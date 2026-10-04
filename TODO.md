@@ -72,7 +72,7 @@ profiles use lands on the field the SDK names. The struct is
 | 40 | `audio_mode`: bits 0–2 source, 3–7 AudioModeType | – | `08` (stereo) |
 | 41 | `wireless_mic` (Tiny 3) | – | 0 |
 | 42 | `auto_frame`: low nibble landscape, high nibble portrait | – | 0 |
-| 43 | `event_count`, counts some camera events | – | went 07 → 08 once; unchanged by a recognised zoom gesture |
+| 43 | `event_count`: queued camera events | ✅ read with query `021d` | 10 stale, then 0–1 |
 | 44 | `kws_extend` (wake-word flags) | – | 3 |
 | 45 | `led_enable` | – | 1 |
 | 46 | `doa_set` (Tiny 3): bit 0 sound-source assisted tracking, bits 1–2 range, bit 3 audio mode limit | – | 1 |
@@ -197,6 +197,17 @@ profiles use lands on the field the SDK names. The struct is
   preview's format display.
 
 ---
+
+### Camera events
+
+- [x] **Event queue and camera-side changes.** *Done:* status[43] counts
+  queued events and query `021d` pops one (see docs/protocol.md). OBSCura
+  drains it on each status read (Tiny 3 only, `event_queue = true`) and
+  logs target lost/found; it also logs AI mode, power and zoom changes the
+  camera made itself. `obsbotctl events` follows them live.
+- [ ] **Decode more event types** (16 is unknown). With a Vox SE paired,
+  run `obsbotctl events` while connecting, muting and charging it: the
+  SDK's `kEvtTipsTWS…` events should arrive through the same queue.
 
 ### Vox SE wireless microphone (Tiny 3)
 

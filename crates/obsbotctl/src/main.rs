@@ -45,6 +45,13 @@ enum Command {
         #[arg(long)]
         check: bool,
     },
+    /// Follow what the camera does: its queued events (target lost/found,
+    /// …) and changes it makes on its own (gestures, voice, auto-sleep).
+    Events {
+        /// Stop after this many seconds (default: run until Ctrl+C).
+        #[arg(long)]
+        seconds: Option<u64>,
+    },
     /// Check OBSBOT's download page for newer firmware (needs network
     /// access). Only checks; update with OBSBOT Center.
     Firmware,
@@ -322,6 +329,32 @@ fn main() -> Result<()> {
                 }
                 for w in warnings {
                     eprintln!("warning: {}", w.message);
+                }
+            }
+        }
+        Command::Events { seconds } => {
+            let dev = open(&cli)?;
+            if dev.live_status().is_none() {
+                bail!("{} has no vendor status block", dev.profile.name);
+            }
+            eprintln!("Following {} (Ctrl+C to stop)…", dev.profile.name);
+            let start = std::time::Instant::now();
+            let mut last = obsbot_core::log::since(0).last().map_or(0, |e| e.seq);
+            while seconds.is_none_or(|s| start.elapsed().as_secs() < s) {
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                dev.live_status();
+                for e in obsbot_core::log::since(last) {
+                    last = e.seq;
+                    if e.level != obsbot_core::log::Level::Trace {
+                        let secs = e.time_ms / 1000;
+                        println!(
+                            "{:02}:{:02}:{:02} UTC  {}",
+                            (secs / 3600) % 24,
+                            (secs / 60) % 60,
+                            secs % 60,
+                            e.message
+                        );
+                    }
                 }
             }
         }
