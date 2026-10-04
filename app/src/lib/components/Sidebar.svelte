@@ -1,17 +1,19 @@
 <script lang="ts">
   import ImageTab from "./ImageTab.svelte";
+  import AudioTab from "./AudioTab.svelte";
   import MoreTab from "./MoreTab.svelte";
 
-  let tab = $state<"image" | "more">("image");
+  let tab = $state<"image" | "audio" | "more">("image");
 </script>
 
 <aside class="sidebar">
   <nav>
     <button class:sel={tab === "image"} onclick={() => (tab = "image")}>Image</button>
+    <button class:sel={tab === "audio"} onclick={() => (tab = "audio")}>Audio</button>
     <button class:sel={tab === "more"} onclick={() => (tab = "more")}>More</button>
   </nav>
   <div class="scroll">
-    {#if tab === "image"}<ImageTab />{:else}<MoreTab />{/if}
+    {#if tab === "image"}<ImageTab />{:else if tab === "audio"}<AudioTab />{:else}<MoreTab />{/if}
   </div>
 </aside>
 

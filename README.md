@@ -181,11 +181,13 @@ Run `obscura` (or `pnpm tauri dev` from `app/` during development).
   Sleep/Resume, and Open/Close Preview.
 - **Preview:** a live view from the camera. Choose resolution and frame rate
   from the format button at the bottom left.
-- **Bottom bar:** AI tracking modes (Human / Group / Hand Tracking) and the
-  AI lock.
+- **Bottom bar:** AI tracking modes (Human / Group / Hand Tracking, plus
+  Whiteboard / Desk / Voice Tracking on the Tiny 3) and the AI lock.
 - **Image tab:** presets, the gimbal joystick and zoom, and image adjustments.
-- **More tab:** audio, device sleep, status light, other settings, and device
-  details.
+- **Audio tab:** the camera's microphone: disable, noise reduction, auto gain,
+  pickup distance, and the microphone during sleep.
+- **More tab:** device sleep, status light, the panel indicator, other
+  settings, and device details (with a firmware update check).
 
 Settings are written to the camera itself, so they apply to every app that
 uses it (Zoom, Meet, OBS, …). You don't need to keep OBSCura running.

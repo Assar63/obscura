@@ -44,14 +44,6 @@
 </script>
 
 <div class="tab">
-  <Card title="Audio">
-    <Feature id="mic_during_sleep" />
-    <Feature id="noise_reduction" variant="select" />
-    <Feature id="auto_gain" />
-    <Feature id="disable_microphone" />
-    <Feature id="pickup_distance" variant="select" />
-  </Card>
-
   <Card title="Device Sleep">
     <Feature id="auto_sleep" />
     {#if device.on("auto_sleep") || !device.supported("auto_sleep")}
