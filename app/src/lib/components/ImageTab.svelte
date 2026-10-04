@@ -76,9 +76,6 @@
 
   const IMAGE = ["brightness", "contrast", "saturation", "sharpness", "hue"];
 
-  /** Show a dependent control when its parent is in `state`, or when the
-   * parent is unsupported (so the full layout is still visible). */
-
   const gimbalSupported = $derived(
     device.gimbalVelocity || device.supported("pan") || device.supported("tilt"),
   );
