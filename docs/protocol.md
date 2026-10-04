@@ -238,7 +238,7 @@ OBSBOT's SDK; commands for a mic go to the mic itself, dst `0x58` (TX1) or
 
 | Action | Frames |
 |---|---|
-| Pair a slot ✅ | flags 0x05 to dst 58/98 `130c` (no payload), then flags 0x21 to dst `13` `0e0c` payload `00` (SDK `setBlePairingEnable`); then hold the mic's button ~6 s |
+| Pair a slot ✅ (TX1 and TX2) | flags 0x05 to dst 58/98 `130c` (no payload), then flags 0x21 to dst `13` `0e0c` payload `00` (SDK `setBlePairingEnable`); then hold the mic's button ~6 s |
 | Stop pairing | flags 0x05 to dst 58/98 `530c` |
 | Forget a slot ✅ | flags 0x05 to dst 58/98 `930e`: TX1 dropped offline and didn't reconnect on its own; auto-select's "has pairing record" stayed 1 |
 | Audio source ✅ | dst 02 `4289` u8: 0 built-in, 3 wireless; read at status[40] bits 0–2 |
@@ -247,7 +247,8 @@ OBSBOT's SDK; commands for a mic go to the mic itself, dst `0x58` (TX1) or
 
 Neither pairing frame works alone: TX1 paired only when both were sent
 before putting the mic into pairing mode (found by the user trying the
-traced commands). The camera then switched the source to the wireless mic
+traced commands). The same Vox SE also paired on TX2 after being forgotten
+on TX1 (status[41] = 04). The camera then switched the source to the wireless mic
 and turned auto-select on; with the mic back in its charging case it
 switched back to the built-in mics. Status[41] (`wireless_mic`): bit 0 TWS
 mode, bits 1–2 TX1/TX2 online, bit 3 Bluetooth connected, bit 4 scanning.

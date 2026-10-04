@@ -210,8 +210,8 @@ short = { id = 0x1b }
 # OBSBOT's SDK; the mic commands are addressed to the mics themselves (dst
 # 0x58 TX1, 0x98 TX2). Pairing, found by trying the traced commands: "pair
 # enable" for the slot, then setBlePairingEnable (dst 0x13), then hold the
-# mic's button ~6 s; status[41] then shows the slot online. Verified for
-# TX1 with one Vox SE; the camera switched to the wireless mic and turned
+# mic's button ~6 s; status[41] then shows the slot online. Verified on
+# TX1 and TX2 (one Vox SE, forgotten in between); the camera switched to the wireless mic and turned
 # auto-select on by itself.
 [features.audio_source]
 status = 40

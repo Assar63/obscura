@@ -238,9 +238,10 @@ button. See docs/protocol.md.
 - [x] **Pairing, slot status and battery.** Audio → Wireless Microphones:
   per-slot state (connected, battery, charging, muted) from query `02c0`,
   a guided Pair button that waits for the camera to report the mic, Cancel
-  and Forget; `obsbotctl mics`. Tiny 3 verified (TX1), Tiny 3 Lite assumed.
+  and Forget; `obsbotctl mics`. Tiny 3 verified (TX1 and TX2), Tiny 3 Lite assumed.
 - [x] **Forget** (TX1): the mic went offline and didn't reconnect.
-- [ ] **Test TX2** with a second Vox SE.
+- [x] **TX2**: the same mic, forgotten on TX1, paired on TX2.
+- [ ] **Two mics at once** (needs a second Vox SE).
 - [ ] **P3: Mic battery in the tray menu.**
 - [ ] **P2: Mute and gain per mic.**
 - [ ] **P2: Button function.** `cameraSetTWSKeyTypeR`: track, switch
