@@ -72,7 +72,7 @@ profiles use lands on the field the SDK names. The struct is
 | 40 | `audio_mode`: bits 0–2 source, 3–7 AudioModeType | – | `08` (stereo) |
 | 41 | `wireless_mic` (Tiny 3) | – | 0 |
 | 42 | `auto_frame`: low nibble landscape, high nibble portrait | – | 0 |
-| 43 | `event_count`, counts camera events | – | went 07 → 08 on a gesture |
+| 43 | `event_count`, counts some camera events | – | went 07 → 08 once; unchanged by a recognised zoom gesture |
 | 44 | `kws_extend` (wake-word flags) | – | 3 |
 | 45 | `led_enable` | – | 1 |
 | 46 | `doa_set` (Tiny 3): bit 0 sound-source assisted tracking, bits 1–2 range, bit 3 audio mode limit | – | 1 |

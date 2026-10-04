@@ -169,7 +169,7 @@ matches it too. Bytes marked ✅ were measured from Linux.
 | 40 | `audio_mode` | bits 0–2 source, 3–7 AudioModeType (omni, stereo, front, back, dipole, music) |
 | 41 | `wireless_mic` | Tiny 3 |
 | 42 | `auto_frame` | low nibble landscape, high nibble portrait |
-| 43 | `event_count` | counts camera events ✅ |
+| 43 | `event_count` | counts some camera events; a recognised zoom gesture left it unchanged ✅ |
 | 44 | `kws_extend` | wake-word flags |
 | 45 | `led_enable` | Tiny 3: status light on/off ✅ (see "OBSBOT Tiny 3") |
 | 46 | `doa_set` | Tiny 3: sound-source assisted tracking and range |
