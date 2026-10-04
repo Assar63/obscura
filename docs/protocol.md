@@ -281,6 +281,9 @@ on the camera, firmware 6.6.8.3):
 | ↳ parameter 0, motion mode | u8 0/1 | | stored and read back; effect not checked |
 | `aiSetTrackingModeR`, `aiSetTrackSpeedTypeR` | dst 04 `c40c` u8, `4409` u8 | none | not used (no readback; `c40c` found ignored by brendanwelsh) |
 | Voice control (`cameraSetAudioCtrlStateU`) | short `15 02 <command> <value>` | commands 0–6: bit n of status[21]; 100 voice zoom (0–100 = 1x–4x) at status[22]; 101 language (0 Chinese, 1 English) at status[20] | ✅ "Unlock Me"/"Track Me" by voice, ignored when switched off |
+| Sound-assisted tracking (`cameraSetDoaFindBack`, exported, not in the header) | short `25 01 <0/1>` | status[46] bit 0 (on by default) | ✅ turned ~80° toward a voice out of view; not when off |
+| DOA range (`cameraSetDoaRange`) | short `24 01 <n>` | status[46] bit 1; 2 reads back as 1 | not used (meaning undocumented) |
+| Audio mode (`cameraSetAudioModeU`, exported, not in the header) | short `22 02 <source 0> <mode>` | status[40] bits 3–7: 0 omni, 1 stereo (default), 2 front, 3 back, 4 front+back, 5 music | ❌ stored, but speech in front was no quieter in Back than in Front; USB audio is mono |
 | Privacy (`cameraSetDevRunStatusR(4)`) | sends `c2a0` u32 1 | status[9] = 3 | same as sleep; not a separate mode |
 
 Status[36] (`ai_tracker_speed`) didn't follow any of the tracking settings.

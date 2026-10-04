@@ -11,6 +11,10 @@
 // ctlprobe ctlbool|ctlint|ctlfloat <target> <para> <value>
 // ctlprobe voice <cmd> <state>         cameraSetAudioCtrlStateU
 // ctlprobe runstatus <n>               cameraSetDevRunStatusR (DevStatus)
+// ctlprobe audiomode <mode>            cameraSetAudioModeU (AudioModeType)
+// ctlprobe doafindback <0|1>           cameraSetDoaFindBack
+// ctlprobe doarange <n>                cameraSetDoaRange
+// ctlprobe audiodistance <n>           cameraSetAudioDistanceU
 // ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
 // ctlprobe presetlist                  aiGetGimbalPresetListR
 // ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
@@ -28,6 +32,13 @@
 #include <cstring>
 #include <string>
 #include <thread>
+
+// Exported by libdev but not declared in its header: non-virtual members,
+// called with the device as the first argument (Itanium C++ ABI).
+extern "C" int32_t _ZN6Device19cameraSetAudioModeUENS_9AudioModeE(Device *, Device::AudioMode);
+extern "C" int32_t _ZN6Device20cameraSetDoaFindBackEh(Device *, unsigned char);
+extern "C" int32_t _ZN6Device17cameraSetDoaRangeEh(Device *, unsigned char);
+extern "C" int32_t _ZN6Device23cameraSetAudioDistanceUEh(Device *, unsigned char);
 
 static void mark(const std::string &s) { fprintf(stderr, "=== %s\n", s.c_str()); fflush(stderr); }
 static void onChanged(std::string, bool, void *) {}
@@ -84,6 +95,16 @@ int main(int argc, char **argv) {
         r = dev->cameraSetAudioCtrlStateU((Device::AudioCtrlCmdType)arg(2), arg(3));
     } else if (cmd == "runstatus" && argc == 3) {
         r = dev->cameraSetDevRunStatusR((Device::DevStatus)arg(2));
+    } else if (cmd == "audiomode" && argc == 3) {
+        Device::AudioMode m{};
+        m.mode = (uint8_t)arg(2);
+        r = _ZN6Device19cameraSetAudioModeUENS_9AudioModeE(dev.get(), m);
+    } else if (cmd == "doafindback" && argc == 3) {
+        r = _ZN6Device20cameraSetDoaFindBackEh(dev.get(), (unsigned char)arg(2));
+    } else if (cmd == "doarange" && argc == 3) {
+        r = _ZN6Device17cameraSetDoaRangeEh(dev.get(), (unsigned char)arg(2));
+    } else if (cmd == "audiodistance" && argc == 3) {
+        r = _ZN6Device23cameraSetAudioDistanceUEh(dev.get(), (unsigned char)arg(2));
     } else if (cmd == "gimbalstate" && argc == 2) {
         Device::AiGimbalStateInfo g{};
         r = dev->aiGetGimbalStateR(&g);

@@ -159,12 +159,17 @@
     <Feature id="field_of_view" hideUnsupported />
   </Card>
 
-  {#if device.supported("tracking_speed") || device.supported("tracking_motion")}
+  {#if device.supported("tracking_speed") || device.supported("tracking_motion") || device.supported("sound_tracking")}
     <Card title="Tracking">
       <Feature id="tracking_speed" variant="select" hideUnsupported />
       <Feature
         id="tracking_motion"
         description="For fast-moving subjects."
+        hideUnsupported
+      />
+      <Feature
+        id="sound_tracking"
+        description="Turn toward a voice when the tracked person is out of view."
         hideUnsupported
       />
     </Card>

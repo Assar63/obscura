@@ -85,7 +85,7 @@ work, or you can record a model's traffic, see
 | Gesture control | Direction Flip | ✅ | – |
 | View & gimbal | Joystick (velocity), view reset, manual zoom (1–4×) | ✅ | ✅ |
 | View & gimbal | Field of view (86° / 78° / 65°) | – | ✅ |
-| AI tracking | Tracking speed (5 steps), motion mode | – | ✅ |
+| AI tracking | Tracking speed (5 steps), motion mode, sound-assisted tracking | – | ✅ |
 | View & gimbal | View and Gimbal Reverse | ✅ | ✅ ² |
 | View & gimbal | Presets: save and recall 3 camera-side presets (also in the tray menu); rename on the Tiny SE, delete on the Tiny 3 | ✅ | ✅ |
 | Image | Mirror image (on the camera, so every app sees it) | ✅ | ✅ |

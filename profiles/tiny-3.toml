@@ -299,6 +299,23 @@ frames = [{ dst = 0x98, cmd = "d32d" }]
 query = { dst = 0x02, cmd = "02c0", offsets = [6], value = "i8" }
 frames = [{ dst = 0x98, cmd = "532d", value = "u32" }]
 
+# Not bound: audio mode (SDK cameraSetAudioModeU, exported but not in the
+# header), short setting 0x22 [source, mode], read back in status[40] bits
+# 3-7 (0 omni, 1 stereo = default, 2 front, 3 back, 4 front and back, 5
+# music). The camera stores it, but speaking in front of it was no quieter
+# in Back than in Front, and the USB audio is mono (L = R).
+
+# Sound-source assisted tracking (SDK cameraSetDoaFindBack): short setting
+# 0x25, status[46] bit 0, on by default. Tested: with Human tracking on and
+# the person out of view, speaking turned the camera ~80 degrees toward
+# them; switched off, it didn't. The DOA range next to it
+# (cameraSetDoaRange, 0x24, bit 1) only takes 0 and 1 and is undocumented,
+# so it's left out.
+[features.sound_tracking]
+status = 46
+status_mask = 0x01
+short = { id = 0x25 }
+
 # What a short press of the Vox SE's button does (SDK cameraSetTWSKeyTypeR,
 # for both mics): dst 02 `42c0` u8, read back at mic info [0]. 0 human
 # tracking (default), 1 switch tracking mode, 2 zoom to 1.0x; 3 ("record")

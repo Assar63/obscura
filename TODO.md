@@ -124,14 +124,17 @@ offsets, for profiles with `status_layout = "tiny"`.
   OBSCura at −40° and 1.5x was recalled from the centre. Per-preset extras
   (`PresetsAction`: framing, AI mode, tracking speed, white balance) are
   not traced.
-- [ ] **Audio mode / beamforming.** `AudioModeType` (Tiny 3): Omni, Stereo,
-  Front, Back, Dipole, Music; status [40] bits 3–7 (Tiny 3 reads stereo).
-  Find the setter by tracing; there's no obvious `cameraSet…` for it in the
-  header.
-- [ ] **Sound-source assisted tracking (DOA).** `doa_set` [46]: "sound
-  source assisted tracking", range, "audio mode limit". The Tiny 3 manual
-  says sound localization for voice control can be switched in OBSBOT
-  Center. Find the setter by tracing.
+- [ ] **Audio mode / beamforming.** *Tested, no audible effect:* short
+  setting `22 02 <source 0> <mode>` (`cameraSetAudioModeU`, exported but
+  not in the header), status[40] bits 3–7 follow. Speaking in front of the
+  camera was no quieter in Back than in Front (two runs), and the USB audio
+  is mono. Left unbound; maybe it only affects the camera's own processing
+  or a later firmware.
+- [x] **Sound-source assisted tracking (DOA).** *Done:* short setting
+  `25 01 <0|1>` (`cameraSetDoaFindBack`), status[46] bit 0. Tested: out of
+  view, speaking turned the camera toward the voice; switched off, it
+  didn't. Image tab → Tracking. The DOA range (`24`, bit 1, only 0/1) is
+  undocumented and left out.
 - [x] **Wireless mic status.** [41] `wireless_mic` (pairing, TX0/TX1
   online). Read-only display in Device details, if someone has the mic. *Done:* Audio → Wireless
   Microphones shows each slot from [41] and the mic info query.
