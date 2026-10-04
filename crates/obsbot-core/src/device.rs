@@ -604,6 +604,27 @@ impl Device {
         state
     }
 
+    /// Re-writes the white balance temperature after Auto WB is switched
+    /// off. Tiny-series firmware uses whichever white balance control was
+    /// written last (joshualambert/obsbot-tiny3-linux), so this makes the
+    /// shown temperature the one in effect.
+    fn reapply_white_balance_temperature(&self) {
+        let Some(Binding::V4l2(t)) = self
+            .profile
+            .features
+            .get(&FeatureId::WhiteBalanceTemperature)
+        else {
+            return;
+        };
+        if let Ok(v) = v4l2_ctrl::get(&self.node, t) {
+            if v4l2_ctrl::set(&self.node, t, v).is_ok() {
+                log::info(format!(
+                    "Temperature: re-applied {v}K for manual white balance"
+                ));
+            }
+        }
+    }
+
     /// Once the status lag has passed after a write, logs a warning if the
     /// camera reports something else than what was written.
     fn verify_write(&self, id: FeatureId, read: Option<i64>, state: &FeatureState) {
@@ -669,7 +690,12 @@ impl Device {
         }
         validate(&current.kind, value)?;
         match self.profile.features.get(&id) {
-            Some(Binding::V4l2(b)) => v4l2_ctrl::set(&self.node, b, value)?,
+            Some(Binding::V4l2(b)) => {
+                v4l2_ctrl::set(&self.node, b, value)?;
+                if id == FeatureId::AutoWhiteBalance && value == 0 {
+                    self.reapply_white_balance_temperature();
+                }
+            }
             Some(Binding::Lock(l)) => self.set_lock(&l.lock, value != 0)?,
             Some(Binding::Vendor(b)) => {
                 self.send_vendor(b, self.feature_to_setting(b, value))?;

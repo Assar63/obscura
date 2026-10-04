@@ -2,6 +2,7 @@
   import { device } from "../device.svelte";
   import Card from "./Card.svelte";
   import Feature from "./Feature.svelte";
+  import AutoManual from "./AutoManual.svelte";
   import Joystick from "./Joystick.svelte";
   import Segmented from "./Segmented.svelte";
   import Icon from "./Icon.svelte";
@@ -171,8 +172,12 @@
       <Feature id="gain" hideUnsupported />
     {/if}
     <Feature id="anti_flicker" />
-    <Feature id="auto_white_balance" />
-    <Feature id="white_balance_temperature" />
+    <AutoManual
+      label="White Balance"
+      autoId="auto_white_balance"
+      manual={["white_balance_temperature"]}
+      autoNote="The camera adjusts the colour temperature by itself."
+    />
   </Card>
 
   <Card title="Image" onreset={() => device.resetToDefault(IMAGE)}>
