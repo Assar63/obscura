@@ -26,6 +26,10 @@ pub struct LiveStatus {
     pub light_level: u8,
     /// Number of queued camera events (status[43]); see `Device::observe`.
     pub event_count: u8,
+    /// Wireless microphone state (status[41]) in words.
+    pub mic: String,
+    /// Audio source (status[40] bits 0-2): 0 built-in, 3 wireless mic.
+    pub audio_source: u8,
     /// The whole block in hex, trailing zeros trimmed.
     pub raw: String,
 }
@@ -54,8 +58,33 @@ pub fn decode(block: &[u8]) -> Option<LiveStatus> {
         fps: b(31)?,
         light_level: b(33)?,
         event_count: b(43)?,
+        mic: describe_mic(b(41)?),
+        audio_source: b(40)? & 0x07,
         raw: crate::log::hex(block),
     })
+}
+
+/// The wireless microphone byte (status[41], SDK `wireless_mic`): bit 0
+/// TWS (Bluetooth) mode, bits 1-2 which mics are online, bit 3 Bluetooth
+/// connected, bit 4 scanning.
+pub fn describe_mic(b: u8) -> String {
+    let mut parts = vec![match (b >> 1) & 3 {
+        0 => "no microphone connected",
+        1 => "TX1 connected",
+        2 => "TX2 connected",
+        _ => "TX1 and TX2 connected",
+    }
+    .to_string()];
+    if b & 0x08 != 0 {
+        parts.push("Bluetooth connected".into());
+    }
+    if b & 0x10 != 0 {
+        parts.push("scanning".into());
+    }
+    if b & 0x01 != 0 {
+        parts.push("TWS mode".into());
+    }
+    parts.join(", ")
 }
 
 #[cfg(test)]
@@ -85,6 +114,14 @@ mod tests {
         assert!((s.zoom - 1.99).abs() < 0.01);
         assert_eq!(s.fov, Some("86°"));
         assert_eq!((s.fps, s.light_level, s.event_count), (30, 3, 10));
+    }
+
+    #[test]
+    fn describes_the_mic_byte() {
+        assert_eq!(describe_mic(0), "no microphone connected");
+        assert_eq!(describe_mic(0x02), "TX1 connected");
+        assert_eq!(describe_mic(0x14), "TX2 connected, scanning");
+        assert_eq!(describe_mic(0x07), "TX1 and TX2 connected, TWS mode");
     }
 
     #[test]

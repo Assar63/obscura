@@ -80,8 +80,10 @@
         <dd>{live.fps}</dd>
         <dt>Status light</dt>
         <dd>level {live.light_level}</dd>
-        <dt>Events</dt>
+        <dt>Queued events</dt>
         <dd>{live.event_count}</dd>
+        <dt>Wireless mic</dt>
+        <dd>{live.mic}{live.audio_source === 3 ? " · source: wireless" : ""}</dd>
       </dl>
     {:else}
       <p class="note">{liveError ?? "Reading…"}</p>

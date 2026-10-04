@@ -70,6 +70,10 @@ export type LiveStatus = {
   fps: number;
   light_level: number;
   event_count: number;
+  /** Wireless microphone state in words (status[41]). */
+  mic: string;
+  /** 0 built-in microphones, 3 wireless mic. */
+  audio_source: number;
   raw: string;
 };
 

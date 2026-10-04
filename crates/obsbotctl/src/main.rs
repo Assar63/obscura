@@ -385,6 +385,7 @@ fn main() -> Result<()> {
             println!("Stream fps:   {}", st.fps);
             println!("Light level:  {}", st.light_level);
             println!("Event count:  {}", st.event_count);
+            println!("Wireless mic: {}", st.mic);
             if *raw {
                 println!("Raw:          {}", st.raw);
             }

@@ -707,6 +707,22 @@ impl Device {
             seen.power = Some(power);
         }
 
+        // Wireless microphones and the audio source; logged whoever changed
+        // them, since that's what pairing experiments need to see.
+        if let (Some(&mic), Some(&audio)) = (block.get(41), block.get(40)) {
+            if seen.mic.is_some_and(|m| m != mic) {
+                log::info(format!(
+                    "Camera: wireless mic: {} (status[41] = {mic:02x})",
+                    crate::status::describe_mic(mic)
+                ));
+            }
+            if seen.audio_source.is_some_and(|a| a != audio & 7) {
+                log::info(format!("Camera: audio source is now {}", audio & 7));
+            }
+            seen.mic = Some(mic);
+            seen.audio_source = Some(audio & 7);
+        }
+
         // Zoom ramps; log it once two reads agree.
         if let (Some(&lo), Some(&hi)) = (block.get(4), block.get(5)) {
             let ratio = u16::from_le_bytes([lo, hi]);
@@ -843,6 +859,8 @@ const OWN_CHANGE: Duration = Duration::from_secs(10);
 struct Observed {
     ai_mode: Option<u8>,
     power: Option<u8>,
+    mic: Option<u8>,
+    audio_source: Option<u8>,
     /// Zoom ratio at the last read, and the last one logged.
     zoom_seen: Option<u16>,
     zoom_logged: Option<u16>,

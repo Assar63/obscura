@@ -203,6 +203,43 @@ status = 34
 status_mask = 0x0f
 short = { id = 0x1b }
 
+# Wireless microphones (Vox SE). EXPERIMENTAL: frames traced from OBSBOT's
+# SDK (cameraSetAudioSourceR, cameraSetAudioSelect, cameraTXSetPairEnabled,
+# cameraTXClearPairedInfo, setBlePairingEnable). The source and auto-select
+# settings work; none of the pairing commands started pairing in tests
+# (status[41] stayed 0), so they're offered for experimenting. The mic
+# commands are addressed to the mics themselves: dst 0x58 TX1, 0x98 TX2.
+[features.audio_source]
+status = 40
+status_mask = 0x07
+frames = [{ dst = 0x02, cmd = "4289" }]
+
+[features.audio_auto_select]
+query = { dst = 0x02, cmd = "828a", offsets = [1] }
+frames = [{ dst = 0x02, cmd = "c28a" }]
+
+[features.mic_pair_tx1]
+frames = [{ dst = 0x58, cmd = "130c", flags = 0x05, payload = "" }]
+
+[features.mic_pair_tx2]
+frames = [{ dst = 0x98, cmd = "130c", flags = 0x05, payload = "" }]
+
+[features.mic_pair_stop]
+frames = [
+  { dst = 0x58, cmd = "530c", flags = 0x05, payload = "" },
+  { dst = 0x98, cmd = "530c", flags = 0x05, payload = "" },
+]
+
+[features.mic_forget_tx1]
+frames = [{ dst = 0x58, cmd = "930e", flags = 0x05, payload = "" }]
+
+[features.mic_forget_tx2]
+frames = [{ dst = 0x98, cmd = "930e", flags = 0x05, payload = "" }]
+
+# setBlePairingEnable(true, 0): the camera's Bluetooth radio (remote?).
+[features.mic_ble_pairing]
+frames = [{ dst = 0x13, cmd = "0e0c", flags = 0x21, payload = "00" }]
+
 # Device sleep: one i16 setting in seconds, negated while auto sleep is off.
 [features.auto_sleep]
 status = 10

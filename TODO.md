@@ -237,6 +237,11 @@ auto select on didn't pair either. OBSBOT's guide pairs through OBSBOT
 Center (Audio → OBSBOT Microphone → add TX1/TX2, while holding the mic's
 button for 6 s), and says the mic reconnects on its own afterwards.
 
+- [x] **Experimental pairing panel.** Audio → Wireless Microphones (Tiny 3):
+  live mic state from status[41], audio source and auto-select (both work),
+  and buttons for each traced pairing command (Pair TX1/TX2, Stop, Forget,
+  Bluetooth pairing mode), so combinations can be tried with the mic in
+  pairing mode. Every change of status[40]/[41] is logged in Diagnostics.
 - [ ] **Pair once with OBSBOT Center** (Windows or macOS), then continue on
   Linux. With a mic paired, trace and test the per-mic reads and writes.
 - [ ] **Capture that pairing session** (`docs/CAPTURING.md`) to find the
