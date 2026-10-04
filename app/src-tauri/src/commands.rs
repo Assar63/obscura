@@ -119,6 +119,27 @@ pub fn get_log(since: u64) -> Vec<log::Entry> {
     log::since(since)
 }
 
+/// Compares the camera's firmware with the latest on OBSBOT's download
+/// page. Runs off the main thread, and holds the camera lock only to read
+/// the version, so a slow network doesn't block the controls.
+#[tauri::command(async)]
+pub fn check_firmware_update(
+    state: State<'_, AppState>,
+) -> CmdResult<obsbot_core::firmware::UpdateCheck> {
+    let (source, current, name) = {
+        let guard = state.0.lock().unwrap();
+        let device = guard.as_ref().ok_or("no camera open")?;
+        (
+            device.profile.firmware.clone(),
+            device.firmware_info().map(|f| f.version),
+            device.profile.name.clone(),
+        )
+    };
+    let source = source.ok_or_else(|| format!("No firmware download page is known for {name}"))?;
+    let current = current.ok_or("The camera didn't report its firmware version")?;
+    obsbot_core::firmware::check(&source, &current)
+}
+
 /// The camera's live state from its status block (`None` without one).
 #[tauri::command]
 pub fn live_status(state: State<AppState>) -> CmdResult<Option<LiveStatus>> {

@@ -32,6 +32,7 @@ pub fn run() {
             commands::set_feature,
             commands::get_log,
             commands::live_status,
+            commands::check_firmware_update,
             commands::gimbal_move,
             commands::save_preset,
             commands::rename_preset,

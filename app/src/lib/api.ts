@@ -72,6 +72,13 @@ export type LiveStatus = {
   raw: string;
 };
 
+export type UpdateCheck = {
+  current: string;
+  latest: string;
+  update_available: boolean;
+  page: string;
+};
+
 export type PreviewConfig = { width: number; height: number; fps: number };
 export type PreviewFormat = PreviewConfig;
 
@@ -84,6 +91,8 @@ export const api = {
   /** Activity log entries newer than `since` (0 for all). */
   getLog: (since: number) => invoke<LogEntry[]>("get_log", { since }),
   liveStatus: () => invoke<LiveStatus | null>("live_status"),
+  /** Compares the camera's firmware with OBSBOT's download page (network). */
+  checkFirmwareUpdate: () => invoke<UpdateCheck>("check_firmware_update"),
   setFeature: (id: string, value: number) =>
     invoke<FeatureState[]>("set_feature", { id, value }),
   /** Starts streaming JPEG frames to `onFrame`. Call `previewReady` after

@@ -51,6 +51,8 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      # Firmware update check (only when asked): OBSBOT's download page.
+      - network
       # The app starts the panel indicator, which then runs under this
       # app's confinement and needs unity7 to register its tray icon.
       - unity7
@@ -66,6 +68,7 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      - network
       - unity7
 
   obsbotctl:
@@ -73,6 +76,7 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      - network
 
 parts:
   obscura:

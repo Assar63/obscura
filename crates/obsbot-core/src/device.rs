@@ -93,6 +93,25 @@ impl Device {
         })
     }
 
+    /// Compares the camera's firmware with the latest on OBSBOT's download
+    /// page. Needs network access; the error is a sentence for the user.
+    #[cfg(feature = "update-check")]
+    pub fn check_firmware_update(
+        &self,
+    ) -> std::result::Result<crate::firmware::UpdateCheck, String> {
+        let source = self.profile.firmware.as_ref().ok_or_else(|| {
+            format!(
+                "No firmware download page is known for {}",
+                self.profile.name
+            )
+        })?;
+        let current = self
+            .firmware_info()
+            .ok_or("The camera didn't report its firmware version")?
+            .version;
+        crate::firmware::check(source, &current)
+    }
+
     /// The camera's live state decoded from the status block, if it has one.
     pub fn live_status(&self) -> Option<crate::status::LiveStatus> {
         crate::status::decode(&self.status_block()?)

@@ -96,6 +96,7 @@ Status on the Tiny SE:
 | Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ |
 | Audio | Mic during sleep, noise reduction, auto gain, disable microphone, radio distance | ✅ |
 | Device | Status light and brightness, firmware version | ✅ |
+| Device | Firmware update check against OBSBOT's download page (on request; updating stays with OBSBOT Center) | ✅ Tiny 3 |
 | Preview | Live MJPEG preview, 1080p/720p at 30/60 fps | ✅ |
 | Device | Hot-plug and reboot recovery | ✅ |
 | Panel | Tray indicator with quick toggles and show/hide | ✅ |
@@ -235,6 +236,7 @@ obsbotctl dump --unsupported       # ...including the unsupported ones and why
 obsbotctl dump --json
 
 obsbotctl status                   # live state: power, AI mode, zoom, fps…
+obsbotctl firmware                 # is newer firmware on OBSBOT's download page?
 obsbotctl get ai_mode
 obsbotctl set ai_mode human        # off | human | group | "hand tracking"
 obsbotctl set ai_mode human --check  # …and report whether the camera took it

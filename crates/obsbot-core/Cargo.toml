@@ -12,6 +12,11 @@ thiserror.workspace = true
 toml = "0.8"
 nix = { version = "0.29", features = ["ioctl", "fs", "signal", "user"] }
 v4l = "0.14"
+# Firmware update check (opt-in: the indicator doesn't need network code).
+ureq = { version = "3", optional = true }
+
+[features]
+update-check = ["dep:ureq"]
 
 [dev-dependencies]
 serde_json.workspace = true

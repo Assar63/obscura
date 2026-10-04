@@ -10,6 +10,7 @@ pub mod device;
 pub mod discovery;
 pub mod error;
 pub mod features;
+pub mod firmware;
 pub mod log;
 pub mod preview;
 pub mod profile;

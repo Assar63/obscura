@@ -38,6 +38,11 @@ system_info = true
 vendor_id = 0x3564
 product_id = 0xff02
 
+# Latest firmware: OBSBOT's download page, model key in its page data.
+[firmware]
+page = "https://www.obsbot.com/download/obsbot-tiny-3-series"
+key = "tiny3"
+
 # No [presets]: the preset list query (dst 04 `043b`) gets no response on
 # the Tiny 3, so the Tiny SE's preset commands aren't used here.
 

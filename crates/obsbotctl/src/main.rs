@@ -45,6 +45,9 @@ enum Command {
         #[arg(long)]
         check: bool,
     },
+    /// Check OBSBOT's download page for newer firmware (needs network
+    /// access). Only checks; update with OBSBOT Center.
+    Firmware,
     /// Show the camera's live state (power, AI mode, zoom, stream fps…)
     /// decoded from its status block.
     Status {
@@ -320,6 +323,18 @@ fn main() -> Result<()> {
                 for w in warnings {
                     eprintln!("warning: {}", w.message);
                 }
+            }
+        }
+        Command::Firmware => {
+            let dev = open(&cli)?;
+            let c = dev.check_firmware_update().map_err(|e| anyhow!(e))?;
+            println!("Camera firmware:  {}", c.current);
+            println!("Latest firmware:  {}", c.latest);
+            if c.update_available {
+                println!("An update is available. Install it with OBSBOT Center (Windows or");
+                println!("macOS): {}", c.page);
+            } else {
+                println!("The camera is up to date.");
             }
         }
         Command::Status { raw } => {

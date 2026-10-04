@@ -306,6 +306,8 @@ pub struct DeviceProfile {
     pub system_info: bool,
     /// Camera-side gimbal presets.
     pub presets: Option<Presets>,
+    /// Where OBSBOT publishes this model's latest firmware.
+    pub firmware: Option<crate::firmware::FirmwareSource>,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -479,6 +481,7 @@ mod tests {
         assert_eq!(p.id, "tiny-3");
         assert!(p.presets.is_none());
         assert!(p.gimbal_velocity.is_some());
+        assert_eq!(p.firmware.as_ref().map(|f| f.key.as_str()), Some("tiny3"));
         let Binding::Vendor(ai) = &p.features[&FeatureId::AiMode] else {
             panic!("AI mode is not a vendor binding");
         };
