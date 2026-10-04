@@ -109,6 +109,8 @@ offsets, for profiles with `status_layout = "tiny"`.
   (0-100 = 1x-4x, status[22]), 101 the language (status[20]). Tested by
   voice: "Unlock Me" and "Track Me" switched tracking, and "Unlock Me" was
   ignored once switched off (repeated hands-free, to rule out gestures).
+  The switches don't survive a power cycle: after unplugging, all seven
+  were on again (status[21] = `7f`).
   Audio tab → Voice Control.
 - [x] **Privacy mode.** *Tested:* the SDK's `cameraSetDevRunStatusR(4)`
   sends the same frame as sleep (`c2a0` u32 1) and the camera reports
