@@ -220,7 +220,8 @@ button. See docs/protocol.md.
   (generic profile). The system's input volume (PipeWire) is a separate
   layer on top that doesn't follow it. Snap: `obscura:alsa`.
 - [ ] **Two mics at once** (needs a second Vox SE).
-- [ ] **P3: Mic battery in the tray menu.**
+- [x] **P3: Mic battery in the tray menu.** *Done:* connected mics with
+  battery, charging and muted, in the tray menu and tooltip.
 - [x] **P2: Mute and gain per mic.** *Done:* `d32d` (mute, u8) and `532d` (gain,
   i32) to the mic; readback from `02c0` [2] bits and [5]/[6]. Gain is
   offered as -12..+12 (the mic stores -30..+30; OBSBOT publishes no range).

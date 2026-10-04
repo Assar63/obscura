@@ -71,6 +71,8 @@ struct Indicator {
     can_reset: bool,
     /// Filled camera presets: slot and name.
     presets: Vec<(u32, String)>,
+    /// Connected wireless mics, e.g. "TX1: 89%, charging".
+    mics: Vec<String>,
     gui_running: bool,
     icons: Vec<ksni::Icon>,
     error: Option<String>,
@@ -87,6 +89,7 @@ impl Indicator {
             can_center: false,
             can_reset: false,
             presets: Vec::new(),
+            mics: Vec::new(),
             gui_running: false,
             icons: ICONS.iter().filter_map(|png| load_icon(png)).collect(),
             error: None,
@@ -116,6 +119,7 @@ impl Indicator {
             self.toggles.clear();
             self.can_center = false;
             self.presets.clear();
+            self.mics.clear();
             return;
         };
         self.camera_name = dev
@@ -153,6 +157,25 @@ impl Indicator {
             .into_iter()
             .zip(0..)
             .filter_map(|(name, slot)| Some((slot, name?)))
+            .collect();
+        self.mics = dev
+            .wireless_mics()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|m| m.connected)
+            .map(|m| {
+                let mut label = format!("TX{}", m.slot);
+                if let Some(b) = m.battery {
+                    label += &format!(": {b}%");
+                }
+                if m.charging {
+                    label += ", charging";
+                }
+                if m.muted {
+                    label += ", muted";
+                }
+                label
+            })
             .collect();
     }
 
@@ -236,6 +259,11 @@ impl ksni::Tray for Indicator {
             }
             (Some(_), None) => self.camera_name.clone(),
         };
+        let description = if self.mics.is_empty() {
+            description
+        } else {
+            format!("{description}\nMics: {}", self.mics.join(" · "))
+        };
         ksni::ToolTip {
             title: "OBSCura".into(),
             description,
@@ -269,6 +297,16 @@ impl ksni::Tray for Indicator {
             }
             .into(),
         );
+        for mic in &self.mics {
+            items.push(
+                StandardItem {
+                    label: format!("🎙 {mic}"),
+                    enabled: false,
+                    ..Default::default()
+                }
+                .into(),
+            );
+        }
         if let Some(err) = &self.error {
             items.push(
                 StandardItem {
