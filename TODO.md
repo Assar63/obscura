@@ -255,12 +255,14 @@ button. See docs/protocol.md.
 
 ## 5. Tooling
 
-- [ ] **Two programs querying the camera at once.** Query replies come back
-  through one slot on the camera (selector 2), so when the app and
+- [x] **Two programs querying the camera at once.** Query replies come
+  back through one slot on the camera (selector 2), so when the app and
   `obsbotctl` query at the same moment, one can read the other's reply
-  and time out ("unavailable" in `obsbotctl dump` while the app is open).
-  Retrying on a mismatched sequence number, or serialising through the
-  running app, would fix it.
+  and time out. *Done:* a query is resent up to 3 times, and each process
+  starts its sequence numbers at a random value (all started at 0, so
+  equal numbers for the same command could take another program's reply
+  to a different payload). With the app and tray polling, 15
+  `obsbotctl dump` runs lost 30 values before and none after.
 - [ ] **Firmware 6.6.10.1's new gesture toggle** ("Motion Capture to
   Avatar"): after updating, trace `aiSetGestureParaR` types beyond 8.
 

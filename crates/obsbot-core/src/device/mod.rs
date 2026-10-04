@@ -88,7 +88,7 @@ impl Device {
             info,
             profile,
             node,
-            seq: AtomicU16::new(0),
+            seq: AtomicU16::new(initial_seq()),
             written: Mutex::new(HashMap::new()),
             levels: Mutex::new(HashMap::new()),
             settled: Mutex::new(HashMap::new()),
@@ -112,4 +112,16 @@ impl Device {
     pub fn is_connected(&self) -> bool {
         self.node.capability().is_ok()
     }
+}
+
+/// A per-process starting sequence number. Replies are matched by sequence
+/// number and command, and the camera has one reply slot shared by every
+/// program; starting each process somewhere different keeps the app, the
+/// tray and `obsbotctl` from taking each other's replies.
+fn initial_seq() -> u16 {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.subsec_nanos());
+    let mixed = (nanos ^ std::process::id().wrapping_mul(0x9e37_79b9)).wrapping_mul(0x85eb_ca6b);
+    (mixed >> 16) as u16
 }

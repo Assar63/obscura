@@ -6,6 +6,9 @@ fn hex(cmd: [u8; 2]) -> String {
     format!("{:02x}{:02x}", cmd[0], cmd[1])
 }
 
+/// How often a query is sent before giving up.
+const QUERY_ATTEMPTS: u32 = 3;
+
 impl Device {
     /// Reads the vendor status block (selector 6), if the device has one.
     pub fn status_block(&self) -> Option<Vec<u8>> {
@@ -42,27 +45,40 @@ impl Device {
         flags: u8,
         payload: &[u8],
     ) -> Result<Option<Vec<u8>>> {
-        let seq = self.seq.fetch_add(1, Ordering::Relaxed);
-        uvc_xu::set(
-            &self.node,
-            protocol::XU_UNIT,
-            protocol::SEL_COMMAND,
-            &encode_query(seq, dst, cmd, flags, payload),
-        )?;
-        // OBSBOT Center reads the response about 40 ms later.
-        for _ in 0..5 {
-            std::thread::sleep(Duration::from_millis(30));
-            let frame = uvc_xu::get(
+        // The camera keeps one reply for everyone: if another program (the
+        // app, the tray, obsbotctl) queries in between, ours is overwritten.
+        // Ask again, after a pause that differs between attempts.
+        for attempt in 0..QUERY_ATTEMPTS {
+            let seq = self.seq.fetch_add(1, Ordering::Relaxed);
+            if attempt > 0 {
+                std::thread::sleep(Duration::from_millis(20 + u64::from(seq % 7) * 10));
+            }
+            uvc_xu::set(
                 &self.node,
                 protocol::XU_UNIT,
                 protocol::SEL_COMMAND,
-                crate::transport::v4l2::UvcQuery::GetCur,
+                &encode_query(seq, dst, cmd, flags, payload),
             )?;
-            match protocol::decode_response(&frame, seq, cmd) {
-                Some((protocol::FLAGS_RESPONSE, p)) => return Ok(Some(p.to_vec())),
-                Some((protocol::FLAGS_RESPONSE_EMPTY, _)) => return Ok(None),
-                _ => {}
+            // OBSBOT Center reads the response about 40 ms later.
+            for _ in 0..5 {
+                std::thread::sleep(Duration::from_millis(30));
+                let frame = uvc_xu::get(
+                    &self.node,
+                    protocol::XU_UNIT,
+                    protocol::SEL_COMMAND,
+                    crate::transport::v4l2::UvcQuery::GetCur,
+                )?;
+                match protocol::decode_response(&frame, seq, cmd) {
+                    Some((protocol::FLAGS_RESPONSE, p)) => return Ok(Some(p.to_vec())),
+                    Some((protocol::FLAGS_RESPONSE_EMPTY, _)) => return Ok(None),
+                    _ => {}
+                }
             }
+            log::trace(format!(
+                "query {}: no reply (attempt {})",
+                hex(cmd),
+                attempt + 1
+            ));
         }
         Err(Error::Unsupported(format!(
             "no response to query {}",
