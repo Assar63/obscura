@@ -123,6 +123,7 @@ explaining why. The layout matches the official app.
 sudo snap install obscura
 sudo snap connect obscura:camera                 # required
 sudo snap connect obscura:hardware-observe       # optional: USB product name/serial
+sudo snap connect obscura:alsa                   # optional: microphone level/switch
 sudo snap alias obscura.obsbotctl obsbotctl      # optional: plain `obsbotctl`
 ```
 
@@ -140,7 +141,8 @@ On Debian/Ubuntu:
 
 ```sh
 sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
-    libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+    libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev \
+    libasound2-dev
 ```
 
 Or let `tools/bootstrap.sh dev` check all of this and install what's

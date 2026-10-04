@@ -18,6 +18,10 @@ description: |
 
     sudo snap connect obscura:camera
 
+  To set the camera microphone's level from OBSCura:
+
+    sudo snap connect obscura:alsa
+
   Optionally, to show the camera's USB product name, serial number and
   revision in the Device panel:
 
@@ -51,6 +55,8 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      # Microphone level/switch through the camera's ALSA mixer.
+      - alsa
       # Firmware update check (only when asked): OBSBOT's download page.
       - network
       # The app starts the panel indicator, which then runs under this
@@ -68,6 +74,8 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      # Microphone level/switch through the camera's ALSA mixer.
+      - alsa
       - network
       - unity7
 
@@ -76,6 +84,8 @@ apps:
     plugs:
       - camera
       - hardware-observe
+      # Microphone level/switch through the camera's ALSA mixer.
+      - alsa
       - network
 
 parts:
@@ -94,6 +104,10 @@ parts:
       - pkg-config
       - libssl-dev
       - librsvg2-dev
+      - libasound2-dev   # camera microphone level (alsa crate)
+    # obsbotctl runs without the gnome extension, so ship libasound.
+    stage-packages:
+      - libasound2t64
     override-pull: |
       craftctl default
       craftctl set version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)+git$(git rev-parse --short HEAD)"

@@ -137,6 +137,8 @@ features! {
     AutoGain              "auto_gain" => "audio", "Auto Gain", FeatureKind::Toggle;
     DisableMicrophone     "disable_microphone" => "audio", "Disable Microphone", FeatureKind::Toggle;
     PickupDistance        "pickup_distance" => "audio", "Radio Distance", choice(&[(0, "Close"), (1, "Standard"), (2, "Far")]);
+    MicCapture            "mic_capture" => "audio", "Microphone On", FeatureKind::Toggle;
+    MicLevel              "mic_level" => "audio", "Level", range(-50, 0, 1, Some(" dB"));
 
     // Wireless microphones (Vox SE, Tiny 3 series): two slots, TX1 and TX2
     AudioSource           "audio_source" => "wireless", "Audio Source", choice(&[(0, "Built-in"), (3, "Wireless Mic")]);
@@ -146,6 +148,10 @@ features! {
     MicPairStop           "mic_pair_stop" => "wireless", "Stop Pairing", FeatureKind::Action;
     MicForgetTx1          "mic_forget_tx1" => "wireless", "Forget TX1", FeatureKind::Action;
     MicForgetTx2          "mic_forget_tx2" => "wireless", "Forget TX2", FeatureKind::Action;
+    MicTx1Mute            "mic_tx1_mute" => "wireless", "TX1 Mute", FeatureKind::Toggle;
+    MicTx1Gain            "mic_tx1_gain" => "wireless", "TX1 Gain", range(-12, 12, 1, None);
+    MicTx2Mute            "mic_tx2_mute" => "wireless", "TX2 Mute", FeatureKind::Toggle;
+    MicTx2Gain            "mic_tx2_gain" => "wireless", "TX2 Gain", range(-12, 12, 1, None);
 
     // Device sleep
     AutoSleep             "auto_sleep" => "sleep", "Auto Sleep", FeatureKind::Toggle;

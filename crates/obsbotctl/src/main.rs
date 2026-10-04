@@ -39,6 +39,8 @@ enum Command {
     /// units (e.g. `zoom 1.5`).
     Set {
         feature: String,
+        /// Negative numbers are fine (e.g. `mic_tx1_gain -4`).
+        #[arg(allow_hyphen_values = true)]
         value: String,
         /// Wait for the camera's status to catch up, then report whether it
         /// took the new value.

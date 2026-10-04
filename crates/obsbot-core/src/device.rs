@@ -11,7 +11,9 @@ use crate::discovery::CameraInfo;
 use crate::error::{Error, Result};
 use crate::features::{ChoiceOption, FeatureId, FeatureKind};
 use crate::log;
-use crate::profile::{Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding};
+use crate::profile::{
+    AlsaControl, Binding, DeviceProfile, Level, LockSpec, QueryRead, VendorBinding,
+};
 use crate::protocol::{
     self, encode_command, encode_query, encode_short, encode_value, ValueEncoding,
 };
@@ -586,7 +588,14 @@ impl Device {
         }
         let bytes: Option<Vec<u8>> = q.offsets.iter().map(|&o| payload.get(o).copied()).collect();
         match bytes?.as_slice() {
-            [b] => Some(*b as i64 * q.scale),
+            [b] => {
+                let b = q.mask.map_or(*b, |m| (b & m) >> m.trailing_zeros());
+                let v = match q.value {
+                    ValueEncoding::I8 => b as i8 as i64,
+                    _ => b as i64,
+                };
+                Some(v * q.scale)
+            }
             bs => Some(bs.iter().any(|&b| b != 0) as i64),
         }
     }
@@ -656,6 +665,22 @@ impl Device {
                 state.supported = true;
                 state.value = Some(self.locked.lock().unwrap().is_some() as i64);
             }
+            Some(Binding::Alsa(a)) => match crate::audio::find_card(&self.info.usb_path) {
+                None => state.reason = Some("no USB audio found for this camera".into()),
+                Some(card) => {
+                    let read = match a.alsa {
+                        AlsaControl::CaptureVolume => crate::audio::volume(card),
+                        AlsaControl::CaptureSwitch => crate::audio::switch(card).map(i64::from),
+                    };
+                    match read {
+                        Ok(v) => {
+                            state.supported = true;
+                            state.value = Some(v);
+                        }
+                        Err(e) => state.reason = Some(e.to_string()),
+                    }
+                }
+            },
         }
         state
     }
@@ -840,6 +865,14 @@ impl Device {
                 }
             }
             Some(Binding::Lock(l)) => self.set_lock(&l.lock, value != 0)?,
+            Some(Binding::Alsa(a)) => {
+                let card = crate::audio::find_card(&self.info.usb_path)
+                    .ok_or_else(|| Error::Audio("no USB audio found for this camera".into()))?;
+                match a.alsa {
+                    AlsaControl::CaptureVolume => crate::audio::set_volume(card, value)?,
+                    AlsaControl::CaptureSwitch => crate::audio::set_switch(card, value != 0)?,
+                }
+            }
             Some(Binding::Vendor(b)) => {
                 self.send_vendor(b, self.feature_to_setting(b, value))?;
                 if b.level == Some(Level::Magnitude) {

@@ -241,6 +241,8 @@ OBSBOT's SDK; commands for a mic go to the mic itself, dst `0x58` (TX1) or
 | Pair a slot ✅ (TX1 and TX2) | flags 0x05 to dst 58/98 `130c` (no payload), then flags 0x21 to dst `13` `0e0c` payload `00` (SDK `setBlePairingEnable`); then hold the mic's button ~6 s |
 | Stop pairing | flags 0x05 to dst 58/98 `530c` |
 | Forget a slot ✅ | flags 0x05 to dst 58/98 `930e`: TX1 dropped offline and didn't reconnect on its own; auto-select's "has pairing record" stayed 1 |
+| Mute a mic ✅ | dst 58/98 `d32d` u8; read back at mic info [2] bit 0/1 |
+| Mic gain ✅ | dst 58/98 `532d` i32; read back at mic info [5]/[6] (i8). Any value -30..+30 is stored; OBSBOT publishes no range |
 | Audio source ✅ | dst 02 `4289` u8: 0 built-in, 3 wireless; read at status[40] bits 0–2 |
 | Auto-select ✅ | dst 02 `c28a` u8; query `828a` → `[supported, on, has pairing record]` |
 | Mic info ✅ | query dst 02 `02c0` → 16 bytes, below |

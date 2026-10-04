@@ -22,6 +22,8 @@ pub enum Error {
     Profile { name: String, msg: String },
     #[error("no camera found")]
     NoDevice,
+    #[error("audio: {0}")]
+    Audio(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

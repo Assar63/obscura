@@ -30,7 +30,7 @@ done
 APT_PACKAGES=(
   build-essential curl wget file pkg-config clang libclang-dev
   libwebkit2gtk-4.1-dev libxdo-dev libssl-dev
-  libayatana-appindicator3-dev librsvg2-dev
+  libayatana-appindicator3-dev librsvg2-dev libasound2-dev
 )
 RUST_MIN=1.77.2
 

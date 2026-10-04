@@ -71,6 +71,11 @@
 
 <div class="tab">
   <Card title="Microphone">
+    <Feature
+      id="mic_capture"
+      description="The camera's microphone level in hardware: Teams, OBS and browsers get this. Your system's input volume applies on top."
+    />
+    <Feature id="mic_level" hideUnsupported />
     <Feature id="disable_microphone" />
     <Feature id="noise_reduction" variant="select" />
     <Feature id="auto_gain" />
@@ -81,26 +86,34 @@
   {#if mics}
     <Card title="Wireless Microphones">
       {#each mics as m (m.slot)}
-        <div class="slot">
-          <span class="dot" class:on={m.connected}></span>
-          <div class="text">
-            <span>TX{m.slot}</span>
-            <span class="desc">{slotText(m)}</span>
+        <div class="slot-group">
+          <div class="slot">
+            <span class="dot" class:on={m.connected}></span>
+            <div class="text">
+              <span>TX{m.slot}</span>
+              <span class="desc">{slotText(m)}</span>
+            </div>
+            {#if pairing === m.slot}
+              <button class="small" onclick={cancel}>Cancel</button>
+            {:else if m.connected}
+              <button
+                class="small ghost"
+                disabled={pairing !== null}
+                onclick={() => ((forgetSlot = m.slot), (confirmForget = true))}>Forget</button
+              >
+            {:else}
+              <button
+                class="small"
+                disabled={pairing !== null || !device.supported(`mic_pair_tx${m.slot}`)}
+                onclick={() => pair(m.slot)}>Pair</button
+              >
+            {/if}
           </div>
-          {#if pairing === m.slot}
-            <button class="small" onclick={cancel}>Cancel</button>
-          {:else if m.connected}
-            <button
-              class="small ghost"
-              disabled={pairing !== null}
-              onclick={() => ((forgetSlot = m.slot), (confirmForget = true))}>Forget</button
-            >
-          {:else}
-            <button
-              class="small"
-              disabled={pairing !== null || !device.supported(`mic_pair_tx${m.slot}`)}
-              onclick={() => pair(m.slot)}>Pair</button
-            >
+          {#if m.connected}
+            <div class="slot-controls">
+              <Feature id={`mic_tx${m.slot}_mute`} label="Mute" />
+              <Feature id={`mic_tx${m.slot}_gain`} label="Gain" />
+            </div>
           {/if}
         </div>
       {/each}
@@ -136,6 +149,17 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+  .slot-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .slot-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 18px;
   }
   .slot {
     display: flex;

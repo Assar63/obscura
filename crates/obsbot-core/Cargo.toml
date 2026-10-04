@@ -15,8 +15,13 @@ v4l = "0.14"
 # Firmware update check (opt-in: the indicator doesn't need network code).
 ureq = { version = "3", optional = true }
 
+# The camera's capture level and switch via its ALSA mixer (opt-in: links
+# libasound).
+alsa = { version = "0.12", optional = true }
+
 [features]
 update-check = ["dep:ureq"]
+alsa = ["dep:alsa"]
 
 [dev-dependencies]
 serde_json.workspace = true

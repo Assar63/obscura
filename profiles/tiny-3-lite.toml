@@ -230,6 +230,26 @@ frames = [{ dst = 0x58, cmd = "930e", flags = 0x05, payload = "" }]
 [features.mic_forget_tx2]
 frames = [{ dst = 0x98, cmd = "930e", flags = 0x05, payload = "" }]
 
+# Per-mic mute and gain, sent to the mic (dst 0x58 TX1, 0x98 TX2); read back
+# from the mic info query `02c0`: [2] bit 0/1 muted, [5]/[6] gain (i8). The
+# mic stores any gain from -30 to +30 and OBSBOT doesn't publish the range,
+# so the catalog offers -12..+12. Verified on TX1.
+[features.mic_tx1_mute]
+query = { dst = 0x02, cmd = "02c0", offsets = [2], mask = 0x01 }
+frames = [{ dst = 0x58, cmd = "d32d" }]
+
+[features.mic_tx1_gain]
+query = { dst = 0x02, cmd = "02c0", offsets = [5], value = "i8" }
+frames = [{ dst = 0x58, cmd = "532d", value = "u32" }]
+
+[features.mic_tx2_mute]
+query = { dst = 0x02, cmd = "02c0", offsets = [2], mask = 0x02 }
+frames = [{ dst = 0x98, cmd = "d32d" }]
+
+[features.mic_tx2_gain]
+query = { dst = 0x02, cmd = "02c0", offsets = [6], value = "i8" }
+frames = [{ dst = 0x98, cmd = "532d", value = "u32" }]
+
 # Device sleep: one i16 setting in seconds, negated while auto sleep is off.
 [features.auto_sleep]
 status = 10

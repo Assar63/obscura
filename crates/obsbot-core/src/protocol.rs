@@ -159,6 +159,8 @@ pub fn encode_short(id: u8, value: &[u8]) -> [u8; PACKET_LEN] {
 #[serde(rename_all = "lowercase")]
 pub enum ValueEncoding {
     U8,
+    /// Signed 8-bit (readback; writes as one byte).
+    I8,
     U16,
     U32,
     /// Signed 16-bit (status readback only).
@@ -169,7 +171,7 @@ pub enum ValueEncoding {
 
 pub fn encode_value(enc: ValueEncoding, value: i64, divisor: i64) -> Vec<u8> {
     match enc {
-        ValueEncoding::U8 => vec![value as u8],
+        ValueEncoding::U8 | ValueEncoding::I8 => vec![value as u8],
         ValueEncoding::U16 | ValueEncoding::I16 => (value as u16).to_le_bytes().to_vec(),
         ValueEncoding::U32 => (value as u32).to_le_bytes().to_vec(),
         ValueEncoding::F32 => ((value as f64 / divisor.max(1) as f64) as f32)
@@ -183,6 +185,7 @@ pub fn decode_status(block: &[u8], offset: usize, enc: ValueEncoding) -> Option<
     let b = |n: usize| block.get(offset..offset + n);
     Some(match enc {
         ValueEncoding::U8 => *block.get(offset)? as i64,
+        ValueEncoding::I8 => *block.get(offset)? as i8 as i64,
         ValueEncoding::U16 => u16::from_le_bytes(b(2)?.try_into().ok()?) as i64,
         ValueEncoding::I16 => i16::from_le_bytes(b(2)?.try_into().ok()?) as i64,
         ValueEncoding::U32 => u32::from_le_bytes(b(4)?.try_into().ok()?) as i64,

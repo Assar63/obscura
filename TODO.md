@@ -169,8 +169,9 @@ profiles use lands on the field the SDK names. The struct is
   source assisted tracking", range, "audio mode limit". The Tiny 3 manual
   says sound localization for voice control can be switched in OBSBOT
   Center. Find the setter by tracing.
-- [ ] **Wireless mic status.** [41] `wireless_mic` (pairing, TX0/TX1
-  online). Read-only display in Device details, if someone has the mic.
+- [x] **Wireless mic status.** [41] `wireless_mic` (pairing, TX0/TX1
+  online). Read-only display in Device details, if someone has the mic. *Done:* Audio → Wireless
+  Microphones shows each slot from [41] and the mic info query.
 - [ ] **Gimbal limits, pan reverse, preset speed.** `aiSetGimbalParaR`
   (tail2 and later): pan/pitch min/max, pan reverse, preset speed
   (0.1–0.8). Might replace the Tiny SE "View and Gimbal Reverse" command,
@@ -241,20 +242,29 @@ button. See docs/protocol.md.
   and Forget; `obsbotctl mics`. Tiny 3 verified (TX1 and TX2), Tiny 3 Lite assumed.
 - [x] **Forget** (TX1): the mic went offline and didn't reconnect.
 - [x] **TX2**: the same mic, forgotten on TX1, paired on TX2.
+- [x] **Camera microphone on/off and level.** The camera's USB audio mixer
+  ("Capture Volume", ALSA), in dB (0 = full; the Tiny 3's control runs
+  -100..0 dB, the slider -50..0). For every webcam with a microphone
+  (generic profile). The system's input volume (PipeWire) is a separate
+  layer on top that doesn't follow it. Snap: `obscura:alsa`.
 - [ ] **Two mics at once** (needs a second Vox SE).
 - [ ] **P3: Mic battery in the tray menu.**
-- [ ] **P2: Mute and gain per mic.**
+- [x] **P2: Mute and gain per mic.** *Done:* `d32d` (mute, u8) and `532d` (gain,
+  i32) to the mic; readback from `02c0` [2] bits and [5]/[6]. Gain is
+  offered as -12..+12 (the mic stores -30..+30; OBSBOT publishes no range).
 - [ ] **P2: Button function.** `cameraSetTWSKeyTypeR`: track, switch
   tracking mode, zoom 1x, record.
-- [ ] **P2: Audio source.** Built-in vs. wireless, and auto select.
+- [x] **P2: Audio source.** Built-in vs. wireless, and auto select. *Done:* audio source and auto-select controls.
 - [ ] **P3: Mic options.** `cameraSetTWSFuncR` (button, vibration, LED,
   noise suppression, auto shutdown), `cameraSetTWSSoundModeR` (mono/stereo).
 
 ## 4. Other models
 
-- [ ] **Tiny 3 Lite (`3564:ff04`).** Same SDK family (`ObsbotProdTiny3Lite
+- [x] **Tiny 3 Lite (`3564:ff04`).** Same SDK family (`ObsbotProdTiny3Lite
   = 19`) and the same verified commands in joshualambert's notes. Likely a
-  copy of `tiny-3.toml` with its USB ID; needs a tester.
+  copy of `tiny-3.toml` with its USB ID; needs a tester. *Done:* `profiles/tiny-3-lite.toml`,
+  a copy of the Tiny 3's, marked unverified.
+- [ ] **Verify the Tiny 3 Lite profile** on a real camera.
 - [ ] **Re-check the Tiny 2 / 2 Lite / 4K / Meet 2 / Meet SE profiles**
   against the SDK. E.g. `aiSetGestureCtrlIndividualR` (gesture types 0–4
   on the Tiny 2 series) may be the Tiny 2's gesture path, and the Meet 2's

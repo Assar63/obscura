@@ -32,3 +32,10 @@ tilt                      = { v4l2 = 0x009a0909, scale = 3600, unit = "°" }
 focus                     = { v4l2 = 0x009a090a }
 auto_focus                = { v4l2 = 0x009a090c }
 zoom                      = { v4l2 = 0x009a090d, scale = 1, unit = "" }
+
+# The camera's USB audio capture, through the ALSA mixer of its sound card
+# (any webcam with a microphone). A hardware level in the camera, so Teams,
+# OBS and browsers get it; the system's input volume (PipeWire) applies on
+# top and doesn't follow it. The level is in dB, 0 = full.
+mic_capture               = { alsa = "capture-switch" }
+mic_level                 = { alsa = "capture-volume" }

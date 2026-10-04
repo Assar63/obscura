@@ -191,7 +191,10 @@ pub struct QueryRead {
     /// Response offset holding the value. With several, the feature is a
     /// toggle that is on when any of the bytes is non-zero.
     pub offsets: Vec<usize>,
-    /// Layout of a single value: `u8` (default) or `f32`.
+    /// Bits of a single byte holding the value (shifted down), e.g. one
+    /// microphone's mute bit.
+    pub mask: Option<u8>,
+    /// Layout of a single value: `u8` (default), `i8` or `f32`.
     #[serde(default = "u8_enc")]
     pub value: ValueEncoding,
     /// Feature value = value x scale (e.g. zoom factor x10 -> x100).
@@ -292,6 +295,24 @@ pub enum Binding {
     V4l2(V4l2Binding),
     Vendor(VendorBinding),
     Lock(LockBinding),
+    Alsa(AlsaBinding),
+}
+
+/// A control of the camera's USB audio, through its ALSA mixer (see
+/// `audio.rs`).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AlsaBinding {
+    pub alsa: AlsaControl,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AlsaControl {
+    /// Capture level in dB.
+    CaptureVolume,
+    /// Capture on/off.
+    CaptureSwitch,
 }
 
 #[derive(Debug, Clone, Deserialize)]
