@@ -32,6 +32,7 @@ pub fn run() {
             commands::set_feature,
             commands::get_log,
             commands::live_status,
+            commands::wireless_mics,
             commands::check_firmware_update,
             commands::toggle_diagnostics,
             commands::gimbal_move,

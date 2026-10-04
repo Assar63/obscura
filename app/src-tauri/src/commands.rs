@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use obsbot_core::{
-    discover, log, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo, LiveStatus,
+    discover, log, CameraInfo, Device, FeatureId, FeatureState, FirmwareInfo, LiveStatus, MicSlot,
 };
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -159,6 +159,14 @@ pub fn toggle_diagnostics(app: AppHandle) -> CmdResult<()> {
     .build()
     .map(|_| ())
     .map_err(err)
+}
+
+/// Wireless microphone slots (`None` if the camera has no receiver).
+#[tauri::command]
+pub fn wireless_mics(state: State<AppState>) -> CmdResult<Option<Vec<MicSlot>>> {
+    let guard = state.0.lock().unwrap();
+    let device = guard.as_ref().ok_or("no camera open")?;
+    Ok(device.wireless_mics())
 }
 
 /// The camera's live state from its status block (`None` without one).

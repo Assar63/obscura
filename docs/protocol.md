@@ -232,6 +232,42 @@ Gestures themselves queue nothing: a palm shows as status[24] changing
 also has Vox SE events (`kEvtTipsTWS…`: connect, battery, mute, …), which
 should come through the same queue once a mic is paired.
 
+**Vox SE wireless microphones: two slots, TX1 and TX2.** Frames traced from
+OBSBOT's SDK; commands for a mic go to the mic itself, dst `0x58` (TX1) or
+`0x98` (TX2), relayed by the camera.
+
+| Action | Frames |
+|---|---|
+| Pair a slot ✅ | flags 0x05 to dst 58/98 `130c` (no payload), then flags 0x21 to dst `13` `0e0c` payload `00` (SDK `setBlePairingEnable`); then hold the mic's button ~6 s |
+| Stop pairing | flags 0x05 to dst 58/98 `530c` |
+| Forget a slot | flags 0x05 to dst 58/98 `930e` (not tested) |
+| Audio source ✅ | dst 02 `4289` u8: 0 built-in, 3 wireless; read at status[40] bits 0–2 |
+| Auto-select ✅ | dst 02 `c28a` u8; query `828a` → `[supported, on, has pairing record]` |
+| Mic info ✅ | query dst 02 `02c0` → 16 bytes, below |
+
+Neither pairing frame works alone: TX1 paired only when both were sent
+before putting the mic into pairing mode (found by the user trying the
+traced commands). The camera then switched the source to the wireless mic
+and turned auto-select on; with the mic back in its charging case it
+switched back to the built-in mics. Status[41] (`wireless_mic`): bit 0 TWS
+mode, bits 1–2 TX1/TX2 online, bit 3 Bluetooth connected, bit 4 scanning.
+
+Mic info (SDK `DevTWSInfo`), with one Vox SE on TX1 at 80 %:
+`00 27 00 02 02 00 00 50 00 00 00 …`
+
+| Byte | Field |
+|---|---|
+| 0 | button function (0 track, 1 switch tracking mode, 2 zoom 1x, 3 record) |
+| 1 | bits: button, vibration, LED, sound mode (2 bits), auto shutdown |
+| 2 | bit 0/1 mic 1/2 muted, bit 2/3 mic 1/2 noise suppression |
+| 3, 4 | noise suppression level, mic 1/2 |
+| 5, 6 | gain, mic 1/2 |
+| 7, 8 | battery percent, mic 1/2 ✅ |
+| 9, 10 | charging, mic 1/2 ✅ |
+
+The per-mic SDK reads (battery, mute, gain, name `Vox SE 1EBB48`, serial,
+version 0x02030700) answer once a mic is paired.
+
 Earlier tests: the Tiny SE's gesture commands (`c430`, `4431`, `4433`,
 `c433`) are accepted and ignored by the Tiny 3.
 

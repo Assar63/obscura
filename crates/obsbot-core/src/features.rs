@@ -138,13 +138,12 @@ features! {
     DisableMicrophone     "disable_microphone" => "audio", "Disable Microphone", FeatureKind::Toggle;
     PickupDistance        "pickup_distance" => "audio", "Radio Distance", choice(&[(0, "Close"), (1, "Standard"), (2, "Far")]);
 
-    // Wireless microphones (Vox SE on the Tiny 3); experimental, see TODO.md
+    // Wireless microphones (Vox SE, Tiny 3 series): two slots, TX1 and TX2
     AudioSource           "audio_source" => "wireless", "Audio Source", choice(&[(0, "Built-in"), (3, "Wireless Mic")]);
     AudioAutoSelect       "audio_auto_select" => "wireless", "Auto-select Wireless Mic", FeatureKind::Toggle;
     MicPairTx1            "mic_pair_tx1" => "wireless", "Pair TX1", FeatureKind::Action;
     MicPairTx2            "mic_pair_tx2" => "wireless", "Pair TX2", FeatureKind::Action;
     MicPairStop           "mic_pair_stop" => "wireless", "Stop Pairing", FeatureKind::Action;
-    MicBlePairing         "mic_ble_pairing" => "wireless", "Bluetooth Pairing Mode", FeatureKind::Action;
     MicForgetTx1          "mic_forget_tx1" => "wireless", "Forget TX1", FeatureKind::Action;
     MicForgetTx2          "mic_forget_tx2" => "wireless", "Forget TX2", FeatureKind::Action;
 

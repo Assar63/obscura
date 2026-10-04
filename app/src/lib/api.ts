@@ -84,6 +84,15 @@ export type UpdateCheck = {
   page: string;
 };
 
+/** A wireless microphone slot (Vox SE): TX1 or TX2. */
+export type MicSlot = {
+  slot: number;
+  connected: boolean;
+  battery: number | null;
+  charging: boolean;
+  muted: boolean;
+};
+
 export type PreviewConfig = { width: number; height: number; fps: number };
 export type PreviewFormat = PreviewConfig;
 
@@ -96,6 +105,7 @@ export const api = {
   /** Activity log entries newer than `since` (0 for all). */
   getLog: (since: number) => invoke<LogEntry[]>("get_log", { since }),
   liveStatus: () => invoke<LiveStatus | null>("live_status"),
+  wirelessMics: () => invoke<MicSlot[] | null>("wireless_mics"),
   /** Opens the Diagnostics window, or closes it if it's open. */
   toggleDiagnostics: () => invoke<void>("toggle_diagnostics"),
   /** Compares the camera's firmware with OBSBOT's download page (network). */

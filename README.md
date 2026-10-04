@@ -44,7 +44,8 @@ using a vendor protocol reverse-engineered from USB captures.
 |---|---|---|
 | OBSBOT Tiny SE | `3564:feff` | Supported (firmware 6.4.4.1) |
 | OBSBOT Tiny 2 | `3564:fef8` | Assumed supported, cross-checked (see below) |
-| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets (firmware 6.6.8.3, see below) |
+| OBSBOT Tiny 3 | `3564:ff02` | Supported except presets, incl. Vox SE wireless mics (firmware 6.6.8.3, see below) |
+| OBSBOT Tiny 3 Lite | `3564:ff04` | Assumed like the Tiny 3, unverified (see `profiles/tiny-3-lite.toml`) |
 | OBSBOT Tiny 2 Lite | `3564:fef9` | Assumed supported, unverified (see below) |
 | OBSBOT Tiny 4K | `3564:fef4` | Assumed supported, unverified (see below) |
 | OBSBOT Meet 2 | `3564:fefb` | Assumed supported minus gimbal features, unverified (see below) |

@@ -52,6 +52,9 @@ enum Command {
         #[arg(long)]
         seconds: Option<u64>,
     },
+    /// Wireless microphones (Vox SE): which slots are connected, battery.
+    /// Pair with `set mic_pair_tx1 1`, then hold the mic's button ~6 s.
+    Mics,
     /// Check OBSBOT's download page for newer firmware (needs network
     /// access). Only checks; update with OBSBOT Center.
     Firmware,
@@ -355,6 +358,25 @@ fn main() -> Result<()> {
                             e.message
                         );
                     }
+                }
+            }
+        }
+        Command::Mics => {
+            let dev = open(&cli)?;
+            let Some(mics) = dev.wireless_mics() else {
+                bail!("{} has no wireless microphone receiver", dev.profile.name);
+            };
+            for m in mics {
+                if m.connected {
+                    let battery = m.battery.map_or("?".into(), |b| format!("{b}%"));
+                    println!(
+                        "TX{}: connected, battery {battery}{}{}",
+                        m.slot,
+                        if m.charging { ", charging" } else { "" },
+                        if m.muted { ", muted" } else { "" }
+                    );
+                } else {
+                    println!("TX{}: not connected", m.slot);
                 }
             }
         }

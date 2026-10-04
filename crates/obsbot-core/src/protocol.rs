@@ -42,6 +42,9 @@ pub const DST_CAMERA: u8 = 0x02;
 /// queue length is status[43]). Reply: u32 source, u32 type, and an
 /// optional u32 value. Seen in the traffic of OBSBOT's SDK on a Tiny 3.
 pub const CMD_EVENT: [u8; 2] = [0x02, 0x1d];
+/// Wireless microphone (Vox SE) info, 16 bytes (SDK `DevTWSInfo`): see
+/// `status::decode_mics`. Query, no payload.
+pub const CMD_MIC_INFO: [u8; 2] = [0x02, 0xc0];
 
 /// AI/gimbal module.
 pub const DST_GIMBAL: u8 = 0x04;

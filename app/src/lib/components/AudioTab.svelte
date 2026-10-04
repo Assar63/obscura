@@ -1,37 +1,71 @@
 <script lang="ts">
-  // The camera's microphones, and wireless microphones (Vox SE on the
-  // Tiny 3). Pairing is experimental: the commands come from OBSBOT's SDK,
-  // but none has been seen to start pairing yet (see TODO.md).
+  // The camera's microphones, and OBSBOT's Vox SE wireless microphones
+  // (Tiny 3 series: two slots, TX1 and TX2).
   import { onDestroy } from "svelte";
-  import { api } from "../api";
+  import { api, type MicSlot } from "../api";
   import { device } from "../device.svelte";
   import Card from "./Card.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Feature from "./Feature.svelte";
 
-  const PAIRING = ["mic_pair_tx1", "mic_pair_tx2", "mic_pair_stop", "mic_ble_pairing"];
-  const wireless = $derived(device.supported("audio_source") || PAIRING.some((id) => device.supported(id)));
+  const POLL_MS = 2000;
+  const PAIR_TIMEOUT_MS = 90_000;
 
-  // The live mic state comes from the status block, not a feature.
-  let mic = $state<string | null>(null);
-  async function pollMic() {
-    if (!wireless || !device.current) return;
-    try {
-      mic = (await api.liveStatus())?.mic ?? null;
-    } catch {
-      mic = null;
-    }
-  }
-  void pollMic();
-  const timer = setInterval(() => void pollMic(), 2000);
-  onDestroy(() => clearInterval(timer));
+  let mics = $state<MicSlot[] | null>(null);
+  // Pairing in progress: slot, start time, and how it ended.
+  let pairing = $state<number | null>(null);
+  let pairStart = 0;
+  let pairResult = $state<{ slot: number; ok: boolean } | null>(null);
 
-  let forget = $state<"mic_forget_tx1" | "mic_forget_tx2">("mic_forget_tx1");
+  let forgetSlot = $state(1);
   let confirmForget = $state(false);
 
-  function act(id: string) {
-    device.set(id, 1);
-    setTimeout(() => void pollMic(), 1500);
+  async function poll() {
+    if (!device.current) {
+      mics = null;
+      return;
+    }
+    try {
+      mics = await api.wirelessMics();
+    } catch {
+      mics = null;
+    }
+    if (pairing !== null) {
+      const slot = mics?.find((m) => m.slot === pairing);
+      if (slot?.connected) {
+        pairResult = { slot: pairing, ok: true };
+        pairing = null;
+      } else if (Date.now() - pairStart > PAIR_TIMEOUT_MS) {
+        device.set("mic_pair_stop", 1);
+        pairResult = { slot: pairing, ok: false };
+        pairing = null;
+      }
+    }
+  }
+
+  void poll();
+  const timer = setInterval(() => void poll(), POLL_MS);
+  onDestroy(() => clearInterval(timer));
+
+  function pair(slot: number) {
+    pairResult = null;
+    pairing = slot;
+    pairStart = Date.now();
+    device.set(`mic_pair_tx${slot}`, 1);
+  }
+
+  function cancel() {
+    device.set("mic_pair_stop", 1);
+    pairing = null;
+  }
+
+  function slotText(m: MicSlot): string {
+    if (!m.connected) return "Not connected";
+    const parts = ["Connected"];
+    if (m.battery !== null) parts.push(`${m.battery}%`);
+    if (m.charging) parts.push("charging");
+    if (m.muted) parts.push("muted");
+    return parts.join(" · ");
   }
 </script>
 
@@ -44,45 +78,57 @@
     <Feature id="mic_during_sleep" />
   </Card>
 
-  {#if wireless}
-    <Card title="Wireless Microphones (experimental)">
-      <div class="status">
-        <span class="dot" class:on={!!mic && !mic.startsWith("no ")}></span>
-        {mic ?? "–"}
-      </div>
+  {#if mics}
+    <Card title="Wireless Microphones">
+      {#each mics as m (m.slot)}
+        <div class="slot">
+          <span class="dot" class:on={m.connected}></span>
+          <div class="text">
+            <span>TX{m.slot}</span>
+            <span class="desc">{slotText(m)}</span>
+          </div>
+          {#if pairing === m.slot}
+            <button class="small" onclick={cancel}>Cancel</button>
+          {:else if m.connected}
+            <button
+              class="small ghost"
+              disabled={pairing !== null}
+              onclick={() => ((forgetSlot = m.slot), (confirmForget = true))}>Forget</button
+            >
+          {:else}
+            <button
+              class="small"
+              disabled={pairing !== null || !device.supported(`mic_pair_tx${m.slot}`)}
+              onclick={() => pair(m.slot)}>Pair</button
+            >
+          {/if}
+        </div>
+      {/each}
+
+      {#if pairing !== null}
+        <p class="hint">
+          Pairing TX{pairing}: take the Vox SE out of its case, then hold its button for about 6 seconds
+          until the light flashes fast. Waiting for it to connect…
+        </p>
+      {:else if pairResult?.ok}
+        <p class="hint ok">TX{pairResult.slot} is paired. It reconnects by itself from now on.</p>
+      {:else if pairResult}
+        <p class="hint fail">
+          TX{pairResult.slot} didn't connect within 90 seconds. Make sure the mic's light flashes fast
+          (hold the button for 6 s), then try Pair again.
+        </p>
+      {/if}
+
       <Feature id="audio_source" />
       <Feature id="audio_auto_select" />
-
-      <p class="note">
-        Pairing from Linux is experimental. To try: set Audio Source to Wireless Mic, hold the Vox SE's
-        button for 6 s until its light flashes fast, then press Pair TX1. Watch the status above and
-        the Diagnostics window (Ctrl+Shift+D). If nothing works, pair once with OBSBOT Center on
-        Windows or macOS; the mic reconnects by itself afterwards.
-      </p>
-      <div class="buttons">
-        <button disabled={!device.supported("mic_pair_tx1")} onclick={() => act("mic_pair_tx1")}>Pair TX1</button>
-        <button disabled={!device.supported("mic_pair_tx2")} onclick={() => act("mic_pair_tx2")}>Pair TX2</button>
-        <button disabled={!device.supported("mic_pair_stop")} onclick={() => act("mic_pair_stop")}>Stop Pairing</button>
-        <button
-          disabled={!device.supported("mic_ble_pairing")}
-          title="setBlePairingEnable in OBSBOT's SDK: the camera's Bluetooth radio"
-          onclick={() => act("mic_ble_pairing")}>Bluetooth Pairing Mode</button
-        >
-        <button class="ghost" disabled={!device.supported("mic_forget_tx1")} onclick={() => ((forget = "mic_forget_tx1"), (confirmForget = true))}
-          >Forget TX1</button
-        >
-        <button class="ghost" disabled={!device.supported("mic_forget_tx2")} onclick={() => ((forget = "mic_forget_tx2"), (confirmForget = true))}
-          >Forget TX2</button
-        >
-      </div>
     </Card>
   {/if}
 </div>
 
 <ConfirmDialog
   bind:open={confirmForget}
-  message={`Forget the pairing of ${forget === "mic_forget_tx2" ? "TX2" : "TX1"}? It will need pairing again.`}
-  onconfirm={() => act(forget)}
+  message={`Forget the microphone on TX${forgetSlot}? It will need pairing again.`}
+  onconfirm={() => device.set(`mic_forget_tx${forgetSlot}`, 1)}
 />
 
 <style>
@@ -91,11 +137,21 @@
     flex-direction: column;
     gap: 10px;
   }
-  .status {
+  .slot {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 10px;
+    min-height: 32px;
+  }
+  .text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .desc {
+    font-size: 12px;
+    color: var(--text-muted);
   }
   .dot {
     width: 8px;
@@ -107,18 +163,19 @@
   .dot.on {
     background: #3ecf6e;
   }
-  .note {
+  button.small {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+  .hint {
     margin: 0;
     font-size: 12px;
     color: var(--text-muted);
   }
-  .buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+  .hint.ok {
+    color: #3ecf6e;
   }
-  .buttons button {
-    font-size: 12px;
-    padding: 5px 8px;
+  .hint.fail {
+    color: #f0b44c;
   }
 </style>

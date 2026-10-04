@@ -24,4 +24,4 @@ pub use discovery::{discover, CameraInfo};
 pub use error::{Error, Result};
 pub use features::{FeatureId, FeatureKind};
 pub use profile::DeviceProfile;
-pub use status::LiveStatus;
+pub use status::{LiveStatus, MicSlot};

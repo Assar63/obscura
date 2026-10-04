@@ -26,6 +26,10 @@ const BUILTIN: &[(&str, &str)] = &[
     ("tiny-2.toml", include_str!("../../../profiles/tiny-2.toml")),
     ("tiny-3.toml", include_str!("../../../profiles/tiny-3.toml")),
     (
+        "tiny-3-lite.toml",
+        include_str!("../../../profiles/tiny-3-lite.toml"),
+    ),
+    (
         "tiny-2-lite.toml",
         include_str!("../../../profiles/tiny-2-lite.toml"),
     ),
@@ -312,6 +316,10 @@ pub struct DeviceProfile {
     /// read: verified per model, since unknown queries can hang a camera.
     #[serde(default)]
     pub event_queue: bool,
+    /// Whether the camera has a receiver for OBSBOT's wireless microphones
+    /// (Vox SE, two slots), read with query `02c0`.
+    #[serde(default)]
+    pub wireless_mics: bool,
     #[serde(default)]
     pub features: BTreeMap<FeatureId, Binding>,
 }
@@ -487,6 +495,7 @@ mod tests {
         assert!(p.gimbal_velocity.is_some());
         assert_eq!(p.firmware.as_ref().map(|f| f.key.as_str()), Some("tiny3"));
         assert!(p.event_queue);
+        assert!(p.wireless_mics);
         let Binding::Vendor(ai) = &p.features[&FeatureId::AiMode] else {
             panic!("AI mode is not a vendor binding");
         };
@@ -505,6 +514,17 @@ mod tests {
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)
         ));
+    }
+
+    #[test]
+    fn tiny_3_lite_matches_by_product_id() {
+        let p = DeviceProfile::for_usb(0x3564, 0xff04);
+        assert_eq!(p.id, "tiny-3-lite");
+        assert!(p.wireless_mics);
+        assert_eq!(
+            p.firmware.as_ref().map(|f| f.key.as_str()),
+            Some("tiny3lite")
+        );
     }
 
     #[test]

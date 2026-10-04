@@ -1,34 +1,18 @@
-# OBSBOT Tiny 3 (3564:ff02).
+# OBSBOT Tiny 3 Lite (3564:ff04).
 #
-# Bindings below are copied from tiny-se.toml. There are no USB captures of
-# this model yet, but it was checked read-only on a Tiny 3 (bcdDevice 5.10):
-# it exposes the same vendor Extension Unit (unit 2, GUID
-# 9a1e7291-6843-4683-6d92-39bc7906ee49, 60-byte selectors), and its
-# selector 6 status block matches the Tiny SE layout -- [9] 1 while awake,
-# [10..12] sleep time 120 s, [14] AF on, [24] AI mode, [31] 0x1e while
-# awake, [33] status light 0..3, [34] 0x10 with the microphone enabled. Its
-# exposure_auto menu is 0 = Auto Mode, 1 = Manual, like the Tiny SE's, and
-# UVC pan/tilt span the same ±130°/±90°.
-#
-# Tested from Linux on firmware 6.6.8.3, set and read back: mirror, status
-# light, HDR, AI mode, AF mode, sleep/resume, manual zoom (the camera ramps
-# it at about 0.2x per second), joystick and re-center (gimbal position
-# query `0466`), the firmware/serial queries, and the gesture switches.
-# Presets differ from the Tiny SE and are left unbound; the audio and
-# device-sleep settings read back sensibly but haven't been written. See
-# "Adding support for another camera" in README.md.
-#
-# Image controls, pan/tilt/zoom and focus are standard UVC controls
-# (inherited from generic-uvc). AI and gesture features use the vendor
-# protocol on Extension Unit 2 -- see docs/protocol.md.
-#
-# Vendor bindings:
-#   frames = framed commands on selector 2 (dst module, 2-byte cmd, value encoding)
-#   short  = short setting on selector 6: [id, len, value]
-#   status = byte offset in the selector 6 status block used for readback
+# UNVERIFIED on this model: a copy of tiny-3.toml (see its notes for what was
+# measured on a Tiny 3). The two share OBSBOT's SDK status layout and
+# wireless mic support ("for tiny3, tiny3Lite"), and OBSBOT sells the Vox SE
+# for both. joshualambert/obsbot-tiny3-linux verified on a Tiny 3 Lite
+# (firmware 0510): the same Extension Unit and status block, the AI mode
+# short setting, sleep/wake, re-center, HDR and the field of view. Gestures,
+# the extra AI modes, the event queue and the mic commands are assumed. If
+# you have a Tiny 3 Lite, please check with `obsbotctl dump`/`status` and
+# correct this file; see "Adding support for another camera" in README.md
+# (or the add-obsbot-camera Claude Code skill).
 
-id = "tiny-3"
-name = "OBSBOT Tiny 3"
+id = "tiny-3-lite"
+name = "OBSBOT Tiny 3 Lite"
 inherits = "generic-uvc"
 
 # Firmware version and serial number via system module queries.
@@ -44,12 +28,12 @@ wireless_mics = true
 
 [[match]]
 vendor_id = 0x3564
-product_id = 0xff02
+product_id = 0xff04
 
 # Latest firmware: OBSBOT's download page, model key in its page data.
 [firmware]
 page = "https://www.obsbot.com/download/obsbot-tiny-3-series"
-key = "tiny3"
+key = "tiny3lite"
 
 # No [presets]: the preset list query (dst 04 `043b`) gets no response on
 # the Tiny 3, so the Tiny SE's preset commands aren't used here.

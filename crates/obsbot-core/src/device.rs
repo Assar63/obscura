@@ -128,6 +128,20 @@ impl Device {
         Some(st)
     }
 
+    /// The wireless microphone slots (Vox SE), if the camera has a
+    /// receiver: online state from the status block, battery and the rest
+    /// from the mic info query.
+    pub fn wireless_mics(&self) -> Option<Vec<crate::status::MicSlot>> {
+        if !self.profile.wireless_mics {
+            return None;
+        }
+        let status41 = *self.status_block()?.get(41)?;
+        let info = self
+            .query(protocol::DST_CAMERA, protocol::CMD_MIC_INFO)
+            .unwrap_or_default();
+        Some(crate::status::decode_mics(&info, status41))
+    }
+
     /// A feature's kind as the profile declares it (catalog, or the
     /// profile's own `options`), without reading the camera.
     pub fn declared_kind(&self, id: FeatureId) -> FeatureKind {
