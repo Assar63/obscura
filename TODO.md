@@ -227,7 +227,7 @@ and TX2). `libdev` exports a full mic API that its header doesn't declare
 | Audio source, write (`cameraSetAudioSourceR`) | | ✅ 3 set status [40] bits 0–2 to 3 (Bluetooth) |
 | Per-mic reads: battery, charging, mute, gain, name, version, serial | query to dst `58` (TX1) / `98` (TX2), e.g. `1330` | no answer without a paired mic |
 | Pair enable/disable for TXn (`cameraTXSetPairEnabled`) | flags 0x05 to dst `58`/`98`, `13 0c` on / `53 0c` off | sent to the mic; together with `setBlePairingEnable` it pairs ✅ |
-| Clear pairing for TXn | flags 0x05 to dst `58`/`98`, `93 0e` | not tested |
+| Clear pairing for TXn | flags 0x05 to dst `58`/`98`, `93 0e` | ✅ unpairs (TX1 tested) |
 | `cameraDevBluetoothMatchU` | nothing sent | |
 | `setBlePairingEnable(on, 0)` | dst `13` `0e0c`, u8 | second half of pairing (after the slot's pair enable) ✅ |
 
@@ -239,7 +239,8 @@ button. See docs/protocol.md.
   per-slot state (connected, battery, charging, muted) from query `02c0`,
   a guided Pair button that waits for the camera to report the mic, Cancel
   and Forget; `obsbotctl mics`. Tiny 3 verified (TX1), Tiny 3 Lite assumed.
-- [ ] **Test TX2** with a second Vox SE, and **Forget**.
+- [x] **Forget** (TX1): the mic went offline and didn't reconnect.
+- [ ] **Test TX2** with a second Vox SE.
 - [ ] **P3: Mic battery in the tray menu.**
 - [ ] **P2: Mute and gain per mic.**
 - [ ] **P2: Button function.** `cameraSetTWSKeyTypeR`: track, switch
