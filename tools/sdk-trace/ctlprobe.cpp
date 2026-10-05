@@ -23,6 +23,8 @@
 // ctlprobe gimbool|gimfloat <type> <value>  aiSetGimbalParaR
 // ctlprobe bootmode <mode> <sub>       cameraSetBootModeU (AiWorkModeType, AiSubModeType)
 // ctlprobe yawrev <0|1>                aiSetGimbalYawDirReverseR
+// ctlprobe ctlgetall <target>          aiGetControlParaR for parameters 0-23 (read only)
+// ctlprobe zoneget                     the zone preset and limited-zone getters (read only)
 // ctlprobe gimbalstate                 aiGetGimbalStateR, gimbalGetAttitudeInfoR
 // ctlprobe presetlist                  aiGetGimbalPresetListR
 // ctlprobe presetinfo <id>             aiGetGimbalPresetInfoWithIdR
@@ -153,6 +155,40 @@ int main(int argc, char **argv) {
         r = dev->cameraSetBootModeU((Device::AiWorkModeType)arg(2), (Device::AiSubModeType)arg(3));
     } else if (cmd == "yawrev" && argc == 3) {
         r = dev->aiSetGimbalYawDirReverseR(arg(2) != 0);
+    } else if (cmd == "ctlgetall" && argc == 3) {
+        for (int pt = 0; pt <= 23; pt++) {
+            bool b = false; int n = 0; float f = 0;
+            auto t = (Device::DevControlTargetType)arg(2);
+            auto pp = (Device::DevControlParaType)pt;
+            int rb = dev->aiGetControlParaR(t, pp, b);
+            int rn = dev->aiGetControlParaR(t, pp, n);
+            int rf = dev->aiGetControlParaR(t, pp, f);
+            char buf[160];
+            snprintf(buf, sizeof buf, "-> para %d: bool ret %d %d | int ret %d %d | float ret %d %g", pt, rb, b,
+                     rn, n, rf, f);
+            mark(buf);
+        }
+        r = 0;
+    } else if (cmd == "zoneget" && argc == 2) {
+        char buf[200];
+        Device::DevDataArray ids{};
+        int r1 = dev->aiGetZonePresetListR(&ids);
+        snprintf(buf, sizeof buf, "-> zone presets ret %d, %d ids", r1, ids.len);
+        mark(buf);
+        bool en = false, sel = false;
+        int r2 = dev->aiGetLimitedZoneTrackEnabledR(en);
+        int r3 = dev->aiGetLimitedZoneTrackAutoSelectR(sel);
+        snprintf(buf, sizeof buf, "-> limited zone enabled ret %d %d | auto select ret %d %d", r2, en, r3, sel);
+        mark(buf);
+        float ymin = 0, ymax = 0, pmin = 0, pmax = 0;
+        int r4 = dev->aiGetLimitedZoneTrackYawMinR(ymin, 0);
+        int r5 = dev->aiGetLimitedZoneTrackYawMaxR(ymax, 0);
+        int r6 = dev->aiGetLimitedZoneTrackPitchMinR(pmin, 0);
+        int r7 = dev->aiGetLimitedZoneTrackPitchMaxR(pmax, 0);
+        snprintf(buf, sizeof buf, "-> limits ret %d/%d/%d/%d: yaw %g..%g pitch %g..%g", r4, r5, r6, r7, ymin, ymax,
+                 pmin, pmax);
+        mark(buf);
+        r = 0;
     } else if (cmd == "gimbalstate" && argc == 2) {
         Device::AiGimbalStateInfo g{};
         r = dev->aiGetGimbalStateR(&g);

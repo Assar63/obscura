@@ -156,7 +156,14 @@ offsets, for profiles with `status_layout = "tiny"`.
   still followed. No visible effect on 6.6.8.3; unbound.
 - [ ] **Tracking zone / composition.** `aiSetControlParaR`: pan/pitch lock,
   limited tracking zone, composition offsets (headroom). Equivalent to
-  OBSBOT Center's Zone Tracking. Big UI work.
+  OBSBOT Center's Zone Tracking. Big UI work. *Read-only trace on a Tiny 3
+  (6.6.8.3):* the control parameters answer with plausible defaults: 8/11
+  pan/tilt lock off, 7/10 pan/tilt gain 0.5, 14–17 composition offsets 0,
+  **19–22 tracking zone pan −100…100°, tilt −30…30°**, 23 auto zoom speed
+  10. The Tiny 2's zone functions (`aiGetZonePresetListR`,
+  `aiGetLimitedZoneTrack…`) get no usable answer. Next: set a narrow zone
+  (e.g. ±20°) and check whether tracking stops at its edge (the gimbal's
+  own pan limits, `443f`, were ignored).
 - [x] **White balance presets and R/B gain.** *Not a camera feature on
   the Tiny 3:* the SDK's `cameraSetWhiteBalanceR(Daylight, 0)` only sets the
   standard UVC white balance to manual with the given temperature (here
