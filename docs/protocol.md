@@ -218,7 +218,7 @@ switch). Recorded from the traffic of OBSBOT's SDK (libdev 2.1.0,
 | 1 | Target selection: palm turns human tracking on/off | ✅ ignored while off |
 | 2 | Zoom: "L" zooms to the zoom factor and back | ✅ ignored while off |
 | 3 | Dynamic zoom | read back only |
-| 7 | Direction mirror (Tiny 2/SE per the SDK) | reads 0; not bound |
+| 7 | Direction flip ("dynamic zoom dir" in the SDK): which way moving the hands zooms | stored and read back (0 by default); effect not checked yet |
 | 8 | Zoom factor, f32 | ✅ 3.0 made "L" zoom to 3.00x |
 
 Switching the master off also switches types 1–3 off, and switching it on

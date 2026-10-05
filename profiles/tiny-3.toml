@@ -128,6 +128,12 @@ frames = [{ dst = 0x04, cmd = "4434", prefix = "02000000" }]
 query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "03000000", offsets = [0] }
 frames = [{ dst = 0x04, cmd = "4434", prefix = "03000000" }]
 
+# Type 7 (DevGestureParaTypeMirror, "dynamic zoom dir"): which way moving
+# the hands zooms. Reads 0 by default.
+[features.gesture_direction_flip]
+query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "07000000", offsets = [0] }
+frames = [{ dst = 0x04, cmd = "4434", prefix = "07000000" }]
+
 # Value is the factor x100 (100..400); the camera takes and returns a float.
 [features.gesture_zoom_factor]
 query = { dst = 0x04, cmd = "8434", flags = 0x21, payload = "08000000", offsets = [0], value = "f32", scale = 100 }
