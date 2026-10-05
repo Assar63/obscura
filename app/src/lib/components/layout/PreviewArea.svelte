@@ -48,7 +48,7 @@
       <div class="mic"><Feature id="mic_during_sleep" label="MIC Status During Sleep" /></div>
     </div>
   {:else if preview}
-    <canvas bind:this={canvas} class:hidden={!stream.format}></canvas>
+    <canvas bind:this={canvas} class:hidden={!stream.format} class:mirrored={stream.mirror}></canvas>
     {#if !stream.format}
       <div class="placeholder overlay">
         {#if stream.error}
@@ -153,5 +153,8 @@
   }
   .error button {
     padding: 2px 6px;
+  }
+  .mirrored {
+    transform: scaleX(-1);
   }
 </style>

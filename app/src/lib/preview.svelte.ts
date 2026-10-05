@@ -7,9 +7,22 @@ export type Fps = 30 | 60;
 
 const SIZES: Record<Resolution, [number, number]> = { 1080: [1920, 1080], 720: [1280, 720] };
 
+const MIRROR_KEY = "obscura.preview.mirror";
+
+function loadMirror(): boolean {
+  try {
+    return localStorage.getItem(MIRROR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 class PreviewStore {
   resolution = $state<Resolution>(1080);
   fps = $state<Fps>(30);
+  /** Show the preview mirrored, like a mirror (the preview only: other
+   * apps still get the camera's picture). Remembered between runs. */
+  mirror = $state(loadMirror());
   /** Format the camera agreed to while streaming. */
   format = $state<PreviewFormat | null>(null);
   error = $state<string | null>(null);
@@ -32,6 +45,15 @@ class PreviewStore {
       this.format = null;
       this.error = e.payload;
     });
+  }
+
+  toggleMirror() {
+    this.mirror = !this.mirror;
+    try {
+      localStorage.setItem(MIRROR_KEY, this.mirror ? "1" : "0");
+    } catch {
+      // Not remembered, but still applied.
+    }
   }
 
   attach(canvas: HTMLCanvasElement | null) {
