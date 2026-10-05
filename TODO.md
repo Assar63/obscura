@@ -123,7 +123,8 @@ offsets, for profiles with `status_layout = "tiny"`.
   `c439`, delete `8439`, list `043d`; position query `0466` without a
   payload. Names are write-only (`043b` doesn't answer), so slots show as
   Preset 1–3, with delete instead of rename. Tested: a preset saved by
-  OBSCura at −40° and 1.5x was recalled from the centre. Per-preset extras
+  OBSCura at −40° and 1.5x was recalled from the centre, and three presets
+  saved in OBSCura were each recalled by voice ("Position One/Two/Three"). Per-preset extras
   (`PresetsAction`: framing, AI mode, tracking speed, white balance) are
   not traced.
 - [ ] **Audio mode / beamforming.** *Tested, no audible effect:* short

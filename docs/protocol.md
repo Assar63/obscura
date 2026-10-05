@@ -256,7 +256,7 @@ presets differently:
 |---|---|---|
 | Save (`aiAddGimbalPresetR`) | dst 04 `4439`, 24 bytes: slot u32; yaw, pitch, roll, zoom as int16 ×100; 12 more bytes | The camera fills the last 12 bytes itself (reads back `10 00 10 00 53 00 53 00 64 00 00 00` whatever was sent). The SDK stores exactly the values given, not the current position. |
 | Name (`aiSetGimbalPresetNameWithIdR`) | `843a`: slot u32 + name | Write-only: `043b` gets no answer, and the SDK has no name reader for this model. |
-| Recall (`aiTrgGimbalPresetR`) | `c439`: slot u32, 1.0 ×4 | Same as the Tiny SE. ✅ the camera turned and zoomed to the stored values. |
+| Recall (`aiTrgGimbalPresetR`) | `c439`: slot u32, 1.0 ×4 | Same as the Tiny SE. ✅ the camera turned and zoomed to the stored values; ✅ the voice commands "Position One/Two/Three" recall presets saved this way. |
 | Delete (`aiDelGimbalPresetR`) | `8439`: slot u32 | |
 | List (`aiGetGimbalPresetListR`) | query `043d` | Stored slots, one byte each; "nothing there" (flags 0x09) when empty. |
 | Info (`aiGetGimbalPresetInfoWithIdR`) | query `443a`, flags 0x21, payload slot u32 + 1 byte | The saved values as above. |
