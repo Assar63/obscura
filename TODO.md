@@ -149,8 +149,10 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [ ] **Upside-down mounting on the Tiny 3.** The profile had the Tiny SE's
   "View and Gimbal Reverse" (`843b`), never tested here; OBSBOT's SDK sends
   dst 04 `043c` u8 (`aiSetGimbalYawDirReverseR`) instead. With `043c` on,
-  joystick moves didn't change and nothing in the status block did; check
-  the picture before binding it. Unbound for now.
+  joystick moves didn't change and nothing in the status block did. *Also
+  checked on the picture:* switched on twice (10 s and 20 s, the second
+  time with the user moving sideways), the picture didn't flip and tracking
+  still followed. No visible effect on 6.6.8.3; unbound.
 - [ ] **Tracking zone / composition.** `aiSetControlParaR`: pan/pitch lock,
   limited tracking zone, composition offsets (headroom). Equivalent to
   OBSBOT Center's Zone Tracking. Big UI work.
