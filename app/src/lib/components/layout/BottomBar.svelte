@@ -55,28 +55,6 @@
         </div>
       </div>
     </Popover>
-    <button
-      class="ghost icon mirror"
-      class:sel={preview.mirror}
-      aria-pressed={preview.mirror}
-      title={preview.mirror ? "Show the preview unmirrored" : "Mirror the preview (only here; other apps still get the normal picture)"}
-      onclick={() => preview.toggleMirror()}
-    >
-      <Icon name="mirror" size={16} />
-    </button>
-    <button
-      class="ghost share"
-      class:sel={preview.share?.running}
-      aria-pressed={!!preview.share?.running}
-      disabled={!device.current}
-      title={preview.share?.running
-        ? "Stop sharing: other apps lose \"OBSCura Camera\""
-        : "Share the camera as \"OBSCura Camera\", so OBS, Teams or a browser can use it while the preview runs"}
-      onclick={() => device.current && preview.toggleShare(device.current.path)}
-    >
-      <Icon name="video" size={16} />
-      <span>{preview.share?.running ? "Sharing" : "Share"}</span>
-    </button>
   </div>
 
   <div class="ai" title={aiSupported ? undefined : (device.features.ai_mode?.reason ?? "")}>
@@ -148,16 +126,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-  }
-  .share {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .share.sel,
-  .mirror.sel {
-    color: var(--accent);
-    background: var(--accent-soft);
   }
   .right {
     display: flex;

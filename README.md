@@ -187,13 +187,15 @@ sudo usermod -aG video "$USER"   # then log out and back in
 
 Run `obscura` (or `pnpm tauri dev` from `app/` during development).
 
-- **Top bar:** camera picker, the Gesture Control and Mirror Image popovers,
-  Sleep/Resume, and Open/Close Preview.
+- **Top bar:** camera picker, the Gesture Control popover, the mirror
+  popover (Mirror Image on the camera, Mirror Preview only in OBSCura, and
+  Share as "OBSCura Camera"), Sleep/Resume, and Open/Close Preview.
 - **Preview:** a live view from the camera. Choose resolution and frame rate
-  from the format button at the bottom left. The mirror button next to it
-  shows the preview mirrored (only in OBSCura; other apps still get the
-  normal picture), and **Share** lets other apps use the camera at the same
-  time (see [Sharing the camera](#sharing-the-camera-with-other-apps)).
+  from the format button at the bottom left. **Mirror Preview** (in the
+  top bar's mirror popover) shows it mirrored, only in OBSCura; other apps
+  still get the normal picture. **Share** in the same popover lets other
+  apps use the camera at the same time (see
+  [Sharing the camera](#sharing-the-camera-with-other-apps)).
 - **Bottom bar:** AI tracking modes (Human / Group / Hand Tracking, plus
   Whiteboard / Desk / Voice Tracking on the Tiny 3) and the AI lock.
 - **Image tab:** presets, the gimbal joystick and zoom, and image adjustments.
@@ -216,7 +218,7 @@ working while another app is streaming.
 
 ### Sharing the camera with other apps
 
-**Share** (bottom left, next to the format button) passes the camera to a
+**Share as "OBSCura Camera"** (in the top bar's mirror popover) passes the camera to a
 virtual camera, **OBSCura Camera**, that OBS, Teams, Zoom or a browser can
 use while OBSCura shows the preview. Pick "OBSCura Camera" as the camera in
 those apps. Sharing runs in the background: it keeps going when the preview

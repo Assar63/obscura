@@ -3,6 +3,8 @@
   import Icon from "../ui/Icon.svelte";
   import Popover from "../ui/Popover.svelte";
   import Feature from "../controls/Feature.svelte";
+  import Toggle from "../ui/Toggle.svelte";
+  import { preview as stream } from "../../preview.svelte";
 
   let { preview = $bindable(true) }: { preview?: boolean } = $props();
 
@@ -10,6 +12,7 @@
   let mirrorOpen = $state(false);
 
   const sleeping = $derived(device.on("sleep"));
+  const sharing = $derived(!!stream.share?.running);
   const cameraLabel = (c: { product: string | null; name: string; is_obsbot: boolean }) =>
     (c.product ?? c.name) + (c.is_obsbot ? "" : " (generic)");
 </script>
@@ -59,8 +62,8 @@
           {#snippet trigger()}
             <button
               class="quick-btn"
-              class:active={device.on("mirror_image")}
-              title="Mirror Image"
+              class:active={device.on("mirror_image") || stream.mirror || sharing}
+              title="Mirror and sharing"
               onclick={() => (mirrorOpen = !mirrorOpen)}><Icon name="mirror" size={15} /></button
             >
           {/snippet}
@@ -69,6 +72,28 @@
               id="mirror_image"
               description="Mirror the video directly on the device side (effective for all software that accesses the camera feed)"
             />
+            <div class="row">
+              <div class="text">
+                <span class="label">Mirror Preview</span>
+                <span class="desc">Only OBSCura's preview, like a mirror; other apps get the normal picture</span>
+              </div>
+              <Toggle checked={stream.mirror} onchange={() => stream.toggleMirror()} />
+            </div>
+            <div class="row">
+              <div class="text">
+                <span class="label">Share as "OBSCura Camera"</span>
+                <span class="desc">
+                  {sharing
+                    ? "Other apps can pick \"OBSCura Camera\"; keeps running when this window closes"
+                    : "Let OBS, Teams or a browser use the camera while the preview runs"}
+                </span>
+              </div>
+              <Toggle
+                checked={sharing}
+                disabled={!device.current}
+                onchange={() => device.current && stream.toggleShare(device.current.path)}
+              />
+            </div>
           </div>
         </Popover>
       </div>
@@ -90,8 +115,13 @@
   </div>
   <div class="hint">
     {#if device.current}
-      <span class="muted">Other apps can use the camera directly:</span>
-      select <strong>{device.current.product ?? device.current.name}</strong>.
+      {#if sharing}
+        <span class="muted">Sharing: in other apps,</span>
+        select <strong>OBSCura Camera</strong>.
+      {:else}
+        <span class="muted">Other apps can use the camera directly:</span>
+        select <strong>{device.current.product ?? device.current.name}</strong>.
+      {/if}
       Settings made here apply on the camera itself.
     {:else}
       <span class="muted">Connect an OBSBOT camera over USB.</span>
@@ -164,6 +194,24 @@
     flex-direction: column;
     gap: 12px;
     width: 280px;
+  }
+  /* Same layout as a Feature row. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .desc {
+    font-size: 12px;
+    color: var(--text-muted);
   }
   .sub {
     display: flex;
