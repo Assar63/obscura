@@ -60,10 +60,7 @@
 
 <div class="tab">
   <Card title="Microphone">
-    <Feature
-      id="mic_capture"
-      description="The camera's microphone level in hardware: Teams, OBS and browsers get this. Your system's input volume applies on top."
-    />
+    <Feature id="mic_capture" />
     <Feature id="mic_level" hideUnsupported />
     <Feature id="disable_microphone" />
     <Feature id="noise_reduction" variant="select" />
