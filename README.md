@@ -95,7 +95,7 @@ work, or you can record a model's traffic, see
 | Image | HDR, Global/Face AF and AE modes, exposure compensation | ✅ | ✅ |
 | Audio | Microphone on/off and level (the camera's USB audio, any webcam) | ✅ | ✅ |
 | Audio | Mic during sleep, noise reduction, auto gain, disable microphone, pickup distance | ✅ | ✅ |
-| Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, button function and lock, mic LED, audio source | – | ✅ |
+| Audio | Vox SE wireless mics: pair, forget, battery, mute and gain per mic, button function and lock, mic LED and vibration, audio source | – | ✅ |
 | Audio | Voice control: switch each spoken command, language, voice zoom | – | ✅ |
 | Device | Sleep/resume, auto sleep and sleep time, sleep background mirror | ✅ | ✅ |
 | Device | Status light and brightness, firmware version | ✅ | ✅ |

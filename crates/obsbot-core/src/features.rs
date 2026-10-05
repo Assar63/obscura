@@ -159,6 +159,7 @@ features! {
     MicTx2Gain            "mic_tx2_gain" => "wireless", "TX2 Gain", range(-12, 12, 1, None);
     SoundTracking         "sound_tracking" => "audio", "Sound-Assisted Tracking", FeatureKind::Toggle;
     MicLed                "mic_led" => "wireless", "Mic LED", FeatureKind::Toggle;
+    MicVibration          "mic_vibration" => "wireless", "Mic Vibration", FeatureKind::Toggle;
     MicButtonEnabled      "mic_button_enabled" => "wireless", "Mic Button Enabled", FeatureKind::Toggle;
     MicButton             "mic_button" => "wireless", "Mic Button", choice(&[(0, "Human Tracking"), (1, "Switch Tracking Mode"), (2, "Zoom to 1.0x")]);
 

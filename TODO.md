@@ -246,9 +246,10 @@ button. See docs/protocol.md.
   "record" left out, it's for OBSBOT Center). Tested with a button press.
 - [x] **P2: Audio source.** Built-in vs. wireless, and auto select. *Done:* audio source and auto-select controls.
 - [ ] **P3: Mic options.** `cameraSetTWSFuncR`: dst 02 `82c0` [function,
-  on/off, i16 parameter], read back at mic info [1] bit n. *Done:* LED and
-  button lock (both tested). Open: vibration, noise suppression (level
-  1–3), auto suspend, shutdown, `cameraSetTWSSoundModeR` (mono/stereo).
+  on/off, i16 parameter], read back at mic info [1] bit n. *Done:* LED,
+  button lock and vibration (all tested on the mic). Open: noise
+  suppression (level 1–3), auto suspend, shutdown,
+  `cameraSetTWSSoundModeR` (mono/stereo).
 
 ## 4. Other models
 
