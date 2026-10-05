@@ -588,7 +588,14 @@ mod tests {
             (q.flags, q.payload.as_slice()),
             (Some(0x21), &[2, 0, 0, 0][..])
         );
-        assert!(!p.features.contains_key(&FeatureId::GestureDirectionFlip));
+        // Direction flip is gesture setting type 7 on the Tiny 3.
+        let Binding::Vendor(flip) = &p.features[&FeatureId::GestureDirectionFlip] else {
+            panic!("direction flip is not a vendor binding");
+        };
+        assert_eq!(
+            flip.query.as_ref().unwrap().payload.as_slice(),
+            &[7, 0, 0, 0][..]
+        );
         assert!(matches!(
             p.features[&FeatureId::MirrorImage],
             Binding::Vendor(_)
