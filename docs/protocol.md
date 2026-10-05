@@ -284,8 +284,10 @@ suppression (parameter: level 1–3; [2] bits 2–3 on/off, [3]/[4] level),
 4 auto suspend, 5 shutdown. Mic info [1] = `27` by default (button,
 vibration, LED and shutdown on; sound mode mono in bits 3–4). ✅ LED: went
 dark and came back. ✅ Button: with it off, a press no longer switched
-tracking. ✅ Vibration: a button press buzzes; with it off, it didn't. The
-others aren't used yet.
+tracking. ✅ Vibration: a button press buzzes; with it off, it didn't. ✅ Noise
+suppression (level 1–3 as the parameter; on/off at [2] bits 2–3, level at
+[3]): steady noise near the mic recorded at RMS 85–88 off and 2 at level 3.
+Auto suspend and shutdown aren't used yet.
 
 The SDK's white balance types (Daylight, Tungsten, …) aren't presets on the
 Tiny 3: `cameraSetWhiteBalanceR(Daylight, 0)` set the standard UVC controls

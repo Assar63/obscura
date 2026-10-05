@@ -160,6 +160,8 @@ features! {
     SoundTracking         "sound_tracking" => "audio", "Sound-Assisted Tracking", FeatureKind::Toggle;
     MicLed                "mic_led" => "wireless", "Mic LED", FeatureKind::Toggle;
     MicVibration          "mic_vibration" => "wireless", "Mic Vibration", FeatureKind::Toggle;
+    MicNoiseSuppression   "mic_noise_suppression" => "wireless", "Noise Suppression", FeatureKind::Toggle;
+    MicNoiseLevel         "mic_noise_level" => "wireless", "Noise Suppression Level", choice(&[(1, "Low"), (2, "Medium"), (3, "High")]);
     MicButtonEnabled      "mic_button_enabled" => "wireless", "Mic Button Enabled", FeatureKind::Toggle;
     MicButton             "mic_button" => "wireless", "Mic Button", choice(&[(0, "Human Tracking"), (1, "Switch Tracking Mode"), (2, "Zoom to 1.0x")]);
 

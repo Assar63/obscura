@@ -247,9 +247,9 @@ button. See docs/protocol.md.
 - [x] **P2: Audio source.** Built-in vs. wireless, and auto select. *Done:* audio source and auto-select controls.
 - [ ] **P3: Mic options.** `cameraSetTWSFuncR`: dst 02 `82c0` [function,
   on/off, i16 parameter], read back at mic info [1] bit n. *Done:* LED,
-  button lock and vibration (all tested on the mic). Open: noise
-  suppression (level 1–3), auto suspend, shutdown,
-  `cameraSetTWSSoundModeR` (mono/stereo).
+  button lock, vibration and noise suppression with its level (all tested
+  on the mic; steady noise went from RMS 85–88 off to 2 at level 3). Open:
+  auto suspend, shutdown, `cameraSetTWSSoundModeR` (mono/stereo).
 
 ## 4. Other models
 

@@ -122,6 +122,10 @@
       <Feature id="mic_button" variant="select" />
       <Feature id="mic_led" hideUnsupported />
       <Feature id="mic_vibration" description="Buzzes when the button is pressed." hideUnsupported />
+      <Feature id="mic_noise_suppression" description="Removes steady background noise (fans, hum)." hideUnsupported />
+      {#if device.on("mic_noise_suppression")}
+        <Feature id="mic_noise_level" hideUnsupported />
+      {/if}
       <Feature id="audio_source" />
       <Feature id="audio_auto_select" />
     </Card>

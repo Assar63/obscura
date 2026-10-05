@@ -356,6 +356,19 @@ frames = [{ dst = 0x02, cmd = "82c0", prefix = "02", suffix = "0000" }]
 query = { dst = 0x02, cmd = "02c0", offsets = [1], mask = 0x02 }
 frames = [{ dst = 0x02, cmd = "82c0", prefix = "01", suffix = "0000" }]
 
+# Noise suppression (function 3): [03, on/off, level i16]. On/off reads
+# back at mic info [2] bits 2-3 (mic 1, mic 2; both set together), the
+# level at [3]. Switching on sends Medium; the level control then sets it
+# (and switches it on). Tested: steady noise near the mic recorded at RMS
+# 85-88 with it off and 2 at level 3.
+[features.mic_noise_suppression]
+query = { dst = 0x02, cmd = "02c0", offsets = [2], mask = 0x04 }
+frames = [{ dst = 0x02, cmd = "82c0", prefix = "03", suffix = "0200" }]
+
+[features.mic_noise_level]
+query = { dst = 0x02, cmd = "02c0", offsets = [3] }
+frames = [{ dst = 0x02, cmd = "82c0", prefix = "0301", value = "u16" }]
+
 [features.mic_button_enabled]
 query = { dst = 0x02, cmd = "02c0", offsets = [1], mask = 0x01 }
 frames = [{ dst = 0x02, cmd = "82c0", prefix = "00", suffix = "0000" }]
