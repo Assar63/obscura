@@ -188,11 +188,13 @@ offsets, for profiles with `status_layout = "tiny"`.
   drains it on each status read (Tiny 3 only, `event_queue = true`) and
   logs target lost/found; it also logs AI mode, power and zoom changes the
   camera made itself. `obsbotctl events` follows them live.
-- [ ] **Decode more event types** (16 is unknown). With a Vox SE paired,
-  run `obsbotctl events` while connecting, muting and charging it: the
-  SDK's `kEvtTipsTWS…` events should arrive through the same queue. Also seen: source 0x71,
-  type 37, value 773, and "audio source" 0 then 3 while a Vox SE came out
-  of its case.
+- [ ] **Decode more event types** (16 is unknown). *Type 37 done:* the
+  Vox SE's button. Checked step by step on a Tiny 3 with the button set to
+  human tracking: `0x309` with tracking switching off, `0x308` with it
+  switching on (twice each, over two runs). `0x304`/`0x305` were seen once,
+  cause unknown. Putting the mic in or taking it out of its case queues
+  nothing; status[40] (audio source) changes instead. The SDK passes these
+  raw types through without names.
 
 ### Vox SE wireless microphone (Tiny 3)
 
