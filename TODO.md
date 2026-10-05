@@ -234,7 +234,8 @@ button. See docs/protocol.md.
   -100..0 dB, the slider -50..0). For every webcam with a microphone
   (generic profile). The system's input volume (PipeWire) is a separate
   layer on top that doesn't follow it. Snap: `obscura:alsa`.
-- [ ] **Two mics at once** (needs a second Vox SE).
+- [ ] **Two mics at once** (needs a second Vox SE). Then also test the
+  mics' mono/stereo sound mode (see Mic options).
 - [x] **P3: Mic battery in the tray menu.** *Done:* connected mics with
   battery, charging and muted, in the tray menu and tooltip.
 - [x] **P2: Mute and gain per mic.** *Done:* `d32d` (mute, u8) and `532d` (gain,
@@ -249,7 +250,9 @@ button. See docs/protocol.md.
   on/off, i16 parameter], read back at mic info [1] bit n. *Done:* LED,
   button lock, vibration and noise suppression with its level (all tested
   on the mic; steady noise went from RMS 85–88 off to 2 at level 3). Open:
-  auto suspend, shutdown, `cameraSetTWSSoundModeR` (mono/stereo).
+  auto suspend, shutdown. *Postponed until a second Vox SE:*
+  `cameraSetTWSSoundModeR` (mono/stereo, mic info [1] bits 3–4, mono now);
+  with two mics, stereo probably puts each on its own channel.
 
 ## 4. Other models
 
