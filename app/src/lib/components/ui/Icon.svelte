@@ -21,6 +21,7 @@
     video: "M3 7h12v10H3zM15 10l6-3v10l-6-3",
     target: "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 2v3M12 19v3M2 12h3M19 12h3",
     pencil: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+    speaker: "M4 9h4l5-4v14l-5-4H4zM16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11",
     trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
     refresh: "M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4",
     whiteboard: "M3 4h18v12H3zM12 16v4M8 20h8M7 9h6M7 12h4",

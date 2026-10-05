@@ -10,6 +10,26 @@
 
   let gestureOpen = $state(false);
   let mirrorOpen = $state(false);
+  let voiceOpen = $state(false);
+
+  // The camera has no voice control master switch: each spoken command is
+  // switched on its own. The button counts as on when any command is.
+  const VOICE_COMMANDS = [
+    "voice_hi_tiny",
+    "voice_sleep_tiny",
+    "voice_track_me",
+    "voice_unlock_me",
+    "voice_zoom_in",
+    "voice_zoom_out",
+    "voice_presets",
+  ];
+  const voiceSupported = $derived(device.supported("voice_track_me"));
+  const voiceOn = $derived(VOICE_COMMANDS.some((id) => device.on(id)));
+  function setVoice(on: boolean) {
+    for (const id of VOICE_COMMANDS) {
+      if (device.supported(id) && device.on(id) !== on) device.set(id, on ? 1 : 0);
+    }
+  }
 
   const sleeping = $derived(device.on("sleep"));
   const sharing = $derived(!!stream.share?.running);
@@ -58,6 +78,38 @@
             {/if}
           </div>
         </Popover>
+        {#if voiceSupported}
+          <Popover bind:open={voiceOpen}>
+            {#snippet trigger()}
+              <button
+                class="quick-btn"
+                class:active={voiceOn}
+                title={voiceOn ? "Voice Control (on)" : "Voice Control (off)"}
+                onclick={() => (voiceOpen = !voiceOpen)}><Icon name="speaker" size={15} /></button
+              >
+            {/snippet}
+            <div class="pop">
+              <div class="row">
+                <div class="text">
+                  <span class="label">Voice Control</span>
+                  <span class="desc">Spoken commands the camera listens for, in the language below</span>
+                </div>
+                <Toggle checked={voiceOn} onchange={setVoice} />
+              </div>
+              <div class="sub">
+                <Feature id="voice_language" label="Language" />
+                <Feature id="voice_hi_tiny" />
+                <Feature id="voice_sleep_tiny" />
+                <Feature id="voice_track_me" />
+                <Feature id="voice_unlock_me" />
+                <Feature id="voice_zoom_in" />
+                <Feature id="voice_zoom_out" />
+                <Feature id="voice_zoom_factor" variant="select" label="Zoom Factor" />
+                <Feature id="voice_presets" />
+              </div>
+            </div>
+          </Popover>
+        {/if}
         <Popover bind:open={mirrorOpen}>
           {#snippet trigger()}
             <button

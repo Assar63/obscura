@@ -187,7 +187,9 @@ sudo usermod -aG video "$USER"   # then log out and back in
 
 Run `obscura` (or `pnpm tauri dev` from `app/` during development).
 
-- **Top bar:** camera picker, the Gesture Control popover, the mirror
+- **Top bar:** camera picker, the Gesture Control popover, the Voice
+  Control popover (loudspeaker button, red while any spoken command is on;
+  Tiny 3 series), the mirror
   popover (Mirror Image on the camera, Mirror Preview only in OBSCura, and
   Share as "OBSCura Camera"), Sleep/Resume, and Open/Close Preview.
 - **Preview:** a live view from the camera. Choose resolution and frame rate

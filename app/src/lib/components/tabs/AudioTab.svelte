@@ -72,21 +72,6 @@
     <Feature id="mic_during_sleep" />
   </Card>
 
-  {#if device.supported("voice_track_me")}
-    <Card title="Voice Control">
-      <p class="hint">Spoken commands the camera listens for (in the language below).</p>
-      <Feature id="voice_language" />
-      <Feature id="voice_hi_tiny" />
-      <Feature id="voice_sleep_tiny" />
-      <Feature id="voice_track_me" />
-      <Feature id="voice_unlock_me" />
-      <Feature id="voice_zoom_in" />
-      <Feature id="voice_zoom_out" />
-      <Feature id="voice_zoom_factor" variant="select" />
-      <Feature id="voice_presets" />
-    </Card>
-  {/if}
-
   {#if device.mics}
     <Card title="Wireless Microphones">
       {#each device.mics as m (m.slot)}
