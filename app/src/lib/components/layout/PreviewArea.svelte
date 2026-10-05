@@ -2,6 +2,7 @@
   import { device } from "../../device.svelte";
   import { preview as stream } from "../../preview.svelte";
   import Feature from "../controls/Feature.svelte";
+  import ShareSetupDialog from "../windows/ShareSetupDialog.svelte";
 
   let { preview }: { preview: boolean } = $props();
 
@@ -12,11 +13,21 @@
   let canvas: HTMLCanvasElement | null = $state(null);
   $effect(() => stream.attach(canvas));
 
-  // (Re)start whenever the camera, the requested format or visibility
+  // While sharing, the preview reads the virtual camera; a new format
+  // restarts the share in that format.
+  const source = $derived(stream.source(path));
+  $effect(() => {
+    const key = stream.key;
+    if (path && stream.share?.running && stream.sharedKey && stream.sharedKey !== key) {
+      void stream.reshare(path);
+    }
+  });
+
+  // (Re)start whenever the source, the requested format or visibility
   // changes; stop when the preview isn't wanted.
   $effect(() => {
-    const p = path;
-    const key = `${stream.resolution}/${stream.fps}`;
+    const p = source;
+    const key = stream.key;
     if (wanted && p) {
       void key;
       void stream.start(p);
@@ -59,7 +70,9 @@
         {/if}
       </div>
     {:else}
-      <span class="badge">{stream.format.width}×{stream.format.height} · {stream.format.fps} fps</span>
+      <span class="badge">
+        {stream.format.width}×{stream.format.height} · {stream.format.fps} fps{stream.share?.running ? " · shared" : ""}
+      </span>
     {/if}
   {:else}
     <div class="placeholder"><span class="muted">Preview closed</span></div>
@@ -71,6 +84,8 @@
     </div>
   {/if}
 </div>
+
+<ShareSetupDialog bind:open={stream.shareSetupOpen} commands={stream.share?.setup ?? []} onrecheck={() => stream.refreshShare()} />
 
 <style>
   .preview {

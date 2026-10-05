@@ -3,8 +3,10 @@
 # the snap build (`snap`: snapcraft, LXD and the firewall rules LXD needs
 # next to Docker). Safe to re-run: it only changes what's missing, and uses
 # sudo for system-wide changes. `--check` reports without changing anything.
+# `virtual-camera` sets up "OBSCura Camera" (v4l2loopback) for sharing the
+# camera with other apps; it's not part of `all`.
 #
-# Usage: tools/bootstrap.sh [--check] [dev|snap|all]   (default: all)
+# Usage: tools/bootstrap.sh [--check] [dev|snap|virtual-camera|all]   (default: all)
 
 set -euo pipefail
 
@@ -13,9 +15,9 @@ target=all
 for arg in "$@"; do
   case "$arg" in
     --check) check_only=true ;;
-    dev | snap | all) target=$arg ;;
+    dev | snap | virtual-camera | all) target=$arg ;;
     -h | --help)
-      sed -n '2,7s/^# \{0,1\}//p' "$0"
+      sed -n '2,9s/^# \{0,1\}//p' "$0"
       exit 0
       ;;
     *)
@@ -206,8 +208,44 @@ check_firewall() {
   fi
 }
 
+# The virtual camera OBSCura shares the camera through. Keep the options in
+# step with crates/obsbot-core/src/virtualcam.rs.
+VCAM_OPTIONS='devices=1 video_nr=42 card_label="OBSCura Camera" exclusive_caps=1'
+
+check_virtual_camera() {
+  echo "Virtual camera (OBSCura Camera):"
+
+  if modinfo v4l2loopback >/dev/null 2>&1; then
+    ok "v4l2loopback module installed"
+  elif have apt-get; then
+    fix "install v4l2loopback" sudo apt-get install -y v4l2loopback-dkms
+  else
+    todo "install the v4l2loopback kernel module"
+  fi
+
+  if grep -qx "OBSCura Camera" /sys/class/video4linux/*/name 2>/dev/null; then
+    ok "loaded: $(grep -lx "OBSCura Camera" /sys/class/video4linux/*/name | head -1 |
+      sed 's|/sys/class/video4linux/\(video[0-9]*\)/name|/dev/\1|')"
+  elif lsmod | grep -q '^v4l2loopback'; then
+    todo "v4l2loopback is loaded with other options; unload it" \
+      "(sudo modprobe -r v4l2loopback, after closing apps using it) and re-run"
+  else
+    fix "load v4l2loopback as \"OBSCura Camera\" (/dev/video42)" \
+      sh -c "sudo modprobe v4l2loopback $VCAM_OPTIONS"
+  fi
+
+  if [ -f /etc/modules-load.d/obscura-camera.conf ] && [ -f /etc/modprobe.d/obscura-camera.conf ]; then
+    ok "loads at every boot"
+  else
+    fix "load it at every boot (/etc/modules-load.d, /etc/modprobe.d)" sh -c \
+      "echo v4l2loopback | sudo tee /etc/modules-load.d/obscura-camera.conf >/dev/null &&
+       echo 'options v4l2loopback $VCAM_OPTIONS' | sudo tee /etc/modprobe.d/obscura-camera.conf >/dev/null"
+  fi
+}
+
 case "$target" in
   dev) check_dev ;;
+  virtual-camera) check_virtual_camera ;;
   snap) check_snap ;;
   all)
     check_dev
@@ -228,6 +266,7 @@ if ((problems)); then
 fi
 case "$target" in
   dev) echo "Ready. Build with: cd app && pnpm install && pnpm tauri build" ;;
+  virtual-camera) echo "Ready. Switch on Share in OBSCura; other apps then see \"OBSCura Camera\"." ;;
   snap) echo "Ready. Build the snap with: snapcraft pack --use-lxd" ;;
   all) echo "Ready. Build with: cd app && pnpm install && pnpm tauri build," \
     "or the snap with: snapcraft pack --use-lxd" ;;

@@ -45,6 +45,9 @@ pub fn run() {
             preview::start_preview,
             preview::preview_ready,
             preview::stop_preview,
+            preview::share_status,
+            preview::share_start,
+            preview::share_stop,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

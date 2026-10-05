@@ -54,6 +54,18 @@ enum Command {
         #[arg(long)]
         seconds: Option<u64>,
     },
+    /// Share the camera through the virtual camera ("OBSCura Camera"), so
+    /// other apps can use it while OBSCura does. Runs until stopped.
+    Share {
+        /// Picture height: 1080 or 720.
+        #[arg(long, default_value_t = 1080)]
+        size: u32,
+        #[arg(long, default_value_t = 30)]
+        fps: u32,
+        /// The virtual camera's node (default: found by its name).
+        #[arg(long)]
+        to: Option<PathBuf>,
+    },
     /// Wireless microphones (Vox SE): which slots are connected, battery.
     /// Pair with `set mic_pair_tx1 1`, then hold the mic's button ~6 s.
     Mics,
@@ -345,6 +357,7 @@ fn main() -> Result<()> {
                 }
             }
         }
+        Command::Share { size, fps, to } => share(&cli, *size, *fps, to.clone())?,
         Command::Events { seconds } => {
             let dev = open(&cli)?;
             if dev.live_status().is_none() {
@@ -557,4 +570,85 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Feeds the virtual camera from the real one until stopped (SIGTERM, as
+/// sent by the app or the tray). Keeps trying while the camera is busy,
+/// asleep or unplugged, so the feed resumes on its own.
+fn share(cli: &Cli, size: u32, fps: u32, to: Option<PathBuf>) -> Result<()> {
+    use obsbot_core::companion::{self, Role};
+    use obsbot_core::preview::{self, PreviewConfig};
+    use obsbot_core::virtualcam;
+    use std::cell::RefCell;
+    use std::sync::atomic::AtomicBool;
+
+    let width = match size {
+        1080 => 1920,
+        720 => 1280,
+        _ => bail!("--size must be 1080 or 720"),
+    };
+    let Some(target) = to.or_else(virtualcam::find) else {
+        bail!(
+            "the virtual camera \"{}\" isn't set up. Load it with:\n  {}\nand to load it at every boot:\n  {}\n  {}",
+            virtualcam::LABEL,
+            virtualcam::SETUP[0],
+            virtualcam::SETUP[1],
+            virtualcam::SETUP[2]
+        );
+    };
+    let camera = pick_camera(cli)?;
+    if companion::running(Role::Share).is_some() {
+        bail!("the camera is already being shared");
+    }
+    companion::register(Role::Share).context("recording the share process")?;
+    // OBSCura's preview reads the frames here, leaving the virtual camera's
+    // single streaming slot to other apps.
+    let server = virtualcam::FrameServer::bind(&virtualcam::socket_path())
+        .context("opening the preview socket")?;
+    eprintln!(
+        "Sharing {} as \"{}\" ({}) — stop with Ctrl+C",
+        camera.product.as_deref().unwrap_or(&camera.name),
+        virtualcam::LABEL,
+        target.display()
+    );
+
+    let stop = AtomicBool::new(false);
+    let config = PreviewConfig {
+        width,
+        height: size,
+        fps,
+    };
+    loop {
+        let writer = RefCell::new(None);
+        let result = preview::run(
+            &camera.path,
+            config,
+            &stop,
+            |fmt| match virtualcam::Writer::open(&target, fmt.width, fmt.height) {
+                Ok(w) => {
+                    eprintln!("{}x{} at {} fps", fmt.width, fmt.height, fmt.fps);
+                    server.set_format(fmt);
+                    *writer.borrow_mut() = Some(w);
+                }
+                Err(e) => eprintln!("can't open {}: {e}", target.display()),
+            },
+            |jpeg| match writer.borrow_mut().as_mut() {
+                Some(w) => match w.write(jpeg) {
+                    Ok(()) => {
+                        server.send(jpeg);
+                        true
+                    }
+                    Err(e) => {
+                        eprintln!("writing to {}: {e}", target.display());
+                        false
+                    }
+                },
+                None => false,
+            },
+        );
+        if let Err(e) = result {
+            eprintln!("camera: {e}; retrying");
+        }
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
 }

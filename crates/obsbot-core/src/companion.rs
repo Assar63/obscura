@@ -23,6 +23,8 @@ const AUTOSTART_FILE: &str = "obscura-indicator.desktop";
 pub enum Role {
     Gui,
     Indicator,
+    /// `obsbotctl share`: feeds the virtual camera in the background.
+    Share,
 }
 
 impl Role {
@@ -30,15 +32,24 @@ impl Role {
         match self {
             Role::Gui => "obscura",
             Role::Indicator => "obscura-indicator",
+            Role::Share => "obsbotctl",
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Role::Share => "obscura-share",
+            r => r.binary(),
         }
     }
 
     fn pid_file(self) -> PathBuf {
-        runtime_dir().join(format!("{}.pid", self.binary()))
+        runtime_dir().join(format!("{}.pid", self.name()))
     }
 }
 
-fn runtime_dir() -> PathBuf {
+/// Where the programs keep their PID files and the share socket.
+pub fn runtime_dir() -> PathBuf {
     std::env::var_os("XDG_RUNTIME_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::temp_dir().join(format!("obscura-{}", nix::unistd::getuid())))
@@ -112,8 +123,16 @@ fn sibling(role: Role) -> PathBuf {
 /// Starts `role` in its own process group, so it outlives this process and
 /// isn't hit by a Ctrl-C aimed at it. The child is reaped in the background.
 pub fn launch(role: Role) -> io::Result<()> {
+    launch_with(role, &[])
+}
+
+/// [`launch`] with arguments.
+pub fn launch_with(role: Role, args: &[String]) -> io::Result<()> {
     use std::os::unix::process::CommandExt;
-    let child: Child = Command::new(sibling(role)).process_group(0).spawn()?;
+    let child: Child = Command::new(sibling(role))
+        .args(args)
+        .process_group(0)
+        .spawn()?;
     std::thread::spawn(move || {
         let mut child = child;
         let _ = child.wait();

@@ -96,6 +96,15 @@ export type MicSlot = {
 };
 
 export type PreviewConfig = { width: number; height: number; fps: number };
+/** The virtual camera ("OBSCura Camera") and whether the camera is shared
+ * through it. `device` is null until v4l2loopback is loaded; while sharing,
+ * the preview reads the frames from `socket`. */
+export type ShareStatus = {
+  device: string | null;
+  running: boolean;
+  socket: string;
+  setup: string[];
+};
 export type PreviewFormat = PreviewConfig;
 
 export const api = {
@@ -132,6 +141,10 @@ export const api = {
   deletePreset: (slot: number) => invoke<(string | null)[]>("delete_preset", { slot }),
   previewReady: () => invoke<void>("preview_ready"),
   stopPreview: () => invoke<void>("stop_preview"),
+  shareStatus: () => invoke<ShareStatus>("share_status"),
+  shareStart: (camera: string, config: PreviewConfig) =>
+    invoke<ShareStatus>("share_start", { camera, config }),
+  shareStop: () => invoke<ShareStatus>("share_stop"),
 };
 
 export function formatValue(kind: FeatureKind, value: number): string {

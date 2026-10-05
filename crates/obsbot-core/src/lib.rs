@@ -16,6 +16,7 @@ pub mod preview;
 pub mod profile;
 pub mod transport;
 pub mod vendor;
+pub mod virtualcam;
 
 pub use device::{Device, FeatureState, FirmwareInfo};
 pub use discovery::{discover, CameraInfo};

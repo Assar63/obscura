@@ -190,7 +190,10 @@ Run `obscura` (or `pnpm tauri dev` from `app/` during development).
 - **Top bar:** camera picker, the Gesture Control and Mirror Image popovers,
   Sleep/Resume, and Open/Close Preview.
 - **Preview:** a live view from the camera. Choose resolution and frame rate
-  from the format button at the bottom left.
+  from the format button at the bottom left. The mirror button next to it
+  shows the preview mirrored (only in OBSCura; other apps still get the
+  normal picture), and **Share** lets other apps use the camera at the same
+  time (see [Sharing the camera](#sharing-the-camera-with-other-apps)).
 - **Bottom bar:** AI tracking modes (Human / Group / Hand Tracking, plus
   Whiteboard / Desk / Voice Tracking on the Tiny 3) and the AI lock.
 - **Image tab:** presets, the gimbal joystick and zoom, and image adjustments.
@@ -208,8 +211,43 @@ Settings are written to the camera itself, so they apply to every app that
 uses it (Zoom, Meet, OBS, …). You don't need to keep OBSCura running.
 
 Only one application can stream from the camera at a time. **Close the preview
-before joining a call**; the controls keep working while another app is
-streaming.
+before joining a call**, or switch on **Share** (below); the controls keep
+working while another app is streaming.
+
+### Sharing the camera with other apps
+
+**Share** (bottom left, next to the format button) passes the camera to a
+virtual camera, **OBSCura Camera**, that OBS, Teams, Zoom or a browser can
+use while OBSCura shows the preview. Pick "OBSCura Camera" as the camera in
+those apps. Sharing runs in the background: it keeps going when the preview
+or OBSCura's window is closed, until you switch it off in OBSCura or choose
+**Stop sharing** in the panel indicator's menu. It shares the preview's
+resolution and frame rate (changing them restarts the share).
+
+One app at a time can stream from "OBSCura Camera" (a v4l2loopback
+limitation): a second one gets "device busy" until the first lets go.
+OBSCura's own preview doesn't count, since it gets the frames directly from
+the share process.
+
+The virtual camera comes from the `v4l2loopback` kernel module, which needs
+administrator rights to load, once:
+
+```sh
+tools/bootstrap.sh virtual-camera   # installs, loads, and loads at every boot
+```
+
+or by hand:
+
+```sh
+sudo apt install v4l2loopback-dkms     # if `modinfo v4l2loopback` finds nothing
+sudo modprobe v4l2loopback devices=1 video_nr=42 card_label="OBSCura Camera" exclusive_caps=1
+# and to load it at every boot:
+echo v4l2loopback | sudo tee /etc/modules-load.d/obscura-camera.conf
+echo 'options v4l2loopback devices=1 video_nr=42 card_label="OBSCura Camera" exclusive_caps=1' | sudo tee /etc/modprobe.d/obscura-camera.conf
+```
+
+If it isn't loaded, switching on Share shows these commands. From the
+command line, `obsbotctl share` does the same as the switch.
 
 ### Panel indicator
 

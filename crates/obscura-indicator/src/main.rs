@@ -16,6 +16,7 @@ use ksni::blocking::TrayMethods;
 use ksni::menu::{CheckmarkItem, RadioGroup, RadioItem, StandardItem, SubMenu};
 use ksni::MenuItem;
 use obsbot_core::companion::{self, Role};
+use obsbot_core::virtualcam;
 use obsbot_core::{discover, Device, FeatureId, FeatureKind};
 
 /// Background refresh; the menu also refreshes whenever it's opened.
@@ -74,6 +75,8 @@ struct Indicator {
     /// Connected wireless mics, e.g. "TX1: 89%, charging".
     mics: Vec<String>,
     gui_running: bool,
+    /// The camera is being shared as the virtual camera (`obsbotctl share`).
+    sharing: bool,
     icons: Vec<ksni::Icon>,
     error: Option<String>,
 }
@@ -91,6 +94,7 @@ impl Indicator {
             presets: Vec::new(),
             mics: Vec::new(),
             gui_running: false,
+            sharing: false,
             icons: ICONS.iter().filter_map(|png| load_icon(png)).collect(),
             error: None,
         };
@@ -102,6 +106,7 @@ impl Indicator {
     /// vendor features shown in the menu.
     fn refresh(&mut self) {
         self.gui_running = companion::running(Role::Gui).is_some();
+        self.sharing = companion::running(Role::Share).is_some();
 
         if self.device.as_ref().is_some_and(|d| !d.is_connected()) {
             self.device = None;
@@ -264,6 +269,11 @@ impl ksni::Tray for Indicator {
         } else {
             format!("{description}\nMics: {}", self.mics.join(" · "))
         };
+        let description = if self.sharing {
+            format!("{description}\nSharing as \"{}\"", virtualcam::LABEL)
+        } else {
+            description
+        };
         ksni::ToolTip {
             title: "OBSCura".into(),
             description,
@@ -378,6 +388,19 @@ impl ksni::Tray for Indicator {
                     label: label.into(),
                     checked,
                     activate: Box::new(move |this: &mut Self| this.set(id, (!checked) as i64)),
+                    ..Default::default()
+                }
+                .into(),
+            );
+        }
+        if self.sharing {
+            items.push(
+                StandardItem {
+                    label: format!("Stop sharing \"{}\"", virtualcam::LABEL),
+                    activate: Box::new(|this: &mut Self| {
+                        companion::terminate(Role::Share);
+                        this.sharing = false;
+                    }),
                     ..Default::default()
                 }
                 .into(),
