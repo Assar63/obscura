@@ -1,7 +1,7 @@
 //! Live camera state decoded from the selector 6 status block, using the
 //! layout OBSBOT's SDK documents as `CameraStatus::tiny` (Tiny, Tiny 4K,
 //! Tiny 2 series, Tiny SE, Tiny 3, Meet 2, Meet SE). See the "Status block
-//! layout" table in docs/protocol.md.
+//! layout" table in docs/reference/protocol.md.
 
 use serde::Serialize;
 

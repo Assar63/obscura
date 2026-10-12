@@ -20,7 +20,7 @@
 #
 # Image controls, pan/tilt/zoom and focus are standard UVC controls
 # (inherited from generic-uvc). AI and gesture features use the vendor
-# protocol on Extension Unit 2 -- see docs/protocol.md.
+# protocol on Extension Unit 2 -- see docs/reference/protocol.md.
 #
 # Vendor bindings:
 #   frames = framed commands on selector 2 (dst module, 2-byte cmd, value encoding)
@@ -42,7 +42,7 @@ event_queue = true
 # Receiver for OBSBOT's Vox SE wireless microphones (query `02c0`).
 wireless_mics = true
 
-# Status block layout: OBSBOT SDK `CameraStatus::tiny` (docs/protocol.md).
+# Status block layout: OBSBOT SDK `CameraStatus::tiny` (docs/reference/protocol.md).
 status_layout = "tiny"
 
 [[match]]

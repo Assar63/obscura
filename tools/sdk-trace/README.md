@@ -41,7 +41,8 @@ before `gprobe`/`micprobe` (they default to the Tiny 3, 18).
 
 - Lines start with `XU SET`/`XU GET`, then the unit, selector and request
   (`q=0x01` SET_CUR, `q=0x81` GET_CUR), then the bytes, zero padding
-  trimmed. Selector 2 frames are laid out in `docs/protocol.md`
+  trimmed. Selector 2 frames are laid out in
+  [`docs/reference/protocol.md`](../../docs/reference/protocol.md)
   ("Framed commands").
 - The SDK reuses its send buffer, so bytes past a frame's payload length
   are left over from earlier frames. On startup that includes the text of
@@ -61,4 +62,4 @@ commands and ignores them. Send it from Linux (`xuframe.py --send`, or a
 profile binding with `obsbotctl set … --check`), confirm the effect with
 an oracle (status byte, query reply, status light, or the picture), put
 the user's setting back, and record what you measured in
-`docs/protocol.md`.
+[`docs/reference/protocol.md`](../../docs/reference/protocol.md).

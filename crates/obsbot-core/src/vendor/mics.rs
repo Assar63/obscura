@@ -1,6 +1,6 @@
 //! OBSBOT's wireless microphones (Vox SE): the mic byte of the status
 //! block and the mic info query (`02c0`, SDK `DevTWSInfo`). See the Vox SE
-//! section of docs/protocol.md.
+//! section of docs/reference/protocol.md.
 
 use serde::Serialize;
 

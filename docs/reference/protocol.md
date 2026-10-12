@@ -23,6 +23,12 @@ In code: frames and encodings are in `crates/obsbot-core/src/vendor/`
 (`protocol`, `status`, `events`, `mics`), per-model bindings in
 `profiles/*.toml`.
 
+The SDK-header notes below were checked against the locally available
+`libdev` 2.1.0 `include/dev/dev.hpp`. They document SDK declarations and
+enumeration names only: they are not wire traces, proof of firmware support,
+or permission to send an untested command. The SDK itself is not included in
+this repository.
+
 ## Channels
 
 | Path | What |
@@ -182,7 +188,7 @@ matches it too. Bytes marked ✅ were measured from Linux.
 | 36 | `ai_tracker_speed` | 0 normal, 2 motion |
 | 37 | `live_stream_mode` | |
 | 38–39 | `gesture_para` | Meet 2 / Meet SE gestures |
-| 40 | `audio_mode` | bits 0–2 source, 3–7 AudioModeType (omni, stereo, front, back, dipole, music) |
+| 40 | `audio_mode` | bits 0–2 source, 3–7 `AudioModeType` (0 omni, 1 stereo, 2 front, 3 back, 4 `Dipol` [SDK spelling], 5 music) |
 | 41 | `wireless_mic` | Tiny 3 |
 | 42 | `auto_frame` | low nibble landscape, high nibble portrait |
 | 43 | `event_count` | number of queued camera events; query `021d` pops one ✅ |
@@ -244,9 +250,25 @@ CDC ACM serial port). Read from Linux on a Tiny 3:
 | 16 | – | unknown; ten had piled up from earlier gesture testing |
 
 Gestures themselves queue nothing: a palm shows as status[24] changing
-(0 ↔ 2), an "L" as the zoom ratio at [4..5] ramping. The SDK's event list
-also has Vox SE events (`kEvtTipsTWS…`: connect, battery, mute, …), which
-should come through the same queue once a mic is paired.
+(0 ↔ 2), an "L" as the zoom ratio at [4..5] ramping. The SDK's `RmEventType` callback enum also names Vox SE callback events.
+For libdev 2.1.0, the relevant callback IDs are:
+
+| Callback ID | SDK name | SDK description |
+|---:|---|---|
+| 3017 | `kEvtTipsTWSFirstConnect` | TWS first connect |
+| 3018–3019 | `kEvtTipsTWSTipConnect1/2` | TWS connect, TX1/TX2 |
+| 3020–3021 | `kEvtTipsTWSTipElectric1/2` | TWS battery/electric, TX1/TX2 |
+| 3022–3023 | `kEvtTipsTWSTipMute1/2` | TWS mute, TX1/TX2 |
+| 3024–3025 | `kEvtTipsTWSTipMuteQuiet1/2` | TWS mute-quiet, TX1/TX2 |
+| 3026–3027 | `kEvtTipsTWSTipDenoiseOn/Off` | TWS denoise |
+| 3028–3029 | `kEvtTipsTWSTipRecordOn/Off` | TWS recording |
+| 3030–3031 | `kEvtTipsTWSTipHumanTrackOn/Off` | TWS human tracking |
+| 3032–3033 | `kEvtTipsTWSTipSingle/MultipleTrack` | TWS single/multiple tracking |
+
+These are names and values for the SDK callback enum, **not** confirmed
+numeric mappings for the selector 2 event queue above. The callback enum
+does not establish that these events are emitted by, or have corresponding
+values in, the queue; do not decode queue events from it alone.
 
 **Presets on the Tiny 3** (traced from the SDK, tested on the camera,
 firmware 6.6.8.3). The Tiny 3 keeps the Tiny SE's recall frame but stores
@@ -277,7 +299,7 @@ mic info [0]. 0 human tracking, 1 switch tracking mode, 2 zoom to 1.0x,
 3 record (in OBSBOT Center). ✅ with 2, a press zoomed the camera from 2x to
 1x.
 
-**Vox SE options** (`cameraSetTWSFuncR`, exported, not in the header): dst 02
+**Vox SE options** (`cameraSetTWSFuncR`, exported, not declared in the header): dst 02
 `82c0` [function u8, on/off u8, parameter i16], for both mics; read back at
 mic info [1] bit n. Functions: 0 button, 1 vibration, 2 LED, 3 noise
 suppression (parameter: level 1–3; [2] bits 2–3 on/off, [3]/[4] level),
@@ -287,7 +309,10 @@ dark and came back. ✅ Button: with it off, a press no longer switched
 tracking. ✅ Vibration: a button press buzzes; with it off, it didn't. ✅ Noise
 suppression (level 1–3 as the parameter; on/off at [2] bits 2–3, level at
 [3]): steady noise near the mic recorded at RMS 85–88 off and 2 at level 3.
-Auto suspend and shutdown aren't used yet.
+The SDK header names the function IDs as `DevTWSFuncBtn`, `Shock`, `Led`,
+`NS`, `AutoSuspend`, and `Shutdown` (0–5); `DevTWSSoundMode` names mono=0
+and stereo=1. Auto suspend and shutdown aren't used yet, and the sound-mode
+effect with two mics has not been tested.
 
 The SDK's white balance types (Daylight, Tungsten, …) aren't presets on the
 Tiny 3: `cameraSetWhiteBalanceR(Daylight, 0)` set the standard UVC controls
@@ -378,3 +403,70 @@ Independent Tiny 3 notes, which agree with the above where they overlap:
 (AI mode short setting `16 02 <category> <submode>`, sleep, recenter) and
 [brendanwelsh/obsbot-tiny3-protocol](https://github.com/brendanwelsh/obsbot-tiny3-protocol)
 (which Tiny 2 commands the Tiny 3 ignores, and its AI quick status).
+
+### SDK header catalog (libdev 2.1.0; not wire proof)
+
+The SDK header provides useful parameter names for interpreting traces, but
+the numeric IDs and descriptions below must not be mistaken for commands
+verified on a camera.
+
+`DevControlParaType` values used by `aiSet/GetControlParaR` are:
+
+| ID | SDK name | Declared meaning/type |
+|---:|---|---|
+| 0 | `Motion` | bool: standard or motion tracking |
+| 1 | `ForeTrack` | bool: track a prior target if it is lost |
+| 2 | `Composition` | bool: adapt composition offsets using nearby people |
+| 3 | `TrackerType` | int: `DevTrackType` |
+| 4 | `GimCtrlMode` | int: `DevGimCtrlMode` |
+| 5 | `GimCtrlSpeedMode` | int: `DevGimCtrlSpeedMode` |
+| 6 | `PanGainAdaptive` | bool |
+| 7 | `PanGainValue` | float |
+| 8 | `PanLocked` | bool |
+| 9 | `PitchGainAdaptive` | bool |
+| 10 | `PitchGainValue` | float |
+| 11 | `PitchLocked` | bool |
+| 12 | `AutoZoomCustomized` | int: custom zoom scale |
+| 13 | `AutoZoomMode` | int |
+| 14 | `OffsetAdaptiveX` | bool |
+| 15 | `OffsetX` | float: horizontal composition offset |
+| 16 | `OffsetAdaptiveY` | bool |
+| 17 | `OffsetY` | float: vertical composition offset |
+| 18 | `LimitAutoSelection` | bool |
+| 19 | `LimitPanMin` | float |
+| 20 | `LimitPanMax` | float |
+| 21 | `LimitPitchMin` | float |
+| 22 | `LimitPitchMax` | float |
+| 23 | `AutoZoomSpeed` | int, documented range 1–10 |
+
+The Tiny 3 trace recorded plausible values for several of these parameters,
+as described above, but only the effects explicitly marked as tested are
+confirmed. In particular, the zone bounds still need an observable tracking
+test.
+
+The header's `PresetsAction` is a 40-byte optional action record. It lists
+Tiny 3/Tiny 3 Lite values for `ai_track_type` 11 (human single) and 12
+(human group), `ai_track_mode` 5 (super lazy), 6 (slow), and 7 (fast),
+`auto_frame` 0–5 (close, full body, half body, close-up, head removal,
+lower body), and `ai_mode` 0–2 (desktop, whiteboard, speech tracking).
+The record also contains focus, exposure, white-balance, and image settings.
+None of these optional preset actions has yet been traced or verified on a
+Tiny 3; the structure is a lead for the preset investigation, not a wire
+format.
+
+The same header lists `DevGestureParaType` IDs only from 0 through 8
+(gesture master through zoom factor). It does not identify an Avatar/Motion
+Capture toggle. The “Motion Capture to Avatar” setting reported for firmware
+6.6.10.1 therefore still needs a suitable SDK/header version or a trace; do
+not infer that it is a gesture type 9.
+
+`cameraSetVerticalModeU(int32_t)` is declared with the SDK category
+`tiny4k`, and its comment says that the device restarts. This is not evidence
+that the Tiny 3 supports the command. `cameraSetRestoreFactorySettingsR()`
+and the boot-position APIs are also declared, but their Tiny 3 wire
+encodings and behavior remain unverified.
+
+The `AudioModeType` enum names values 0–5 as omni, stereo, front, back,
+`Dipol`, and music. `cameraSetAudioModeU` is exported by the library but is
+not declared in this header; tracing found the corresponding setting and
+status bits, but testing has not confirmed a change in recorded USB audio.

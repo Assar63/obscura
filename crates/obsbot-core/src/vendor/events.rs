@@ -1,5 +1,5 @@
 //! Camera events. The camera queues them; status[43] counts them and query
-//! dst 02 `021d` pops one (see docs/protocol.md, "Camera events").
+//! dst 02 `021d` pops one (see docs/reference/protocol.md, "Camera events").
 
 use crate::log;
 

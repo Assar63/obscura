@@ -26,7 +26,7 @@ impl Device {
     /// Logs what the camera did on its own since the last status read:
     /// queued events (target lost/found, …), and AI mode, power and zoom
     /// changes that weren't OBSCura's (a gesture, a voice command,
-    /// auto-sleep). Status layout: docs/protocol.md.
+    /// auto-sleep). Status layout: docs/reference/protocol.md.
     pub(super) fn observe(&self, block: &[u8]) {
         if self.profile.status_layout != Some(StatusLayout::Tiny) {
             return;

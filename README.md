@@ -111,7 +111,7 @@ work, or you can record a model's traffic, see
 the PC, not the camera. Firmware flashing is deliberately never implemented:
 the update check only points you to OBSBOT Center.
 
-² The Tiny SE's command was never tested on a Tiny 3, and OBSBOT's SDK uses a different one there; left out until it's checked (see `TODO.md`).
+² The Tiny SE's command was never tested on a Tiny 3, and OBSBOT's SDK uses a different one there; left out until it's checked (see the [roadmap](docs/project/roadmap.md)).
 
 Controls that aren't supported yet are still shown, greyed out, with a tooltip
 explaining why. The layout follows the official app.
@@ -368,7 +368,7 @@ malformed commands.
   webview over a Tauri channel, with flow control so frames drop rather than
   queue.
 
-The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
+The full protocol write-up is in the [protocol reference](docs/reference/protocol.md).
 
 ### Repository layout
 
@@ -379,10 +379,8 @@ The full protocol write-up is in [`docs/protocol.md`](docs/protocol.md).
 | `crates/obscura-indicator/` | Lightweight tray indicator |
 | `app/` | Tauri 2 desktop app: Rust backend in `src-tauri/`, Svelte 5 frontend in `src/` (components in `ui/`, `controls/`, `layout/`, `tabs/`, `windows/`) |
 | `profiles/` | Per-model device profiles (compiled into the binaries) |
-| `docs/protocol.md` | Decoded vendor protocol |
-| `docs/CAPTURING.md` | How to capture OBSBOT Center's USB traffic on Windows |
+| [`docs/`](docs/README.md) | Documentation index, protocol reference, capture guide, and project roadmap |
 | `captures/README.md` | Which OBSBOT Center actions still need recording (recordings themselves stay local) |
-| `TODO.md` | Roadmap: done, next, and what's known about each open item |
 | `tools/capture/obsbot_pcap.py` | Decoder for USBPcap captures |
 | `tools/sdk-trace/` | Linux alternative to captures: record the frames OBSBOT's SDK sends (SDK not included) |
 | `tools/bootstrap.sh` | Installs build dependencies and fixes LXD networking for snap builds |
@@ -403,7 +401,7 @@ Inside `crates/obsbot-core/src/`:
 ## Adding support for another camera
 
 1. **Capture** OBSBOT Center's USB traffic on Windows while using each feature,
-   following [`docs/CAPTURING.md`](docs/CAPTURING.md). On Linux, if you have
+   following the [capture guide](docs/development/capturing.md). On Linux, if you have
    OBSBOT's SDK, [`tools/sdk-trace/`](tools/sdk-trace/README.md) records the
    frames it sends instead. With Claude Code, `/add-obsbot-camera` walks
    through the whole process.
@@ -446,7 +444,8 @@ Inside `crates/obsbot-core/src/`:
 
 Pull requests with captures and profiles for other models are very welcome.
 Please leave the raw `.pcapng` files out of the repository: they're large and
-contain video frames. Only commit the decoded evidence in `docs/protocol.md`.
+contain video frames. Only commit the decoded evidence in
+[`docs/reference/protocol.md`](docs/reference/protocol.md).
 
 ## Development
 

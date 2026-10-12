@@ -4,8 +4,8 @@ What's done, what's next, and what's known about each open item. Most
 items came from OBSBOT's SDK headers (`libdev` 2.1.0) and tests on a
 Tiny 3; nothing here comes from the SDK's binaries, and no SDK code goes
 into this repository. What still needs recording from OBSBOT Center is in
-[`captures/README.md`](captures/README.md); the protocol itself is in
-[`docs/protocol.md`](docs/protocol.md).
+[`captures/README.md`](../../captures/README.md); the protocol itself is in
+[`../reference/protocol.md`](../reference/protocol.md).
 
 **The headers are not proof.** Their `@category` notes lag behind the
 hardware. `aiSetGestureParaR` is documented as "tail2 and later products"
@@ -29,7 +29,7 @@ useful feature with a clear path, **P3** is nice to have or speculative.
 
 Decoded byte by byte from the SDK's `CameraStatus::tiny`; the table, with
 the bytes measured from Linux, is in
-[`docs/protocol.md`](docs/protocol.md#status-block-layout-selector-6). In
+[`../reference/protocol.md`](../reference/protocol.md#status-block-layout-selector-6). In
 code, `vendor::status::StatusBlock` is the only place that knows the
 offsets, for profiles with `status_layout = "tiny"`.
 
@@ -43,7 +43,7 @@ offsets, for profiles with `status_layout = "tiny"`.
   progress), 7 Speech (Tiny 3's voice tracking), 14 Portrait tracking (Tiny
   3). *Done:* profiles mark 6 as `transient`, and the app keeps showing the
   last settled mode. The Tiny 3's extra modes are a feature (§3).
-- [x] **Fix the status byte notes in `docs/protocol.md`.** *Done:* the
+- [x] **Fix the status byte notes in `docs/reference/protocol.md`.** *Done:* the
   SDK layout is now a table there, with measured bytes marked. [1] and [2] are
   `rvd` in the SDK; [2] still works as "asleep" on the Tiny SE and Tiny 3.
   [4–5] are the zoom ratio and [17] the field of view, not "tracking state".
@@ -55,7 +55,7 @@ offsets, for profiles with `status_layout = "tiny"`.
 - [x] **Pickup distance labels.** *Done:* Close, Standard, Far ("Close"
   is OBSBOT Center's label for 0 on the Tiny SE, so it stays). The SDK names `audio_opt.distance` 0 near,
   1 standard, 2 far. The app shows Close, Medium, Far, with Medium a
-  guess (`captures/README.md` §0). Use Near, Standard, Far.
+  guess ([captures/README.md](../../captures/README.md) §0). Use Near, Standard, Far.
 - [x] **Noise reduction range.** The SDK documents `noise_cancellation` as
   0 off, 1 on, but the Tiny SE captures show values 0–3 and the Tiny 3
   reports 3. *Measured:* the Tiny 3 takes and reports 0–3, so the levels
@@ -125,8 +125,11 @@ offsets, for profiles with `status_layout = "tiny"`.
   Preset 1–3, with delete instead of rename. Tested: a preset saved by
   OBSCura at −40° and 1.5x was recalled from the centre, and three presets
   saved in OBSCura were each recalled by voice ("Position One/Two/Three"). Per-preset extras
-  (`PresetsAction`: framing, AI mode, tracking speed, white balance) are
-  not traced.
+  (`PresetsAction`) are not traced. The libdev 2.1.0 header documents
+  Tiny 3 values for AI track type (single/group), tracking speed, framing,
+  and AI mode; see the SDK header catalog in the protocol reference. These
+  declarations do not establish the record's wire encoding or which actions
+  the Tiny 3 firmware applies.
 - [ ] **Audio mode / beamforming.** *Tested, no audible effect:* short
   setting `22 02 <source 0> <mode>` (`cameraSetAudioModeU`, exported but
   not in the header), status[40] bits 3–7 follow. Speaking in front of the
@@ -175,7 +178,9 @@ offsets, for profiles with `status_layout = "tiny"`.
   started with AI off (6.6.8.3). `aiSetGimbalBootPosR` not traced.
 - [ ] **Portrait mode.** `vertical` [12], `cameraSetVerticalModeU` ("the
   device will restart automatically"). The Tiny 3 manual mentions portrait
-  mode. Restarting makes it a careful, confirm-first action.
+  mode, but the libdev 2.1.0 header categorizes this API as Tiny 4K, not Tiny
+  3. Verify on the intended model before adding support. Restarting makes it
+  a careful, confirm-first action.
 - [ ] **Factory reset.** `cameraSetRestoreFactorySettingsR` ("all"). Tracing
   it means actually resetting the camera, so do it last and only on
   purpose. Unlocks the greyed-out Factory Reset button.
@@ -192,7 +197,7 @@ offsets, for profiles with `status_layout = "tiny"`.
 ### Camera events
 
 - [x] **Event queue and camera-side changes.** *Done:* status[43] counts
-  queued events and query `021d` pops one (see docs/protocol.md). OBSCura
+  queued events and query `021d` pops one (see [protocol reference](../reference/protocol.md)). OBSCura
   drains it on each status read (Tiny 3 only, `event_queue = true`) and
   logs target lost/found; it also logs AI mode, power and zoom changes the
   camera made itself. `obsbotctl events` follows them live.
@@ -228,7 +233,7 @@ and TX2). `libdev` exports a full mic API that its header doesn't declare
 
 **Pairing works from Linux** (solved by trying the traced commands): "pair
 enable" for the slot, then Bluetooth pairing mode, then hold the mic's
-button. See docs/protocol.md.
+button. See [protocol reference](../reference/protocol.md).
 
 - [x] **Pairing, slot status and battery.** Audio → Wireless Microphones:
   per-slot state (connected, battery, charging, muted) from query `02c0`,
@@ -286,7 +291,10 @@ button. See docs/protocol.md.
   to a different payload). With the app and tray polling, 15
   `obsbotctl dump` runs lost 30 values before and none after.
 - [ ] **Firmware 6.6.10.1's new gesture toggle** ("Motion Capture to
-  Avatar"): after updating, trace `aiSetGestureParaR` types beyond 8.
+  Avatar"): after updating, trace its setting. The libdev 2.1.0 header's
+  `DevGestureParaType` enum stops at 8 (zoom factor) and names no Avatar
+  toggle, so do not assume the new setting is type 9; use a newer SDK or
+  capture the control on that firmware.
 
 - [x] **Add the SDK trace tooling to `tools/`.** *Done:* `tools/sdk-trace/`,
   with a build script and README; the workflow is also in the
@@ -299,7 +307,7 @@ button. See docs/protocol.md.
     marker before each call, so the log lines up with the API.
 
   Build instructions should point at a locally downloaded SDK. Document the
-  workflow in `docs/CAPTURING.md` as the Linux alternative to Windows
+  workflow in `docs/development/capturing.md` as the Linux alternative to Windows
   captures.
 - [x] **Never send the SDK's startup shell command.** *Done:* noted in
   `tools/sdk-trace/README.md` and the skill. On start, the SDK

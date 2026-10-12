@@ -285,7 +285,7 @@ pub struct GimbalVelocity {
 #[serde(deny_unknown_fields)]
 pub struct Presets {
     pub slots: u32,
-    /// How presets are stored and listed (see `docs/protocol.md`).
+    /// How presets are stored and listed (see `docs/reference/protocol.md`).
     #[serde(default)]
     pub format: PresetFormat,
 }

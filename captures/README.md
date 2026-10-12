@@ -4,8 +4,8 @@ What's still needed from OBSBOT Center on Windows, and what each capture
 should tell us. These are for the **Tiny SE**, the camera the original
 captures came from; `NOTES.md` has what was observed during them. The
 recordings themselves (`*.pcapng`) are git-ignored: they're large and
-contain video. For the Tiny 3, see the roadmap in [`TODO.md`](../TODO.md). Setup, Wireshark settings and pacing are the same as in
-[`docs/CAPTURING.md`](../docs/CAPTURING.md) §1.1–1.3. In short:
+contain video. For the Tiny 3, see the [roadmap](../docs/project/roadmap.md). Setup, Wireshark settings and pacing are the same as in
+the [capture guide](../docs/development/capturing.md) §1.1–1.3. In short:
 
 - Stay on firmware **6.4.4.1**.
 - Preview **closed** unless a capture says otherwise.
@@ -14,7 +14,7 @@ contain video. For the Tiny 3, see the roadmap in [`TODO.md`](../TODO.md). Setup
   Sliders: type min, max, middle, then two neighbouring values.
 - Add one entry per file to `NOTES.md` with the actions in order and anything you saw
   (LED, gimbal movement, controls that appeared or disappeared).
-- Screenshot every dropdown's full option list and any new panel into `reference-screenshots/`.
+- Screenshot every dropdown's full option list and any new panel into the repository-root `reference-screenshots/` directory (ignored by Git and created as needed).
 
 "Expect" below is my best guess. If a capture shows **no USB traffic at all**
 for an action, that's a useful answer too: it means OBSBOT Center does it on the

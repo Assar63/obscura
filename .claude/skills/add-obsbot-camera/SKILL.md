@@ -28,7 +28,8 @@ should see.
   changed. Note the starting state first (`obsbotctl dump`,
   `obsbotctl status`).
 - **Never ship a command that wasn't tested on the camera.** If something
-  can't be tested (e.g. no mic to pair), record it in `TODO.md` instead.
+  can't be tested (e.g. no mic to pair), record it in
+  `docs/project/roadmap.md` instead.
 - The SDK's `@category` notes are out of date: functions documented for
   other models can be exactly what a newer model uses.
 - No SDK code or files in the repo. Only our own tools
@@ -68,9 +69,9 @@ tools/sdk-trace/xustatus.py /dev/videoN --raw   # selector 6 status block
 
 - Extension Unit **2** with GUID `9a1e7291-6843-4683-6d92-39bc7906ee49` and
   60-byte selectors means the same vendor protocol as the existing models
-  (`docs/protocol.md`).
+  (`docs/reference/protocol.md`).
 - Compare the status block with the **"Status block layout"** table in
-  `docs/protocol.md` (from the SDK's `CameraStatus::tiny`). Plausible
+  `docs/reference/protocol.md` (from the SDK's `CameraStatus::tiny`). Plausible
   values at the known offsets (e.g. [9] = 1 awake, [10..12] = sleep time,
   [24] = AI mode, [33] = light level) mean the layout matches.
 - Check the `auto_exposure` menu values: profiles override them when they
@@ -135,7 +136,8 @@ Build the CLI (`cargo build -p obsbotctl`) and use
 
 In order of preference:
 
-1. **Existing notes**: `docs/protocol.md`, `TODO.md`, other models'
+1. **Existing notes**: `docs/reference/protocol.md`,
+   `docs/project/roadmap.md`, other models'
    profiles, and public projects (e.g. joshualambert/obsbot-tiny3-linux,
    brendanwelsh/obsbot-tiny3-protocol, cgevans/tiny2). Treat them as
    leads, not proof.
@@ -146,7 +148,7 @@ In order of preference:
    `LD_PRELOAD=…/xulog.so`, and read the frames between the `===`
    markers. Trace reads before writes. Functions missing from the header
    are often exported anyway: `nm -D -C --defined-only libdev.so.1.0.0`.
-3. **Windows capture** of OBSBOT Center: `docs/CAPTURING.md`,
+3. **Windows capture** of OBSBOT Center: `docs/development/capturing.md`,
    `tools/capture/obsbot_pcap.py`, and add what's needed to `captures/README.md`.
 4. **Probing** only as a last resort, with the user's explicit OK, using
    commands from a related model, one at a time, with an oracle.
@@ -165,8 +167,9 @@ cargo test -p obsbot-core --all-features
 
 - Add a byte-exact test in `vendor/protocol.rs` for each new frame encoding,
   using the traced or captured bytes.
-- Record measurements in `docs/protocol.md` (a section per model when it
-  differs), tick or add items in `TODO.md`, and update `README.md`.
+- Record measurements in `docs/reference/protocol.md` (a section per model
+  when it differs), tick or add items in `docs/project/roadmap.md`, and update
+  `README.md`.
 - To try it in the installed app, rebuild the snap. The `obscura` part
   must be cleaned first or snapcraft packs the previous build:
   `sg lxd -c "snapcraft clean obscura --use-lxd" && sg lxd -c

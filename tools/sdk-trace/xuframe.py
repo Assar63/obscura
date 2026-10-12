@@ -8,7 +8,7 @@ DST and CMD are hex as they appear in traces (e.g. `04` `4434`), PAYLOAD is
 hex bytes (`''` for none). Without --send it only prints the frame.
 
 Only send frames you have seen work: in an SDK trace, an OBSBOT Center
-capture, or docs/protocol.md. Unknown commands have crashed cameras.
+capture, or docs/reference/protocol.md. Unknown commands have crashed cameras.
 """
 import argparse
 import ctypes

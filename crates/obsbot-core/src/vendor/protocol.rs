@@ -22,7 +22,7 @@
 //!   zero-padded. Reading selector 6 returns a status block that reflects
 //!   many settings.
 //!
-//! Decoded from USB captures of OBSBOT Center (see `docs/protocol.md`).
+//! Decoded from USB captures of OBSBOT Center (see `docs/reference/protocol.md`).
 
 pub const XU_UNIT: u8 = 2;
 pub const SEL_COMMAND: u8 = 2;

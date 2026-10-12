@@ -2,7 +2,7 @@
 #
 # Image controls, pan/tilt/zoom and focus are standard UVC controls
 # (inherited from generic-uvc). AI and gesture features use the vendor
-# protocol on Extension Unit 2 -- see docs/protocol.md.
+# protocol on Extension Unit 2 -- see docs/reference/protocol.md.
 #
 # Vendor bindings:
 #   frames = framed commands on selector 2 (dst module, 2-byte cmd, value encoding)
@@ -16,7 +16,7 @@ inherits = "generic-uvc"
 # Firmware version and serial number via system module queries.
 system_info = true
 
-# Status block layout: OBSBOT SDK `CameraStatus::tiny` (docs/protocol.md).
+# Status block layout: OBSBOT SDK `CameraStatus::tiny` (docs/reference/protocol.md).
 status_layout = "tiny"
 
 [[match]]
@@ -24,7 +24,7 @@ vendor_id = 0x3564
 product_id = 0xfeff
 
 # Gimbal presets: 3 slots holding position, zoom and a name (see
-# docs/protocol.md).
+# docs/reference/protocol.md).
 [presets]
 slots = 3
 
