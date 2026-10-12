@@ -1,0 +1,154 @@
+{
+  "folders": [
+    { "name": "obscura", "path": "." }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/target": true,
+      "**/node_modules": true,
+      "app/dist": true,
+      "app/src-tauri/gen": true,
+      ".idea": true
+    },
+    "files.watcherExclude": {
+      "**/target/**": true,
+      "**/node_modules/**": true,
+      "captures/*.pcap*": true
+    },
+    "search.exclude": {
+      "**/target": true,
+      "**/node_modules": true,
+      "app/dist": true,
+      "*.snap": true,
+      "Cargo.lock": true,
+      "app/pnpm-lock.yaml": true
+    },
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.check.allTargets": true,
+    "rust-analyzer.cargo.features": "all",
+    "[rust]": {
+      "editor.defaultFormatter": "rust-lang.rust-analyzer",
+      "editor.formatOnSave": true
+    },
+
+    "[svelte]": {
+      "editor.defaultFormatter": "svelte.svelte-vscode"
+    },
+    "typescript.tsdk": "app/node_modules/typescript/lib",
+    "npm.packageManager": "pnpm",
+
+    "[python]": {
+      "editor.formatOnSave": false
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "cargo build",
+        "type": "shell",
+        "command": "cargo build --workspace",
+        "group": { "kind": "build", "isDefault": true },
+        "problemMatcher": ["$rustc"]
+      },
+      {
+        "label": "cargo test",
+        "type": "shell",
+        "command": "cargo test --workspace",
+        "group": { "kind": "test", "isDefault": true },
+        "problemMatcher": ["$rustc"]
+      },
+      {
+        "label": "cargo clippy",
+        "type": "shell",
+        "command": "cargo clippy --workspace --all-targets -- -D warnings",
+        "problemMatcher": ["$rustc"]
+      },
+      {
+        "label": "cargo fmt",
+        "type": "shell",
+        "command": "cargo fmt --all",
+        "problemMatcher": []
+      },
+      {
+        "label": "pnpm install",
+        "type": "shell",
+        "command": "pnpm install",
+        "options": { "cwd": "${workspaceFolder}/app" },
+        "problemMatcher": []
+      },
+      {
+        "label": "svelte check",
+        "type": "shell",
+        "command": "pnpm check",
+        "options": { "cwd": "${workspaceFolder}/app" },
+        "problemMatcher": []
+      },
+      {
+        "label": "tauri dev",
+        "type": "shell",
+        "command": "pnpm tauri dev",
+        "options": { "cwd": "${workspaceFolder}/app" },
+        "isBackground": true,
+        "problemMatcher": ["$rustc"]
+      },
+      {
+        "label": "CI checks",
+        "dependsOrder": "sequence",
+        "dependsOn": ["cargo clippy", "cargo test", "svelte check"],
+        "problemMatcher": []
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug obsbotctl",
+        "type": "lldb",
+        "request": "launch",
+        "cargo": {
+          "args": ["build", "--bin=obsbotctl", "--package=obsbotctl"],
+          "filter": { "name": "obsbotctl", "kind": "bin" }
+        },
+        "args": ["--help"],
+        "cwd": "${workspaceFolder}"
+      },
+      {
+        "name": "Debug obsbot-core tests",
+        "type": "lldb",
+        "request": "launch",
+        "cargo": {
+          "args": ["test", "--no-run", "--lib", "--package=obsbot-core"],
+          "filter": { "name": "obsbot_core", "kind": "lib" }
+        },
+        "cwd": "${workspaceFolder}"
+      },
+      {
+        "name": "Debug obscura app (start Vite first)",
+        "type": "lldb",
+        "request": "launch",
+        "cargo": {
+          "args": ["build", "--bin=obscura", "--package=obscura"],
+          "filter": { "name": "obscura", "kind": "bin" }
+        },
+        "cwd": "${workspaceFolder}/app/src-tauri"
+      }
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "rust-lang.rust-analyzer",
+      "vadimcn.vscode-lldb",
+      "tamasfe.even-better-toml",
+      "svelte.svelte-vscode",
+      "tauri-apps.tauri-vscode",
+      "ms-python.python",
+      "llvm-vs-code-extensions.vscode-clangd",
+      "editorconfig.editorconfig"
+    ]
+  }
+}
