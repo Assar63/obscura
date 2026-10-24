@@ -12,14 +12,15 @@ Built with Rust, Tauri 2 and Svelte.
 
 OBSBOT's own *OBSBOT Center* only runs on Windows and macOS. On Linux the
 cameras work as plain UVC webcams, but their AI and gimbal features can't be
-changed. This project talks to the camera the same way the official app does,
-using a vendor protocol reverse-engineered from USB captures.
+changed. This project talks to the camera using a vendor protocol
+reverse-engineered from OBSBOT Center USB captures and traces of OBSBOT's SDK.
 
 > **Not affiliated with OBSBOT / Remo Tech.** "OBSBOT" is their trademark.
-> This project contains no vendor code and was written without vendor
-> documentation. The protocol comes from watching OBSBOT's own software
-> talk to the camera: OBSBOT Center's USB traffic, and for the Tiny 3's
-> gesture settings, the traffic of OBSBOT's SDK. Use it at your own risk.
+> This project contains no copied vendor implementation code and does not
+> bundle the SDK. Its protocol research combines OBSBOT Center USB captures,
+> USB traffic observed while running OBSBOT's SDK, and SDK header
+> declarations. SDK declarations alone do not prove behavior on a
+> particular camera. Use it at your own risk.
 
 <p align="center">
   <img src="screenshots/obscura1.png" width="48%" alt="OBSCura main window">
@@ -68,11 +69,13 @@ the plain Meet/Meet 4K), and [cgevans/tiny2](https://github.com/cgevans/tiny2),
 an independent reverse-engineering of the Tiny 2, confirms several of the
 same command IDs. The Meet 2 and Meet SE have no mechanical gimbal, so their
 profiles leave out gimbal velocity, presets and gimbal reset/reverse.
+See the [OBSBOT model and feature matrix](docs/reference/models.md) for all
+known model profiles and SDK-only feature leads.
 
 Other OBSBOT models (Meet, Meet 4K, …) get the standard webcam controls;
-their vendor features stay off until someone records their traffic, since
-command IDs and status layouts differ between models. If something doesn't
-work, or you can record a model's traffic, see
+their vendor features stay off until model-specific commands and status
+layouts are traced and verified on hardware. If something doesn't work, or
+you can trace a model's traffic, see
 [Adding support for another camera](#adding-support-for-another-camera).
 
 ## Features
@@ -105,11 +108,29 @@ work, or you can record a model's traffic, see
 | Device | Hot-plug and reboot recovery | ✅ | ✅ |
 | Panel | Tray indicator with quick toggles and show/hide | ✅ | ✅ |
 | Pending captures | Custom sleep background, factory reset | 🚧 | 🚧 |
-| Out of scope | Beauty/background effects, portrait mode, rotate/flip, recording, firmware updates | ❌ ¹ | ❌ ¹ |
+| Out of scope | Beauty effects, recording, firmware updates | ❌ ¹ | ❌ ¹ |
 
-¹ In OBSBOT Center these effects (and portrait mode, rotate and flip) run on
-the PC, not the camera. Firmware flashing is deliberately never implemented:
-the update check only points you to OBSBOT Center.
+### SDK-indicated features to investigate
+
+The libdev 2.1.0 headers declare these as camera-side features for the
+**Meet / Meet 4K** categories. They are not implemented or verified by
+OBSCura, and the SDK category does not establish support on Meet 2 or Meet
+SE:
+
+| Area | SDK-declared candidate |
+|---|---|
+| Camera framing | Auto framing for groups or a single person; single-person close-up or upper-body framing |
+| Camera background | On-camera virtual background: blur (adjustable level), solid color, or replacement image; select/delete background resources |
+
+See the [roadmap](docs/project/roadmap.md#5-sdk-leads-for-meet-and-meet-4k)
+for evidence and the verification caveats.
+
+¹ Beauty effects, portrait mode, rotate/flip, and recording in OBSBOT Center
+are PC-side or outside the Tiny SE/Tiny 3 feature scope. The SDK declares
+separate camera-side background controls for Meet / Meet 4K, as listed above;
+those still need model-specific tracing and testing. Firmware flashing is
+deliberately never implemented: the update check only points you to OBSBOT
+Center.
 
 ² The Tiny SE's command was never tested on a Tiny 3, and OBSBOT's SDK uses a different one there; left out until it's checked (see the [roadmap](docs/project/roadmap.md)).
 
@@ -335,19 +356,58 @@ malformed commands.
 
 ## How it works
 
-```
-┌────────────────────┐ ┌───────────┐ ┌───────────────────┐
-│ app/ (Tauri+Svelte)│ │ obsbotctl │ │ obscura-indicator │
-└─────────┬──────────┘ └─────┬─────┘ └─────────┬─────────┘
-          └──────────────────┼─────────────────┘
-                     ┌───────▼────────┐    profiles/*.toml
-                     │  obsbot-core   │◄── (per-model feature bindings)
-                     └───────┬────────┘
-     ┌──────────────┬────────┴───────┬──────────────┬──────────────┐
-  V4L2 controls  UVC XU unit 2    UVC XU unit 2   V4L2 streaming  ALSA mixer
-  VIDIOC_S_CTRL  selector 2:      selector 6:     (MJPEG preview) (mic level)
-                 framed commands, settings +
-                 queries, events  status block
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#f8fafc","primaryColor":"#f8fafc","primaryTextColor":"#111827","primaryBorderColor":"#64748b","lineColor":"#475569","secondaryColor":"#f8fafc","tertiaryColor":"#f8fafc"}}}%%
+flowchart TD
+    subgraph architecture["How it works"]
+        subgraph clients["Applications"]
+            app["app/<br/>Tauri + Svelte"]
+            cli["obsbotctl"]
+            indicator["obscura-indicator"]
+        end
+
+        core["obsbot-core"]
+        profiles["profiles/*.toml<br/>Per-model feature bindings"]
+        activity["Activity log<br/>In-memory, per process<br/>500 entries"]
+        diagnostics["Diagnostics window"]
+        events["obsbotctl debug-feed listen"]
+
+        app --> core
+        cli --> core
+        indicator --> core
+        profiles -. configure .-> core
+        core --> activity
+        activity --> diagnostics
+        activity --> events
+
+        subgraph camera_io["Camera and host interfaces"]
+            v4l2["V4L2 controls<br/>VIDIOC_S_CTRL"]
+            xu2["UVC Extension Unit 2<br/>Selector 2: framed commands,<br/>queries, events"]
+            xu6["UVC Extension Unit 2<br/>Selector 6: settings,<br/>status block"]
+            preview["V4L2 streaming<br/>MJPEG preview"]
+            alsa["ALSA mixer<br/>Microphone level"]
+        end
+
+        core --> v4l2
+        core --> xu2
+        core --> xu6
+        core --> preview
+        core --> alsa
+    end
+
+    classDef appNode fill:#e8f1fb,stroke:#2563eb,color:#111827
+    classDef coreNode fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:2px
+    classDef profileNode fill:#fef3c7,stroke:#d97706,color:#111827
+    classDef ioNode fill:#ecfdf5,stroke:#059669,color:#111827
+    classDef logNode fill:#f3e8ff,stroke:#9333ea,color:#111827
+    class app,cli,indicator appNode
+    class core coreNode
+    class profiles profileNode
+    class v4l2,xu2,xu6,preview,alsa ioNode
+    class activity,diagnostics,events logNode
+    style architecture fill:#f8fafc,stroke:#64748b,color:#111827
+    style clients fill:#f8fafc,stroke:#64748b,color:#111827
+    style camera_io fill:#f8fafc,stroke:#64748b,color:#111827
 ```
 
 - **Standard controls** (image, focus, exposure, white balance, pan/tilt/zoom)
@@ -367,6 +427,32 @@ malformed commands.
 - **Preview** captures MJPEG on its own file handle and sends JPEG bytes to the
   webview over a Tauri channel, with flow control so frames drop rather than
   queue.
+
+#### Debug-only live diagnostics feed
+
+In a debug build, opt in when starting the GUI with
+`OBSCURA_DEBUG_FEED=1`. The feed listens on a user-only Unix socket and
+publishes activity-log entries to clients that attach while the GUI is
+running. It carries no video or audio and accepts no camera-control commands.
+The activity log is per process; this feed publishes the GUI's log.
+
+```sh
+# Terminal 1: start a debug GUI with the feed enabled
+OBSCURA_DEBUG_FEED=1 cargo run -p obscura
+
+# Terminal 2: follow human-readable events or JSON Lines
+cargo run -p obsbotctl -- debug-feed listen
+cargo run -p obsbotctl -- debug-feed listen --jsonl
+
+# Mark a physical action that the camera does not report
+cargo run -p obsbotctl -- debug-feed mark "raised hand"
+```
+
+To include raw UVC frames in the activity log, also set
+`OBSCURA_TRACE=1` when launching the GUI; known camera serial-number query
+replies are redacted. Markers are user-supplied notes; they do not mean the
+camera detected that action. This listener and its CLI commands are compiled
+out of release builds.
 
 The full protocol write-up is in the [protocol reference](docs/reference/protocol.md).
 

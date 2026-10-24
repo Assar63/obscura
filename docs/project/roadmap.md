@@ -1,9 +1,11 @@
 # Roadmap
 
-What's done, what's next, and what's known about each open item. Most
-items came from OBSBOT's SDK headers (`libdev` 2.1.0) and tests on a
-Tiny 3; nothing here comes from the SDK's binaries, and no SDK code goes
-into this repository. What still needs recording from OBSBOT Center is in
+What's done, what's next, and what's known about each open item. Research
+draws on OBSBOT's SDK headers (`libdev` 2.1.0), traces of SDK calls on a
+Tiny 3, and camera tests. The SDK is used locally for tracing but is not
+included in this repository, and no SDK implementation code is copied here.
+SDK declarations and traces are leads, not proof that a feature works on
+another model. What still needs recording from OBSBOT Center is in
 [`captures/README.md`](../../captures/README.md); the protocol itself is in
 [`../reference/protocol.md`](../reference/protocol.md).
 
@@ -280,7 +282,33 @@ button. See [protocol reference](../reference/protocol.md).
 
 ---
 
-## 5. Tooling
+## 5. SDK leads for Meet and Meet 4K
+
+The libdev 2.1.0 header declares a separate set of camera-side controls for
+the **Meet / Meet 4K** categories. These are feature candidates, not
+OBSCura support claims: trace each call and verify its visible effect on the
+exact model before binding it.
+
+- [ ] **Camera-side auto framing:** `cameraSetMediaModeU(MediaModeAutoFrame)`
+  selects auto-framing mode; `cameraSetAutoFramingModeU` declares group or
+  single-person framing, with close-up or upper-body framing for a single
+  person. `CameraStatus::meet` has corresponding framing fields.
+- [ ] **Camera-side virtual backgrounds:** `cameraSetMediaModeU` selects
+  background mode; `cameraSetBgModeU` declares blur, color, and replacement
+  image modes. The header also declares blur-level and background-color
+  controls, plus selection/deletion of up to three background resources.
+  `CameraStatus::meet` has fields for the active mode, blur level, image
+  index, color, and disabled state.
+
+**Model boundary:** the same header places Meet 2 and Meet SE in the `tiny`
+status layout; its separate `meet` layout is labelled only for Meet and
+Meet 4K. Product-type names and generic SDK categories do not prove which
+firmware accepts these controls. In particular, do not apply this lead to
+the currently unverified Meet 2 profile without a trace and hardware test.
+
+---
+
+## 6. Tooling
 
 - [x] **Two programs querying the camera at once.** Query replies come
   back through one slot on the camera (selector 2), so when the app and
@@ -314,5 +342,6 @@ button. See [protocol reference](../reference/protocol.md).
   sends the system module (dst 0d, `c81a`) the text
   `touch /app/private/resolution.conf`. The trace tooling should note this,
   and OBSCura must not copy it.
-- [ ] **Licence check.** The SDK zip has no licence text. Before tracing
-  more of it, check the terms OBSBOT gave with the download.
+- [ ] **Licence check.** The SDK zip has no licence text. Confirm the
+  applicable terms with OBSBOT before further SDK use or distributing
+  anything derived from it.

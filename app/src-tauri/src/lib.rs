@@ -8,6 +8,24 @@ use obsbot_core::companion::{self, Role};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(all(debug_assertions, unix))]
+    let _debug_feed = match obsbot_core::debug_feed::FeedServer::start_if_enabled() {
+        Ok(Some(server)) => {
+            obsbot_core::log::info(format!(
+                "Debug diagnostics feed listening at {}",
+                obsbot_core::debug_feed::socket_path().display()
+            ));
+            Some(server)
+        }
+        Ok(None) => None,
+        Err(error) => {
+            let message = format!("couldn't start debug diagnostics feed: {error}");
+            obsbot_core::log::warn(&message);
+            eprintln!("obscura: {message}");
+            None
+        }
+    };
+
     // The panel indicator runs alongside the app, whether the app was
     // started from the indicator or directly.
     companion::apply_first_run_defaults();

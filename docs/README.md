@@ -19,6 +19,8 @@ installation, and everyday use.
 
 - [OBSBOT vendor protocol](reference/protocol.md) — decoded commands, status
   layout, and measurements from supported cameras.
+- [OBSBOT model and feature matrix](reference/models.md) — known model
+  profiles, their feature coverage, and the evidence level for each.
 
 Tool-specific documentation remains next to its tool, and capture notes remain
 next to the capture assets.

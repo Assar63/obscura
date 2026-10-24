@@ -5,6 +5,8 @@ use clap::{Parser, Subcommand};
 use obsbot_core::transport::uvc_xu;
 use obsbot_core::transport::v4l2::UvcQuery;
 use obsbot_core::{discover, CameraInfo, Device, FeatureId, FeatureKind};
+#[cfg(all(debug_assertions, unix))]
+use std::io::{BufRead, BufReader};
 
 #[derive(Parser)]
 #[command(version, about = "Control OBSBOT webcams on Linux")]
@@ -79,6 +81,10 @@ enum Command {
         #[arg(long)]
         raw: bool,
     },
+    /// Attach to the GUI's opt-in, debug-only local diagnostics feed.
+    #[cfg(all(debug_assertions, unix))]
+    #[command(subcommand)]
+    DebugFeed(DebugFeedCommand),
     /// List the raw V4L2 controls the driver exposes.
     Controls,
     /// Gimbal presets stored on the camera (slots are numbered from 1).
@@ -98,6 +104,19 @@ enum Command {
     /// Low-level UVC Extension Unit access (development only).
     #[command(subcommand, hide = true)]
     Raw(Raw),
+}
+
+#[cfg(all(debug_assertions, unix))]
+#[derive(Subcommand)]
+enum DebugFeedCommand {
+    /// Follow activity-log entries from a running GUI instance.
+    Listen {
+        /// Print one JSON object per line.
+        #[arg(long)]
+        jsonl: bool,
+    },
+    /// Add a marker for a physical action performed during observation.
+    Mark { text: String },
 }
 
 // Variant names become the subcommands `xu-probe`, `xu-get` and `xu-set`.
@@ -383,6 +402,43 @@ fn main() -> Result<()> {
                     }
                 }
             }
+        }
+        #[cfg(all(debug_assertions, unix))]
+        Command::DebugFeed(DebugFeedCommand::Listen { jsonl }) => {
+            let stream = obsbot_core::debug_feed::connect()
+                .context("connecting to the debug feed; start the GUI with OBSCURA_DEBUG_FEED=1")?;
+            eprintln!("Connected to the OBSCura debug feed (Ctrl+C to stop)…");
+            for line in BufReader::new(stream).lines() {
+                let line = line.context("reading from the debug feed")?;
+                if *jsonl {
+                    println!("{line}");
+                } else {
+                    let message: obsbot_core::debug_feed::Message =
+                        serde_json::from_str(&line).context("decoding a debug-feed entry")?;
+                    match message {
+                        obsbot_core::debug_feed::Message::Entry { entry } => {
+                            let secs = entry.time_ms / 1000;
+                            println!(
+                                "{:02}:{:02}:{:02} UTC  [{:?}] {}",
+                                (secs / 3600) % 24,
+                                (secs / 60) % 60,
+                                secs % 60,
+                                entry.level,
+                                entry.message
+                            );
+                        }
+                        obsbot_core::debug_feed::Message::Marker { .. } => {
+                            bail!("received an unexpected marker request from the debug feed");
+                        }
+                    }
+                }
+            }
+        }
+        #[cfg(all(debug_assertions, unix))]
+        Command::DebugFeed(DebugFeedCommand::Mark { text }) => {
+            obsbot_core::debug_feed::send_marker(text)
+                .context("sending marker to the debug feed")?;
+            println!("Marker added.");
         }
         Command::Mics => {
             let dev = open(&cli)?;

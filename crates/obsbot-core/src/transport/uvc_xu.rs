@@ -28,9 +28,25 @@ pub fn get(node: &VideoNode, unit: u8, selector: u8, query: UvcQuery) -> Result<
     node.xu_query(unit, selector, query, &mut buf)?;
     log::trace(format!(
         "XU GET  unit {unit} sel {selector}: {}",
-        log::hex(&buf)
+        trace_data(unit, selector, &buf)
     ));
     Ok(buf)
+}
+
+fn trace_data(unit: u8, selector: u8, data: &[u8]) -> String {
+    let is_serial_reply = unit == crate::vendor::protocol::XU_UNIT
+        && selector == crate::vendor::protocol::SEL_COMMAND
+        && data.first() == Some(&0xaa)
+        && data.get(1) == Some(&crate::vendor::protocol::FLAGS_RESPONSE)
+        && data.get(10..12) == Some(&crate::vendor::protocol::CMD_SERIAL);
+    if is_serial_reply {
+        format!(
+            "{} [serial payload redacted]",
+            log::hex(data.get(..16).unwrap_or(data))
+        )
+    } else {
+        log::hex(data)
+    }
 }
 
 pub fn set(node: &VideoNode, unit: u8, selector: u8, data: &[u8]) -> Result<()> {
@@ -68,4 +84,30 @@ pub fn probe(node: &VideoNode) -> Vec<XuControl> {
         }
     }
     found
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trace_redacts_serial_query_responses_only() {
+        let mut response = [0u8; crate::vendor::protocol::PACKET_LEN];
+        response[0] = 0xaa;
+        response[1] = crate::vendor::protocol::FLAGS_RESPONSE;
+        response[10..12].copy_from_slice(&crate::vendor::protocol::CMD_SERIAL);
+        response[12..14].copy_from_slice(&8u16.to_le_bytes());
+        response[16..24].copy_from_slice(b"12345678");
+
+        let traced = trace_data(
+            crate::vendor::protocol::XU_UNIT,
+            crate::vendor::protocol::SEL_COMMAND,
+            &response,
+        );
+        assert!(!traced.contains("31 32 33 34 35 36 37 38"));
+        assert!(traced.contains("[serial payload redacted]"));
+
+        let other = trace_data(2, 2, &[0xaa, 0x29, 0x31]);
+        assert_eq!(other, "aa 29 31");
+    }
 }

@@ -7,12 +7,12 @@ use std::collections::VecDeque;
 use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Entries kept in memory; older ones are dropped.
 const CAPACITY: usize = 500;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Level {
     /// Raw frames, only with `OBSCURA_TRACE=1`.
@@ -23,7 +23,7 @@ pub enum Level {
     Warn,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Entry {
     /// Increasing number, for fetching only newer entries.
     pub seq: u64,

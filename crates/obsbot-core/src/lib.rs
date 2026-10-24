@@ -6,6 +6,8 @@
 //! Extension Unit queries.
 
 pub mod companion;
+#[cfg(all(debug_assertions, unix))]
+pub mod debug_feed;
 pub mod device;
 pub mod discovery;
 pub mod error;
